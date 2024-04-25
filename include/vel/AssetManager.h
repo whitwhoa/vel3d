@@ -10,7 +10,6 @@
 #include "vel/Texture.h"
 #include "vel/Material.h"
 #include "vel/MaterialAnimator.h"
-#include "vel/Renderable.h"
 #include "vel/Animation.h"
 #include "vel/Armature.h"
 #include "vel/FontBitmap.h"

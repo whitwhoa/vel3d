@@ -8,7 +8,6 @@
 #include "vel/Texture.h"
 #include "vel/Material.h"
 #include "vel/MaterialAnimator.h"
-#include "vel/Renderable.h"
 #include "vel/Animation.h"
 #include "vel/Armature.h"
 #include "vel/FontBitmap.h"
@@ -49,11 +48,6 @@ namespace vel
 	
 	struct MaterialTracker{
 		Material* 		ptr = nullptr;
-		size_t 			usageCount = 0;
-	};
-
-	struct RenderableTracker{
-		Renderable* 	ptr = nullptr;
 		size_t 			usageCount = 0;
 	};
 	

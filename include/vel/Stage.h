@@ -10,7 +10,6 @@
 #include "vel/AssetManager.h"
 #include "vel/Actor.h"
 #include "vel/Camera.h"
-#include "vel/Renderable.h"
 #include "vel/TextActor.h"
 
 namespace vel
