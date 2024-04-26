@@ -299,12 +299,13 @@ namespace vel
 
 				this->activeScene->immediateLoop(this->frameTime, renderLerpInterval);
 
+
 				// clear all previous render target buffers, this is done here as doing it right before or right after
 				// we draw, wouldn't work as far as I can tell at the moment as many stages can have many cameras and
 				// many cameras can have many stages, meaning that if we clear render buffers after drawing to camera's render target
 				// in one stage, if it's used in another stage things would be bad
 				this->activeScene->clearAllRenderTargetBuffers(this->gpu);
-				
+
                 this->activeScene->draw(this->gpu, this->frameTime, renderLerpInterval);
 
 				this->window->renderGui();

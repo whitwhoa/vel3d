@@ -260,6 +260,9 @@ namespace vel
 
 				for (auto& a : s->getActors())
 				{
+					if (!a->isVisible())
+						continue;
+
 					if (actorsFirstPass && a->getMaterial().has_value() && a->getMaterial()->getMaterialAnimator().has_value())
 						a->getMaterial()->getMaterialAnimator()->update(frameTime);
 
@@ -346,8 +349,8 @@ namespace vel
 
 	void Scene::drawActor(GPU* gpu, Actor* a, float alphaTime)
 	{
-		if (a->isVisible())
-		{
+		//if (a->isVisible())
+		//{
 			if (a->getMaterial().has_value())
 				gpu->useMaterial(&a->getMaterial().value());
 
@@ -395,7 +398,7 @@ namespace vel
 			}
 			
 			gpu->drawGpuMesh();
-		}
+		//}
 	}
 
 	void Scene::clearAllRenderTargetBuffers(GPU* gpu)
