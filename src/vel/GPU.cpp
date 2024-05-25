@@ -97,7 +97,7 @@ namespace vel
 		v0.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 		v0.textureCoordinates = glm::vec2(0.0f, 1.0f);
 		v0.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-		v0.textureId = 0;
+		v0.materialUBOIndex = 0;
 
 		// bottom left
 		Vertex v1;
@@ -105,7 +105,7 @@ namespace vel
 		v1.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 		v1.textureCoordinates = glm::vec2(0.0f, 0.0f);
 		v1.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-		v1.textureId = 0;
+		v1.materialUBOIndex = 0;
 
 		// bottom right
 		Vertex v2;
@@ -113,7 +113,7 @@ namespace vel
 		v2.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 		v2.textureCoordinates = glm::vec2(1.0f, 0.0f);
 		v2.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-		v2.textureId = 0;
+		v2.materialUBOIndex = 0;
 
 		// top right
 		Vertex v3;
@@ -121,7 +121,7 @@ namespace vel
 		v3.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 		v3.textureCoordinates = glm::vec2(1.0f, 1.0f);
 		v3.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-		v3.textureId = 0;
+		v3.materialUBOIndex = 0;
 
 		std::vector<Vertex> vs = { v0, v1, v2, v3 };
 		this->screenSpaceMesh.setVertices(vs);
@@ -398,7 +398,7 @@ namespace vel
 
 		// Assign texture id to location = 4
 		glEnableVertexAttribArray(4);
-		glVertexAttribIPointer(4, 1, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, textureId));
+		glVertexAttribIPointer(4, 1, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, materialUBOIndex));
 
 		// Assign vertex bone ids to location = 5 (and 6 for second array element)
 		glEnableVertexAttribArray(5);

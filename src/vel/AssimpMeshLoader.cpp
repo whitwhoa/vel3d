@@ -232,7 +232,7 @@ namespace vel
 				vertex.textureCoordinates = vec;
 
 				// assign this mesh's textureid to each vertex
-				vertex.textureId = this->currentMeshTextureId;
+				vertex.materialUBOIndex = this->currentMeshTextureId;
 			}
 			else
 			{

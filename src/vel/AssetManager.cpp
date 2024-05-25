@@ -806,7 +806,7 @@ namespace vel
 			v1.position = glyphInfo.positions[0];
 			v1.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 			v1.textureCoordinates = glyphInfo.uvs[0];
-			v1.textureId = 0;
+			v1.materialUBOIndex = 0;
 			meshVertices.push_back(v1);
 			if (v1.position.y < lineMinY)
 				lineMinY = v1.position.y;
@@ -818,7 +818,7 @@ namespace vel
 			v2.position = glyphInfo.positions[1];
 			v2.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 			v2.textureCoordinates = glyphInfo.uvs[1];
-			v2.textureId = 0;
+			v2.materialUBOIndex = 0;
 			meshVertices.push_back(v2);
 			if (v2.position.y < lineMinY)
 				lineMinY = v2.position.y;
@@ -830,7 +830,7 @@ namespace vel
 			v3.position = glyphInfo.positions[2];
 			v3.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 			v3.textureCoordinates = glyphInfo.uvs[2];
-			v3.textureId = 0;
+			v3.materialUBOIndex = 0;
 			meshVertices.push_back(v3);
 			if (v3.position.y < lineMinY)
 				lineMinY = v3.position.y;
@@ -842,7 +842,7 @@ namespace vel
 			v4.position = glyphInfo.positions[3];
 			v4.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 			v4.textureCoordinates = glyphInfo.uvs[3];
-			v4.textureId = 0;
+			v4.materialUBOIndex = 0;
 			meshVertices.push_back(v4);
 			if (v4.position.y < lineMinY)
 				lineMinY = v4.position.y;

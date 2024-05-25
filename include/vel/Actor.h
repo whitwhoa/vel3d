@@ -34,6 +34,7 @@ namespace vel
 		ArmatureBone*									parentArmatureBone;
 		std::vector<Actor*>								childActors;
 
+		// TODO: move this into material
 		Shader*											shader;
 
 		Armature*										armature;
@@ -41,10 +42,17 @@ namespace vel
 																	// the glue between an armature and a mesh (index is mesh bone index, value is armature bone index)
 		
 		Mesh*											mesh;
-		std::optional<Material>							material; // must be a copy
-		Texture*										lightMapTexture;
-		glm::vec4										color; // blends with material
-		std::vector<glm::vec3>							giColors;// -x, +x, -y, +y, -z, +z
+		// TODO: make this std::shared_ptr<Material> so we can have polymorphism and actors can be copied if required
+		std::optional<Material>							material; // actor must own it's own copy of a material because of animators
+
+		// TODO: move this into a material for static things?
+		Texture*										lightMapTexture; // default to nullptr, optional, assetmanager owns
+
+		// TODO: make this a parameter in base Material class and call it "mixColor"
+		glm::vec4										color; // blends with material, defaults to white
+
+		// TODO: move this into a material designed around Ambient Cubes
+		std::vector<glm::vec3>							giColors;// -x, +x, -y, +y, -z, +z, defaults to empty vector, only used if actor uses specific material
 		
 		void*											userPointer;
 

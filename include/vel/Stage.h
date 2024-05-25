@@ -25,9 +25,14 @@ namespace vel
 		bool											visible;
 		bool											clearDepthBuffer;
 
-		std::vector<Camera*>							cameras; // raw pointer managed by asset manager since multiple stages can use the same camera
+		std::vector<Camera*>							cameras; // pointer managed by asset manager since multiple stages can use the same camera
+
+		// TODO: needs to be unordered_map where keys are of type int or MaterialType (which will be an enum)
 		std::vector<std::unique_ptr<Actor>>				actors;
-		std::vector<std::unique_ptr<Armature>>			armatures;
+
+		std::vector<std::unique_ptr<Armature>>			armatures;	// multiple actors can be associated with the same armature (arms, hands, gun1, gun2, etc for example)
+																	// so the memory managed by the stage vs the actor (noting this because it through me for a bit when I
+																	// came back to it the last time)
 		std::vector<std::unique_ptr<TextActor>>			textActors;
 
 		int												getActorIndex(const std::string& name);
