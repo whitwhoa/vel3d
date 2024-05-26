@@ -11,7 +11,6 @@
 #include "vel/Stage.h"
 #include "vel/Armature.h"
 #include "vel/Animation.h"
-#include "vel/Material.h"
 #include "vel/AssetTrackers.h"
 #include "vel/CollisionWorld.h"
 #include "vel/CollisionDebugDrawer.h"
@@ -20,6 +19,12 @@
 #include "vel/AssetManager.h"
 #include "vel/HeadlessScene.h"
 
+#include "vel/Material.h"
+#include "vel/DiffuseMaterial.h"
+#include "vel/DiffuseLightmapMaterial.h"
+#include "vel/DiffuseAnimatedMaterial.h"
+#include "vel/DiffuseAnimatedLightmapMaterial.h"
+#include "vel/DiffuseSkinnedMaterial.h"
 
 namespace vel
 {
@@ -45,7 +50,6 @@ namespace vel
 		glm::mat4							cameraViewMatrix;
 
 		void								freeAssets();
-		void								drawActor(GPU* gpu, Actor* a, float alphaTime);
 		
 	protected:
 		const InputState*					inputState;
@@ -54,7 +58,14 @@ namespace vel
 		FontBitmap*							loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath);
 
 		Camera*								addCamera(const std::string& name, CameraType type);
-		Material*							addMaterial(const std::string& name);
+
+		DiffuseMaterial*					addDiffuseMaterial(const std::string& name);
+		DiffuseLightmapMaterial*			addDiffuseLightmapMaterial(const std::string& name);
+		DiffuseAnimatedMaterial*			addDiffuseAnimatedMaterial(const std::string& name);
+		DiffuseAnimatedLightmapMaterial*	addDiffuseAnimatedLightmapMaterial(const std::string& name);
+		DiffuseSkinnedMaterial*				addDiffuseSkinnedMaterial(const std::string& name);
+
+
 		TextActor*							addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
 												TextActorAlignment alignment = TextActorAlignment::LEFT_ALIGN, glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 

@@ -19,7 +19,7 @@
 namespace vel
 {
 	GPU::GPU() :
-		defaultScreenShader(nullptr),
+		screenShader(nullptr),
 		activeShader(nullptr),
 		activeMesh(nullptr),
 		activeMaterial(nullptr),
@@ -46,12 +46,12 @@ namespace vel
 
 	void GPU::setDefaultShader(Shader* s)
 	{
-		this->defaultScreenShader = s;
+		this->screenShader = s;
 	}
 
 	void GPU::drawScreen(GLuint64 dsaHandle, glm::vec4 screenColor)
 	{
-		this->useShader(this->defaultScreenShader);
+		this->useShader(this->screenShader);
 
 		//this->setShaderVec4("color", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 		//this->setShaderMat4("mvp", glm::mat4(1.0f));
@@ -63,7 +63,7 @@ namespace vel
 		this->setShaderVec4("color", screenColor);
 
 		// clear the active lightmap texture
-		this->updateLightMapTextureUBO(this->defaultWhiteTextureHandle);
+		this->updateLightmapTextureUBO(this->defaultWhiteTextureHandle);
 
 		// set mesh
 		//this->activeMesh = &this->screenSpaceMesh;
@@ -158,7 +158,7 @@ namespace vel
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 
-	void GPU::updateLightMapTextureUBO(GLuint64 dsaHandle)
+	void GPU::updateLightmapTextureUBO(GLuint64 dsaHandle)
 	{
 		glBindBuffer(GL_UNIFORM_BUFFER, this->lightmapTextureUBO);
 		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GLuint64) * 2, (void*)&dsaHandle);
@@ -632,24 +632,9 @@ namespace vel
 		glBindVertexArray(m->getGpuMesh()->VAO);
 	}
 
-	void GPU::useMaterial(Material* m)
+	void GPU::setActiveMaterial(Material* m)
 	{
 		this->activeMaterial = m;
-
-		if (!m->getMaterialAnimator().has_value())
-		{
-			for (unsigned int i = 0; i < m->getTextures().size(); i++)
-				this->updateTextureUBO(i, m->getTextures().at(i)->frames.at(0).dsaHandle);
-		}
-		else
-		{
-			for (unsigned int i = 0; i < m->getTextures().size(); i++)
-			{
-				auto currentTextureFrame = m->getMaterialAnimator()->getTextureCurrentFrame(i);
-				this->updateTextureUBO(i, m->getTextures().at(i)->frames.at(currentTextureFrame).dsaHandle);
-			}
-		}
-
 	}
 
 	void GPU::drawGpuMesh()

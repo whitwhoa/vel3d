@@ -25,7 +25,7 @@ namespace vel
 	class GPU
 	{
 	private:
-        Shader*								defaultScreenShader;
+        Shader*								screenShader;
 		uint64_t							defaultWhiteTextureHandle;
 		Shader*								activeShader;
 		Mesh*								activeMesh;
@@ -51,10 +51,12 @@ namespace vel
 		void								clearBuffers(float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 0.0f);
 		void								drawLinesOnly();
 
+		
 		const Shader* const					getActiveShader() const;
 		const Mesh*	const					getActiveMesh() const;
 		const Material*	const				getActiveMaterial() const;
 		void								resetActives();
+
 
 		void								loadShader(Shader* s);
 		void								loadMesh(Mesh* m);
@@ -66,9 +68,8 @@ namespace vel
 		void								updateRenderTarget(RenderTarget* rt);
 		void								clearRenderTarget(RenderTarget* rt);
 
-
+		void								setActiveMaterial(Material* m);
 		void								useShader(Shader* s);
-		void								useMaterial(Material* m);
 		void								useMesh(Mesh* m);
 
 		void								setShaderBool(const std::string& name, bool value);
@@ -101,7 +102,7 @@ namespace vel
 		void								disableBackfaceCulling();
 
 		void								updateTextureUBO(unsigned int index, GLuint64 dsaHandle);
-		void								updateLightMapTextureUBO(GLuint64 dsaHandle);
+		void								updateLightmapTextureUBO(GLuint64 dsaHandle);
 
 		void								updateViewportSize(unsigned int width, unsigned int height);
 		void								setRenderTarget(unsigned int FBO, bool depth);

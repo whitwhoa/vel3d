@@ -52,7 +52,7 @@ namespace vel
 		return -1;
 	}
 
-	Shader* AssetManager::loadShader(const std::string& name, const std::string& vertFile, const std::string& fragFile)
+	Shader* AssetManager::loadShader(const std::string& name, const std::string& vertFile, const std::string& fragFile, std::vector<std::string> defs)
 	{
 		int shaderIndex = this->getShaderIndex(name);
 
@@ -78,11 +78,19 @@ namespace vel
 
 		try
 		{
+			
 			// open files
-			vShaderFile.open(vertFile);
-			fShaderFile.open(fragFile);
+			vShaderFile.open("data/shaders/" + vertFile);
+			fShaderFile.open("data/shaders/" + fragFile);
 
 			std::stringstream vShaderStream, fShaderStream;
+
+			// preload defs into scripts
+			for (const auto& def : defs)
+			{
+				vShaderStream << "#define " << def << "\n";
+				fShaderStream << "#define " << def << "\n";
+			}
 
 			// read file's buffer contents into streams
 			vShaderStream << vShaderFile.rdbuf();

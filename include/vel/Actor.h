@@ -12,17 +12,21 @@
 #include "vel/ArmatureBone.h"
 #include "vel/Mesh.h"
 #include "vel/Transform.h"
-#include "vel/Material.h"
+
 
 
 namespace vel
 {
 	class	Stage;
 	class	CollisionWorld;
+	class	Material;
 
 	class Actor
 	{
 	private:
+		static unsigned int copyCount;
+		static unsigned int getNextCopyCount();
+
 		std::string										name;
 		bool											visible;
 		bool											dynamic;
@@ -35,21 +39,26 @@ namespace vel
 		std::vector<Actor*>								childActors;
 
 		// TODO: move this into material
-		Shader*											shader;
+		// DONE
+		//Shader*											shader;
 
 		Armature*										armature;
 		std::vector<std::pair<size_t, unsigned int>>	activeBones; // the bones from the armature that are actually used by the mesh, 
 																	// the glue between an armature and a mesh (index is mesh bone index, value is armature bone index)
 		
 		Mesh*											mesh;
-		// TODO: make this std::shared_ptr<Material> so we can have polymorphism and actors can be copied if required
-		std::optional<Material>							material; // actor must own it's own copy of a material because of animators
+
+		// std::unique_ptr<Material> so we can have polymorphism, copy constructor and copy assignment operators overwritten to perform deep copy
+		// as each actor needs it's own copy of it's material
+		std::unique_ptr<Material>						material; // actor must own it's own copy of a material because of animators
 
 		// TODO: move this into a material for static things?
-		Texture*										lightMapTexture; // default to nullptr, optional, assetmanager owns
+		// DONE
+		//Texture*										lightMapTexture; // default to nullptr, optional, assetmanager owns
 
-		// TODO: make this a parameter in base Material class and call it "mixColor"
-		glm::vec4										color; // blends with material, defaults to white
+		// TODO: make this a parameter in base Material class
+		// DONE
+		//glm::vec4										color; // blends with material, defaults to white
 
 		// TODO: move this into a material designed around Ambient Cubes
 		std::vector<glm::vec3>							giColors;// -x, +x, -y, +y, -z, +z, defaults to empty vector, only used if actor uses specific material
@@ -58,29 +67,29 @@ namespace vel
 
 	public:
 		Actor(std::string name);
-		Actor											cleanCopy(std::string newName);
+
+		
+		Actor(const Actor& original); // Copy constructor
+		Actor& operator=(const Actor& a); // Copy assignment operator
+
+
+
 		void											setDynamic(bool dynamic);
 
 		void											setName(std::string newName);
 		const std::string								getName() const;
 
-		void											setShader(Shader* t);
-		Shader*											getShader();
-
 		void											setMesh(Mesh* m);
 		Mesh*											getMesh();
+		Mesh*											getMesh() const;
 
 		void											setArmature(Armature* arm);
 		Armature*										getArmature();
+		Armature*										getArmature() const;
 
-		void											setColor(glm::vec4 c);
-		const glm::vec4&								getColor();
-
-		void											setMaterial(Material m);
-		std::optional<Material>&						getMaterial();
-
-		void											setLightMapTexture(Texture* t);
-		Texture*										getLightMapTexture();
+		void											setMaterial(Material* m);
+		Material*										getMaterial();
+		Material*										getMaterial() const;
 		
 
 
@@ -92,13 +101,19 @@ namespace vel
 
 		const std::vector<std::pair<size_t, unsigned int>>& getActiveBones() const;
 		void											setActiveBones(std::vector<std::pair<size_t, unsigned int>> activeBones);
+
 		void											setParentActor(Actor* a);
 		void											setParentArmatureBone(ArmatureBone* b);
+
 		void											addChildActor(Actor* a);
+
 		Transform&										getTransform();
+		const Transform&								getTransform() const;
+
 		std::optional<Transform>&						getPreviousTransform();
 		void											updatePreviousTransform();
 		void											clearPreviousTransform();
+
 		glm::mat4										getWorldMatrix();
 		glm::mat4										getWorldRenderMatrix(float alpha); // contains logic for interpolation
 		glm::vec3										getInterpolatedTranslation(float alpha);

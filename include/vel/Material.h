@@ -12,31 +12,37 @@
 
 namespace vel
 {
+	class GPU;
+	class Shader;
+	class Actor;
+
 	class Material
 	{
 	private:
 		std::string							name;
+		glm::vec4							color;
 		std::vector<Texture*>				textures;
 		bool								hasAlphaChannel;
-
-		std::optional<MaterialAnimator>		materialAnimator;
+		Shader*								shader;
 
 	public:
-		Material(std::string name);
+		Material(const std::string& name, Shader* shader);
 
-		void								addTexture(Texture* t);
-		void								addAnimatedTexture(Texture* t, float fps);
+		const std::string&			getName() const;
+		bool						getHasAlphaChannel() const;
+		void						setHasAlphaChannel(bool b);
 
-		void								pauseAnimatedTextureAfterCycles(unsigned int textureId, unsigned int cycles);
-		void								setAnimatedTexturePause(unsigned int textureId, bool isPaused);
-		bool								getAnimatedTexturePause(unsigned int textureId);
+		void						addTexture(Texture* t);
+		std::vector<Texture*>&		getTextures();
+		
+		void						setColor(glm::vec4 c);
+		const glm::vec4&			getColor();
 
-		void								setAnimatedTextureReverse(unsigned int textureId, bool reverse);
-		bool								getAnimatedTextureReversed(unsigned int textureId);
+		void						setShader(Shader* s);
+		Shader*						getShader();
 
-		const std::string&					getName() const;
-		std::vector<Texture*>&				getTextures();
-		std::optional<MaterialAnimator>&	getMaterialAnimator();
-		bool								getHasAlphaChannel();
+
+		virtual void preDraw(float frameTime) = 0;
+		virtual void draw(float alphaTime, GPU* gpu, Actor* actor, const glm::mat4& viewMatrix, const glm::mat4& projMatrix) = 0;
 	};
 }

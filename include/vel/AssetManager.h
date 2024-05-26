@@ -70,7 +70,7 @@ namespace vel
 		~AssetManager();
 
 
-		Shader*						loadShader(const std::string& name, const std::string& vertFile, const std::string& fragFile);
+		Shader*						loadShader(const std::string& name, const std::string& vertFile, const std::string& fragFile, std::vector<std::string> defs = {});
 		Shader*						getShader(const std::string& name);
 		void						removeShader(const Shader* pShader);
 

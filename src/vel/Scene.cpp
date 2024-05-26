@@ -140,13 +140,74 @@ namespace vel
 		return t;
 	}
 	
-	Material* Scene::addMaterial(const std::string& name)
+
+
+	DiffuseMaterial* Scene::addDiffuseMaterial(const std::string& name)
 	{
-		std::unique_ptr<Material> m = std::make_unique<Material>(name);
+		Shader* diffuseMaterialShader = this->assetManager->loadShader("diffuseMaterialShader", 
+			"uber.vert", "uber.frag", DiffuseMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<DiffuseMaterial> m = std::make_unique<DiffuseMaterial>(name, diffuseMaterialShader);
+
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
-		return pMaterial;
+
+		return static_cast<DiffuseMaterial*>(pMaterial);
 	}
+
+	DiffuseLightmapMaterial* Scene::addDiffuseLightmapMaterial(const std::string& name)
+	{
+		Shader* diffuseLightmapMaterialShader = this->assetManager->loadShader("diffuseLightmapMaterialShader",
+			"uber.vert", "uber.frag", DiffuseLightmapMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<DiffuseLightmapMaterial> m = std::make_unique<DiffuseLightmapMaterial>(name, diffuseLightmapMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<DiffuseLightmapMaterial*>(pMaterial);
+	}
+
+	DiffuseAnimatedMaterial* Scene::addDiffuseAnimatedMaterial(const std::string& name)
+	{
+		Shader* diffuseAnimatedMaterialShader = this->assetManager->loadShader("diffuseAnimatedMaterialShader",
+			"uber.vert", "uber.frag", DiffuseAnimatedMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<DiffuseAnimatedMaterial> m = std::make_unique<DiffuseAnimatedMaterial>(name, diffuseAnimatedMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<DiffuseAnimatedMaterial*>(pMaterial);
+	}
+
+	DiffuseAnimatedLightmapMaterial* Scene::addDiffuseAnimatedLightmapMaterial(const std::string& name)
+	{
+		Shader* diffuseAnimatedLightmapMaterialShader = this->assetManager->loadShader("diffuseAnimatedLightmapMaterialShader",
+			"uber.vert", "uber.frag", DiffuseAnimatedLightmapMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<DiffuseAnimatedLightmapMaterial> m = std::make_unique<DiffuseAnimatedLightmapMaterial>(name, diffuseAnimatedLightmapMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<DiffuseAnimatedLightmapMaterial*>(pMaterial);
+	}
+
+	DiffuseSkinnedMaterial* Scene::addDiffuseSkinnedMaterial(const std::string& name)
+	{
+		Shader* diffuseSkinnedMaterialShader = this->assetManager->loadShader("diffuseSkinnedMaterialShader",
+			"uber.vert", "uber.frag", DiffuseSkinnedMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<DiffuseSkinnedMaterial> m = std::make_unique<DiffuseSkinnedMaterial>(name, diffuseSkinnedMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<DiffuseSkinnedMaterial*>(pMaterial);
+	}
+
+
 
 	Shader* Scene::getShader(const std::string& name)
 	{
@@ -202,7 +263,7 @@ namespace vel
 		pTextActor->setColor(color);
 		pTextActor->setDynamic(false);
 		pTextActor->setVisible(true);
-		pTextActor->setShader(this->getShader("textShader"));
+		pTextActor->setShader(this->getShader("text"));
 		pTextActor->setMesh(pTam);
 		pTextActor->setMaterial(*taMaterial);
 		
@@ -263,25 +324,19 @@ namespace vel
 					if (!a->isVisible())
 						continue;
 
-					if (actorsFirstPass && a->getMaterial().has_value() && a->getMaterial()->getMaterialAnimator().has_value())
-						a->getMaterial()->getMaterialAnimator()->update(frameTime);
+					if (actorsFirstPass)
+						a->getMaterial()->preDraw(frameTime);
 
 					// Pool transparents/translucents for render after opaques
-					if ((a->getColor().w < 1.0f) || (a->getMaterial().has_value() && a->getMaterial()->getHasAlphaChannel()))
+					if(a->getMaterial()->getHasAlphaChannel() || a->getMaterial()->getColor().w < 1.0f)
 					{
 						float dist = glm::length(this->cameraPosition - a->getTransform().getTranslation());
 						this->transparentActors.push_back(std::pair<float, Actor*>(dist, a.get()));
-
 						continue;
 					}
 
 					// Draw Opaques
-
-					// Reset Gpu state for this actor
-					gpu->useShader(a->getShader());
-					gpu->useMesh(a->getMesh());
-
-					this->drawActor(gpu, a.get(), alpha);
+					a->getMaterial()->draw(alpha, gpu, a.get(), this->cameraViewMatrix, this->cameraProjectionMatrix);
 				}
 
 				actorsFirstPass = false;
@@ -298,13 +353,8 @@ namespace vel
 				// Draw all transparent/translucent actors
 				for (std::vector<std::pair<float, Actor*>>::reverse_iterator it = transparentActors.rbegin(); it != transparentActors.rend(); ++it)
 				{
-					// Reset gpu state for this ACTOR and draw
-					auto a = it->second;;
-
-					gpu->useShader(a->getShader());
-					gpu->useMesh(a->getMesh());
-
-					this->drawActor(gpu, it->second, alpha);
+					auto a = it->second;
+					a->getMaterial()->draw(alpha, gpu, a, this->cameraViewMatrix, this->cameraProjectionMatrix);
 				}
 
 			} // end for each camera
@@ -343,62 +393,6 @@ namespace vel
 			}
 		}
 #endif
-
-
-	}
-
-	void Scene::drawActor(GPU* gpu, Actor* a, float alphaTime)
-	{
-		//if (a->isVisible())
-		//{
-			if (a->getMaterial().has_value())
-				gpu->useMaterial(&a->getMaterial().value());
-
-			gpu->setShaderVec4("color", a->getColor());
-
-			//gpu->setShaderMat4("mvp", this->cameraProjectionMatrix * this->cameraViewMatrix * a->getWorldRenderMatrix(alphaTime));
-			gpu->setShaderMat4("model", a->getWorldRenderMatrix(alphaTime));
-			gpu->setShaderMat4("view", this->cameraViewMatrix);
-			gpu->setShaderMat4("projection", this->cameraProjectionMatrix);
-
-			if (a->getGIColors().size() == 6)
-				gpu->setShaderVec3Array("giColors", a->getGIColors());
-				
-			if (a->getLightMapTexture() == nullptr)
-				gpu->updateLightMapTextureUBO(this->assetManager->getTexture("defaultWhite")->frames.at(0).dsaHandle);	
-			else
-				gpu->updateLightMapTextureUBO(a->getLightMapTexture()->frames.at(0).dsaHandle);
-				
-
-			// If this actor is animated, send the bone transforms of it's armature to the shader
-			if (a->isAnimated())
-			{
-				auto mesh = a->getMesh();
-				auto armature = a->getArmature();
-				bool armInterp = armature->getShouldInterpolate();
-
-				size_t boneIndex = 0;
-				std::vector<std::pair<unsigned int, glm::mat4>> boneData;
-
-				glm::mat4 meshBoneTransform;
-				for (auto& activeBone : a->getActiveBones())
-				{
-					if(armInterp)
-						// global inverse matrix does not seem to make any difference
-						//meshBoneTransform = mesh->getGlobalInverseMatrix() * armature->getBone(activeBone.first).getRenderMatrixInterpolated(alphaTime) * mesh->getBone(boneIndex).offsetMatrix;
-						meshBoneTransform = armature->getBone(activeBone.first).getRenderMatrixInterpolated(alphaTime) * mesh->getBone(boneIndex).offsetMatrix;
-					else
-						meshBoneTransform = armature->getBone(activeBone.first).getRenderMatrix() * mesh->getBone(boneIndex).offsetMatrix;
-
-					boneData.push_back(std::pair<unsigned int, glm::mat4>(activeBone.second, meshBoneTransform));
-					boneIndex++;
-				}
-
-				gpu->updateBonesUBO(boneData);
-			}
-			
-			gpu->drawGpuMesh();
-		//}
 	}
 
 	void Scene::clearAllRenderTargetBuffers(GPU* gpu)
@@ -416,6 +410,7 @@ namespace vel
 		gpu->setRenderTarget(0, false);
 		gpu->clearBuffers(0.0f, 0.0f, 0.0f, 1.0f);
 	}
+
 
 // END VEL NAMESPACE
 }

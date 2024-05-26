@@ -1,12 +1,30 @@
 #include "vel/Material.h"
 
+
 namespace vel
 {
 
-	Material::Material(std::string name) :
+	Material::Material(const std::string& name, Shader* shader) :
 		name(name),
+		shader(shader),
+		color(glm::vec4(1.0f)),
 		hasAlphaChannel(false)
 	{}
+
+	const std::string& Material::getName() const
+	{
+		return this->name;
+	}
+
+	bool Material::getHasAlphaChannel() const
+	{
+		return this->hasAlphaChannel;
+	}
+
+	void Material::setHasAlphaChannel(bool b)
+	{
+		this->hasAlphaChannel = b;
+	}
 
 	void Material::addTexture(Texture* t)
 	{
@@ -16,76 +34,29 @@ namespace vel
 			this->hasAlphaChannel = true;
 	}
 
-	void Material::addAnimatedTexture(Texture* t, float fps)
-	{
-		if (!this->materialAnimator.has_value())
-			this->materialAnimator = MaterialAnimator();
-
-		this->addTexture(t);
-		this->materialAnimator->addTextureAnimator(t->frames.size(), fps);
-
-		if (t->alphaChannel)
-			this->hasAlphaChannel = true;
-	}
-
-	void Material::pauseAnimatedTextureAfterCycles(unsigned int textureId, unsigned int cycles)
-	{
-		if (!this->materialAnimator.has_value())
-			return;
-
-		this->materialAnimator.value().setTextureAnimatorPauseAfterCycles(textureId, cycles);
-	}
-
-	void Material::setAnimatedTexturePause(unsigned int textureId, bool isPaused)
-	{
-		if (!this->materialAnimator.has_value())
-			return;
-
-		this->materialAnimator.value().setTextureAnimatorPause(textureId, isPaused);
-	}
-
-	bool Material::getAnimatedTexturePause(unsigned int textureId)
-	{
-		if (!this->materialAnimator.has_value())
-			return true;
-
-		return this->materialAnimator.value().getTexturePaused(textureId);
-	}
-
-	void Material::setAnimatedTextureReverse(unsigned int textureId, bool reverse)
-	{
-		if (!this->materialAnimator.has_value())
-			return;
-
-		this->materialAnimator.value().setAnimatedTextureReverse(textureId, reverse);
-	}
-
-	bool Material::getAnimatedTextureReversed(unsigned int textureId)
-	{
-		if (!this->materialAnimator.has_value())
-			return true;
-
-		return this->materialAnimator.value().getAnimatedTextureReversed(textureId);
-	}
-
-	const std::string& Material::getName() const
-	{
-		return this->name;
-	}
-
 	std::vector<Texture*>& Material::getTextures()
 	{
 		return this->textures;
 	}
 
-	std::optional<MaterialAnimator>& Material::getMaterialAnimator()
+	void Material::setColor(glm::vec4 c)
 	{
-		return this->materialAnimator;
+		this->color = c;
 	}
 
-	bool Material::getHasAlphaChannel()
+	const glm::vec4& Material::getColor()
 	{
-		return this->hasAlphaChannel;
+		return this->color;
+	}
+
+	void Material::setShader(Shader* s)
+	{
+		this->shader = s;
+	}
+
+	Shader* Material::getShader()
+	{
+		return this->shader;
 	}
 
 }

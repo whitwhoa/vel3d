@@ -6,6 +6,13 @@
 
 namespace vel
 {
+	unsigned int Actor::copyCount = 0;
+
+	unsigned int Actor::getNextCopyCount()
+	{
+		return ++copyCount;
+	}
+
 	Actor::Actor(std::string name) :
 		name(name),
 		visible(true),
@@ -13,13 +20,39 @@ namespace vel
 		transform(Transform()),
 		parentActor(nullptr),
 		parentArmatureBone(nullptr),
-		shader(nullptr),
 		armature(nullptr),
 		mesh(nullptr),
-		lightMapTexture(nullptr),
-		color(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)),
+		material(nullptr),
 		userPointer(nullptr)
 	{}
+
+	Actor::Actor(const Actor& a) : 
+		name(a.getName() + "_" + std::to_string(Actor::getNextCopyCount())),
+		visible(a.isVisible()),
+		dynamic(a.isDynamic()),
+		transform(a.getTransform()),
+		parentActor(nullptr),
+		parentArmatureBone(nullptr),
+		armature(nullptr),
+		mesh(a.getMesh()),
+		material(std::make_unique<Material>(*a.getMaterial())),
+		userPointer(nullptr)
+	{}
+
+	Actor& Actor::operator=(const Actor& a)
+	{
+		if (this == &a)
+			return *this; // handle self-assignment
+
+		this->name = a.getName() + "_" + std::to_string(Actor::getNextCopyCount());
+		this->visible = a.isVisible();
+		this->dynamic = a.isDynamic();
+		this->transform = a.getTransform();
+		this->mesh = a.getMesh();
+		this->material = std::make_unique<Material>(*a.getMaterial());
+
+		return *this;
+	}
 
 	std::vector<glm::vec3>& Actor::getGIColors()
 	{
@@ -29,26 +62,6 @@ namespace vel
 	void Actor::updateGIColors(std::vector<glm::vec3>& colors)
 	{
 		this->giColors = colors;
-	}
-
-	void Actor::setLightMapTexture(Texture* t)
-	{
-		this->lightMapTexture = t;
-	}
-
-	Texture* Actor::getLightMapTexture()
-	{
-		return this->lightMapTexture;
-	}
-
-	void Actor::setShader(Shader* s)
-	{
-		this->shader = s;
-	}
-
-	Shader* Actor::getShader()
-	{
-		return this->shader;
 	}
 
 	void* Actor::getUserPointer()
@@ -61,23 +74,19 @@ namespace vel
 		this->userPointer = p;
 	}
 
-	void Actor::setMaterial(Material m)
+	void Actor::setMaterial(Material* m)
 	{
-		this->material = m;
+		this->material = std::make_unique<Material>(*m);
 	}
 
-	std::optional<Material>& Actor::getMaterial()
+	Material* Actor::getMaterial()
 	{
-		return this->material;
+		return this->material.get();
 	}
 
-	void Actor::setColor(glm::vec4 c)
+	Material* Actor::getMaterial() const
 	{
-		this->color = c;
-	}
-	const glm::vec4& Actor::getColor()
-	{
-		return this->color;
+		return this->material.get();
 	}
 
 	void Actor::clearPreviousTransform()
@@ -110,26 +119,6 @@ namespace vel
 		}
 	}
 
-	Actor Actor::cleanCopy(std::string newName)
-	{
-		// TODO: this might need some more work
-
-		auto newActor = *this;
-		newActor.setName(newName);
-
-		// Clear parents and children
-		newActor.setParentActor(nullptr);
-		newActor.setParentArmatureBone(nullptr);
-
-		// Clear armature
-		newActor.setArmature(nullptr);
-
-		// TODO: In the future we may need to implement methods for:
-		// > automatically duplicating an entire actor hierarchy including all of it's children
-
-		return newActor;
-	}
-
 	void Actor::setName(std::string newName)
 	{
 		this->name = newName;
@@ -141,6 +130,11 @@ namespace vel
 	}
 
 	Mesh* Actor::getMesh()
+	{
+		return this->mesh;
+	}
+
+	Mesh* Actor::getMesh() const
 	{
 		return this->mesh;
 	}
@@ -296,6 +290,11 @@ namespace vel
 		return this->transform;
 	}
 
+	const Transform& Actor::getTransform() const
+	{
+		return this->transform;
+	}
+
 	std::optional<Transform>& Actor::getPreviousTransform()
 	{
 		return this->previousTransform;
@@ -333,6 +332,11 @@ namespace vel
 	}
 
 	Armature* Actor::getArmature()
+	{
+		return this->armature;
+	}
+
+	Armature* Actor::getArmature() const
 	{
 		return this->armature;
 	}

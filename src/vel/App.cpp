@@ -35,34 +35,14 @@ namespace vel
 		averageFrameRate(0.0f),
 		canDisplayAverageFrameTime(false),
 		pauseBufferClearAndSwap(false)
-    {
+    {		
+		this->assetManager->loadShader("debug", "debug.vert", "debug.frag"); // used for bullet's debug drawer
+		this->assetManager->loadShader("screen", "screen.vert", "screen.frag"); // used for rendering texture to screen buffer
+		this->assetManager->loadShader("text", "uber.vert", "uber.frag", {"IS_TEXT"}); // used for rendering text
 
-		this->assetManager->loadShader("defaultDebug",
-			"data/shaders/defaults/debug.vert", "data/shaders/defaults/debug.frag");
-
-		this->assetManager->loadShader("default",
-			"data/shaders/defaults/default.vert", "data/shaders/defaults/default.frag");
-
-		this->assetManager->loadShader("defaultGI",
-			"data/shaders/defaults/default.vert", "data/shaders/defaults/defaultGI.frag");
-
-		//this->assetManager.loadShader("defaultSkinned",
-		//	"data/shaders/defaults/default_skinned.vert", "data/shaders/defaults/default.frag");
-		this->assetManager->loadShader("defaultSkinned",
-			"data/shaders/defaults/default_skinned.vert", "data/shaders/defaults/defaultGI.frag");
-
-		// used for rendering texture to screen buffer
-		this->assetManager->loadShader("defaultScreen",
-			"data/shaders/defaults/screen.vert", "data/shaders/defaults/screen.frag");
-
-		// used for rendering text
-		this->assetManager->loadShader("textShader",
-			"data/shaders/defaults/default.vert", "data/shaders/defaults/text.frag");
-
-		// load default white texture
 		Texture* ptrDefaultWhite = this->assetManager->loadTexture("defaultWhite", "data/textures/defaults/default.jpg");
 
-		this->gpu->setDefaultShader(this->assetManager->getShader("defaultScreen"));
+		this->gpu->setDefaultShader(this->assetManager->getShader("screen"));
 		this->gpu->setDefaultWhiteTextureHandle(ptrDefaultWhite->frames.at(0).dsaHandle);
 
     }
