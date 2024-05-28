@@ -69,7 +69,9 @@ namespace vel
 		AssetManager(std::unique_ptr<MeshLoaderInterface> ml, GPU* gpu);
 		~AssetManager();
 
-
+		std::string					loadShaderFile(const std::string& shaderPath);
+		std::string					getTopShaderLines(const std::string& shaderCode, int numLinesToGet);
+		std::string					getBottomShaderLines(const std::string& shaderCode, int numLinesToSkip);
 		Shader*						loadShader(const std::string& name, const std::string& vertFile, const std::string& fragFile, std::vector<std::string> defs = {});
 		Shader*						getShader(const std::string& name);
 		void						removeShader(const Shader* pShader);

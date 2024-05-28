@@ -26,6 +26,10 @@
 #include "vel/DiffuseAnimatedLightmapMaterial.h"
 #include "vel/DiffuseSkinnedMaterial.h"
 #include "vel/TextMaterial.h"
+#include "vel/DiffuseAmbientCubeMaterial.h"
+#include "vel/DiffuseAmbientCubeSkinnedMaterial.h"
+#include "vel/RGBAMaterial.h"
+#include "vel/RGBALightmapMaterial.h"
 
 namespace vel
 {
@@ -66,6 +70,10 @@ namespace vel
 		DiffuseAnimatedLightmapMaterial*	addDiffuseAnimatedLightmapMaterial(const std::string& name);
 		DiffuseSkinnedMaterial*				addDiffuseSkinnedMaterial(const std::string& name);
 		TextMaterial*						addTextMaterial(const std::string& name);
+		DiffuseAmbientCubeMaterial*			addDiffuseAmbientCubeMaterial(const std::string& name);
+		DiffuseAmbientCubeSkinnedMaterial*	addDiffuseAmbientCubeSkinnedMaterial(const std::string& name);
+		RGBAMaterial*						addRGBAMaterial(const std::string& name);
+		RGBALightmapMaterial*				addRGBALightmapMaterial(const std::string& name);
 
 
 		TextActor*							addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,

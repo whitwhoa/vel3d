@@ -40,30 +40,15 @@ namespace vel
 		ArmatureBone*									parentArmatureBone;
 		std::vector<Actor*>								childActors;
 
-		// TODO: move this into material
-		// DONE
-		//Shader*											shader;
-
 		Armature*										armature;
 		std::vector<std::pair<size_t, unsigned int>>	activeBones; // the bones from the armature that are actually used by the mesh, 
 																	// the glue between an armature and a mesh (index is mesh bone index, value is armature bone index)
 		
 		Mesh*											mesh;
 
-		// std::unique_ptr<Material> so we can have polymorphism, copy constructor and copy assignment operators overwritten to perform deep copy
+		// std::unique_ptr<Material> so we can have polymorphism, copy constructor and copy assignment operators overwritten to perform clone
 		// as each actor needs it's own copy of it's material
 		std::unique_ptr<Material>						material; // actor must own it's own copy of a material because of animators
-
-		// TODO: move this into a material for static things?
-		// DONE
-		//Texture*										lightMapTexture; // default to nullptr, optional, assetmanager owns
-
-		// TODO: make this a parameter in base Material class
-		// DONE
-		//glm::vec4										color; // blends with material, defaults to white
-
-		// TODO: move this into a material designed around Ambient Cubes
-		std::vector<glm::vec3>							giColors;// -x, +x, -y, +y, -z, +z, defaults to empty vector, only used if actor uses specific material
 		
 		void*											userPointer;
 
@@ -127,10 +112,5 @@ namespace vel
 
 		void*											getUserPointer();
 		void											setUserPointer(void* p);
-
-		void											updateGIColors(std::vector<glm::vec3>& colors);
-
-		void											setEmptyGIColors();
-		std::vector<glm::vec3>&							getGIColors();
 	};
 }

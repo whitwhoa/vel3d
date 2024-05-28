@@ -220,6 +220,58 @@ namespace vel
 		return static_cast<TextMaterial*>(pMaterial);
 	}
 
+	DiffuseAmbientCubeMaterial* Scene::addDiffuseAmbientCubeMaterial(const std::string& name)
+	{
+		Shader* diffuseAmbientCubeMaterialShader = this->assetManager->loadShader("diffuseAmbientCubeMaterialShader",
+			"uber.vert", "uber.frag", DiffuseAmbientCubeMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<DiffuseAmbientCubeMaterial> m = std::make_unique<DiffuseAmbientCubeMaterial>(name, diffuseAmbientCubeMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<DiffuseAmbientCubeMaterial*>(pMaterial);
+	}
+
+	DiffuseAmbientCubeSkinnedMaterial* Scene::addDiffuseAmbientCubeSkinnedMaterial(const std::string& name)
+	{
+		Shader* diffuseAmbientCubeSkinnedMaterialShader = this->assetManager->loadShader("diffuseAmbientCubeSkinnedMaterialShader",
+			"uber.vert", "uber.frag", DiffuseAmbientCubeSkinnedMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<DiffuseAmbientCubeSkinnedMaterial> m = std::make_unique<DiffuseAmbientCubeSkinnedMaterial>(name, diffuseAmbientCubeSkinnedMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<DiffuseAmbientCubeSkinnedMaterial*>(pMaterial);
+	}
+
+	RGBAMaterial* Scene::addRGBAMaterial(const std::string& name)
+	{
+		Shader* RGBAMaterialShader = this->assetManager->loadShader("RGBAMaterialShader",
+			"uber.vert", "uber.frag", RGBAMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<RGBAMaterial> m = std::make_unique<RGBAMaterial>(name, RGBAMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<RGBAMaterial*>(pMaterial);
+	}
+
+	RGBALightmapMaterial* Scene::addRGBALightmapMaterial(const std::string& name)
+	{
+		Shader* RGBALightmapMaterialShader = this->assetManager->loadShader("RGBALightmapMaterialShader",
+			"uber.vert", "uber.frag", RGBALightmapMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<RGBALightmapMaterial> m = std::make_unique<RGBALightmapMaterial>(name, RGBALightmapMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<RGBALightmapMaterial*>(pMaterial);
+	}
+
 
 
 	Shader* Scene::getShader(const std::string& name)

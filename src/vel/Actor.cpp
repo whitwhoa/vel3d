@@ -56,16 +56,6 @@ namespace vel
 		return *this;
 	}
 
-	std::vector<glm::vec3>& Actor::getGIColors()
-	{
-		return this->giColors;
-	}
-
-	void Actor::updateGIColors(std::vector<glm::vec3>& colors)
-	{
-		this->giColors = colors;
-	}
-
 	void* Actor::getUserPointer()
 	{
 		return this->userPointer;
@@ -208,19 +198,9 @@ namespace vel
 		return this->transform.getScale();
 	}
 
-	void Actor::setEmptyGIColors()
-	{
-		this->giColors = { glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f), glm::vec3(1.0f) };
-	}
-
 	void Actor::setDynamic(bool dynamic)
 	{
 		this->dynamic = dynamic;
-		// TODO: do we want to be setting these here, what if we want to go from dynamic to none dynamic and retain current giColor...????
-		if (dynamic)
-			this->setEmptyGIColors();
-		else
-			this->giColors.clear();
 	}
 
 	const bool Actor::isDynamic() const

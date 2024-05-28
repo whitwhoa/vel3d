@@ -52,6 +52,51 @@ namespace vel
 		return -1;
 	}
 
+	std::string AssetManager::loadShaderFile(const std::string& shaderPath)
+	{
+		std::ifstream shaderFile;
+		std::stringstream shaderStream;
+
+		shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+		shaderFile.open(shaderPath);
+		shaderStream << shaderFile.rdbuf();
+		shaderFile.close();
+
+		return shaderStream.str();
+	}
+
+	std::string AssetManager::getTopShaderLines(const std::string& shaderCode, int numLinesToGet)
+	{
+		std::istringstream shaderStream(shaderCode);
+		std::string line;
+		std::string firstLines;
+
+		for (int i = 0; i < numLinesToGet; ++i) 
+		{
+			std::getline(shaderStream, line);
+			firstLines += line + "\n";
+		}
+
+		return firstLines;
+	}
+
+	std::string AssetManager::getBottomShaderLines(const std::string& shaderCode, int numLinesToSkip)
+	{
+		std::istringstream shaderStream(shaderCode);
+		std::string line;
+
+		// Skip the specified number of lines
+		for (int i = 0; i < numLinesToSkip; ++i) 
+			std::getline(shaderStream, line);
+
+		// Return the remaining shader code
+		std::stringstream remainingShaderCode;
+		remainingShaderCode << shaderStream.rdbuf();
+
+		return remainingShaderCode.str();
+	}
+
 	Shader* AssetManager::loadShader(const std::string& name, const std::string& vertFile, const std::string& fragFile, std::vector<std::string> defs)
 	{
 		int shaderIndex = this->getShaderIndex(name);
@@ -67,56 +112,40 @@ namespace vel
 
 		LOG_TO_CLI_AND_FILE("Loading new Shader: " + name);
 
-		// 1. retrieve the vertex/fragment source code from filePath
+
+		// retrieve the vertex/fragment source code from filePath
 		std::string vertexCode;
 		std::string fragmentCode;
-		std::ifstream vShaderFile;
-		std::ifstream fShaderFile;
-
-		vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
 		try
 		{
-			
-			// open files
-			vShaderFile.open("data/shaders/" + vertFile);
-			fShaderFile.open("data/shaders/" + fragFile);
+			vertexCode = this->loadShaderFile("data/shaders/" + vertFile);
+			fragmentCode = this->loadShaderFile("data/shaders/" + fragFile);
 
-			std::stringstream vShaderStream, fShaderStream;
+			std::string topVertexLines = this->getTopShaderLines(vertexCode, 10);
+			std::string topFragmentLines = this->getTopShaderLines(fragmentCode, 10);
+			std::string bottomVertexLines = this->getBottomShaderLines(vertexCode, 10);
+			std::string bottomFragmentLines = this->getBottomShaderLines(fragmentCode, 10);
 
-			std::string vertexVersion;
-			std::string vertexExtension;
-			std::string fragmentVersion;
-			std::string fragmentExtension;
+			std::stringstream preprocessedVertexCode;
+			std::stringstream preprocessedFragmentCode;
 
-			std::getline(vShaderFile, vertexVersion);
-			std::getline(vShaderFile, vertexExtension);
-			std::getline(fShaderFile, fragmentVersion);
-			std::getline(fShaderFile, fragmentExtension);
+			preprocessedVertexCode << topVertexLines;
+			preprocessedFragmentCode << topFragmentLines;
 
-			vShaderStream << vertexVersion << "\n" << vertexExtension << "\n";
-			fShaderStream << fragmentVersion << "\n" << fragmentExtension << "\n";
 
 			// preload defs into scripts
 			for (const auto& def : defs)
 			{
-				vShaderStream << "#define " << def << "\n";
-				fShaderStream << "#define " << def << "\n";
+				preprocessedVertexCode << "#define " << def << "\n";
+				preprocessedFragmentCode << "#define " << def << "\n";
 			}
 
-			// read file's buffer contents into streams
-			vShaderStream << vShaderFile.rdbuf();
-			fShaderStream << fShaderFile.rdbuf();
+			preprocessedVertexCode << bottomVertexLines;
+			preprocessedFragmentCode << bottomFragmentLines;
 
-			// close file handlers
-			vShaderFile.close();
-			fShaderFile.close();
-
-			// convert stream into string
-			vertexCode = vShaderStream.str();
-			fragmentCode = fShaderStream.str();
-
+			vertexCode = preprocessedVertexCode.str();
+			fragmentCode = preprocessedFragmentCode.str();
 		}
 		catch (std::ifstream::failure e)
 		{
@@ -130,7 +159,6 @@ namespace vel
 		s->name = name;
 		s->vertCode = vertexCode;
 		s->fragCode = fragmentCode;
-
 
 		this->shaders.push_back(std::pair<std::unique_ptr<Shader>, int>(std::move(s), 1));
 
