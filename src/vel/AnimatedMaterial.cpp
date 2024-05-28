@@ -1,3 +1,4 @@
+#include "vel/Shader.h"
 #include "vel/AnimatedMaterial.h"
 
 namespace vel

@@ -85,6 +85,19 @@ namespace vel
 
 			std::stringstream vShaderStream, fShaderStream;
 
+			std::string vertexVersion;
+			std::string vertexExtension;
+			std::string fragmentVersion;
+			std::string fragmentExtension;
+
+			std::getline(vShaderFile, vertexVersion);
+			std::getline(vShaderFile, vertexExtension);
+			std::getline(fShaderFile, fragmentVersion);
+			std::getline(fShaderFile, fragmentExtension);
+
+			vShaderStream << vertexVersion << "\n" << vertexExtension << "\n";
+			fShaderStream << fragmentVersion << "\n" << fragmentExtension << "\n";
+
 			// preload defs into scripts
 			for (const auto& def : defs)
 			{

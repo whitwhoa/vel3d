@@ -3,6 +3,7 @@
 #include "glm/glm.hpp"
 
 #include "vel/App.h"
+#include "vel/LightmapMaterialMixin.h"
 #include "vel/CollisionWorld.h"
 #include "vel/functions.h"
 #include "vel/RaycastCallback.h"
@@ -230,6 +231,12 @@ namespace vel
 		for (auto& ind : mesh->getIndices())
 			tmpInds.push_back(ind + vertexOffset);
 
+		// TODO: could probably implement a more elaborate system in the future where we're not
+		// saving empty uvs and nullptrs to textures if the actor material does not have a lightmap
+		Texture* lightmapTexture = nullptr;
+		if (auto* lightMapMixin = dynamic_cast<LightmapMaterialMixin*>(actor->getMaterial()))
+			lightmapTexture = lightMapMixin->getLightmapTexture();
+			
 		CustomTriangleMesh* mergedTriangleMesh = new CustomTriangleMesh();
 		btVector3 p0, p1, p2;
 		for (int triCounter = 0; triCounter < tmpInds.size() / 3; triCounter++)
@@ -237,17 +244,17 @@ namespace vel
 			p0 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter]]);
 			CustomTriangleMeshData p0CD;
 			p0CD.lightmapUVs = tmpLightmapCoords[tmpInds[3 * triCounter]];
-			p0CD.lightmapTexture = actor->getLightMapTexture();
+			p0CD.lightmapTexture = lightmapTexture;
 
 			p1 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 1]]);
 			CustomTriangleMeshData p1CD;
 			p1CD.lightmapUVs = tmpLightmapCoords[tmpInds[3 * triCounter + 1]];
-			p1CD.lightmapTexture = actor->getLightMapTexture();
+			p1CD.lightmapTexture = lightmapTexture;
 
 			p2 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 2]]);
 			CustomTriangleMeshData p2CD;
 			p2CD.lightmapUVs = tmpLightmapCoords[tmpInds[3 * triCounter + 2]];
-			p2CD.lightmapTexture = actor->getLightMapTexture();
+			p2CD.lightmapTexture = lightmapTexture;
 
 			mergedTriangleMesh->addTriangle(p0, p1, p2, p0CD, p1CD, p2CD);
 		}

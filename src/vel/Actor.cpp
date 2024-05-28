@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "vel/functions.h"
+#include "vel/EmptyMaterial.h"
 #include "vel/Actor.h"
 
 
@@ -22,7 +23,8 @@ namespace vel
 		parentArmatureBone(nullptr),
 		armature(nullptr),
 		mesh(nullptr),
-		material(nullptr),
+		//material(nullptr),
+		material(std::make_unique<EmptyMaterial>("EMPTY", nullptr)),
 		userPointer(nullptr)
 	{}
 
@@ -35,7 +37,7 @@ namespace vel
 		parentArmatureBone(nullptr),
 		armature(nullptr),
 		mesh(a.getMesh()),
-		material(std::make_unique<Material>(*a.getMaterial())),
+		material(a.getMaterial()->clone()),
 		userPointer(nullptr)
 	{}
 
@@ -49,7 +51,7 @@ namespace vel
 		this->dynamic = a.isDynamic();
 		this->transform = a.getTransform();
 		this->mesh = a.getMesh();
-		this->material = std::make_unique<Material>(*a.getMaterial());
+		this->material = a.getMaterial()->clone();
 
 		return *this;
 	}
@@ -76,7 +78,7 @@ namespace vel
 
 	void Actor::setMaterial(Material* m)
 	{
-		this->material = std::make_unique<Material>(*m);
+		this->material = m->clone();
 	}
 
 	Material* Actor::getMaterial()

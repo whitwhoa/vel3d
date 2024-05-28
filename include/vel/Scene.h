@@ -25,6 +25,7 @@
 #include "vel/DiffuseAnimatedMaterial.h"
 #include "vel/DiffuseAnimatedLightmapMaterial.h"
 #include "vel/DiffuseSkinnedMaterial.h"
+#include "vel/TextMaterial.h"
 
 namespace vel
 {
@@ -64,6 +65,7 @@ namespace vel
 		DiffuseAnimatedMaterial*			addDiffuseAnimatedMaterial(const std::string& name);
 		DiffuseAnimatedLightmapMaterial*	addDiffuseAnimatedLightmapMaterial(const std::string& name);
 		DiffuseSkinnedMaterial*				addDiffuseSkinnedMaterial(const std::string& name);
+		TextMaterial*						addTextMaterial(const std::string& name);
 
 
 		TextActor*							addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,

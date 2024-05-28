@@ -14,5 +14,6 @@ namespace vel
 
 		void preDraw(float frameTime) override;
 		void draw(float alphaTime, GPU* gpu, Actor* actor, const glm::mat4& viewMatrix, const glm::mat4& projMatrix) override;
+		virtual std::unique_ptr<Material> clone() const override;
 	};
 }

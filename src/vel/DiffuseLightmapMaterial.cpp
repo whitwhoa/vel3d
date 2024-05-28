@@ -33,4 +33,9 @@ namespace vel
 		gpu->setShaderMat4("projection", projMatrix);
 		gpu->drawGpuMesh();
 	}
+
+	std::unique_ptr<Material> DiffuseLightmapMaterial::clone() const
+	{
+		return std::make_unique<DiffuseLightmapMaterial>(*this);
+	}
 }

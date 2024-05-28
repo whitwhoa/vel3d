@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include "vel/Material.h"
 #include "vel/MaterialAnimator.h"
 
@@ -27,6 +28,7 @@ namespace vel
 
 		virtual void preDraw(float frameTime) = 0;
 		virtual void draw(float alphaTime, GPU* gpu, Actor* actor, const glm::mat4& viewMatrix, const glm::mat4& projMatrix) = 0;
+		virtual std::unique_ptr<Material> clone() const = 0;
 
 	};
 }

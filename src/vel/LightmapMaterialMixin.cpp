@@ -1,3 +1,4 @@
+#include "vel/Texture.h"
 #include "vel/LightmapMaterialMixin.h"
 
 namespace vel

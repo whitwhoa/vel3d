@@ -207,6 +207,19 @@ namespace vel
 		return static_cast<DiffuseSkinnedMaterial*>(pMaterial);
 	}
 
+	TextMaterial* Scene::addTextMaterial(const std::string& name)
+	{
+		Shader* textMaterialShader = this->assetManager->loadShader("textMaterialShader",
+			"uber.vert", "uber.frag", TextMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<TextMaterial> m = std::make_unique<TextMaterial>(name, textMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<TextMaterial*>(pMaterial);
+	}
+
 
 
 	Shader* Scene::getShader(const std::string& name)
@@ -255,17 +268,17 @@ namespace vel
 		this->meshesInUse.push_back(pTam);
 
 		// create material
-		Material* taMaterial = this->addMaterial(name + "_material");
+		Material* taMaterial = this->addTextMaterial(name + "_material");
 		taMaterial->addTexture(&fb->texture);
+		taMaterial->setColor(color);
 
 		// create actor
 		Actor* pTextActor = stage->addActor(name);
-		pTextActor->setColor(color);
+		
 		pTextActor->setDynamic(false);
 		pTextActor->setVisible(true);
-		pTextActor->setShader(this->getShader("text"));
 		pTextActor->setMesh(pTam);
-		pTextActor->setMaterial(*taMaterial);
+		pTextActor->setMaterial(taMaterial);
 		
 		// add actor pointer to TextActor.actor
 		ta->actor = pTextActor;

@@ -3,6 +3,7 @@
 #include <string>
 #include <optional>
 #include <vector>
+#include <memory>
 
 #include "glm/glm.hpp"
 
@@ -44,5 +45,6 @@ namespace vel
 
 		virtual void preDraw(float frameTime) = 0;
 		virtual void draw(float alphaTime, GPU* gpu, Actor* actor, const glm::mat4& viewMatrix, const glm::mat4& projMatrix) = 0;
+		virtual std::unique_ptr<Material> clone() const = 0;
 	};
 }
