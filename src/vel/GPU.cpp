@@ -549,6 +549,9 @@ namespace vel
 
 	void GPU::useShader(Shader* s)
 	{
+		if (s == nullptr || this->activeShader == s)
+			return;
+
 		this->activeShader = s;
 		glUseProgram(s->id);
 	}
@@ -628,6 +631,9 @@ namespace vel
 
 	void GPU::useMesh(Mesh* m)
 	{
+		if (!m || m == this->activeMesh)
+			return;
+
 		this->activeMesh = m;
 		glBindVertexArray(m->getGpuMesh()->VAO);
 	}
@@ -647,6 +653,13 @@ namespace vel
 		// and draw elements of that object individually using glDrawElementsBaseVertex()... I think that's the right
 		// method, need to confirm... doing this will greatly reduce the number of state switches, especially since
 		// we now use DSA textures
+		//
+		// OK, Years later again, I looked into this after implementing a material system, and I have actor objects
+		// setup in 2d unordered_maps where the final value is a vector and I only switch shader program and vao
+		// when necessary, but each unique mesh is still it's own buffer object. My intention was to implement what
+		// I spoke of above, but honestly...if I can accomplish what I want to accomplish with this paradigm, then
+		// it really doesn't necessitate the extra work, because I would have to rework quite a bit of logic, and
+		// it's just not worth the time if it's not required
 		glDrawElements(GL_TRIANGLES, this->activeMesh->getGpuMesh()->indiceCount, GL_UNSIGNED_INT, 0);
 	}
 

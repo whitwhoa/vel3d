@@ -78,7 +78,7 @@ namespace vel
 		this->clearDepthBuffer = b;
 	}
 
-	std::vector<std::unique_ptr<Actor>>& Stage::getActors()
+	std::unordered_map<unsigned int, std::unordered_map<unsigned int, std::vector<std::unique_ptr<Actor>>>>& Stage::getActors()
 	{
 		return this->actors;
 	}
@@ -133,44 +133,100 @@ namespace vel
 
 	void Stage::updatePreviousTransforms()
 	{
-		for (auto& a : this->actors)
-			if (a->isDynamic())
-				a->updatePreviousTransform();
+		// OMG we loop through all actors twice 0_0 once here then once in the render loop...wow,
+		// well...I guess if it ain't broke...
+		for (auto& shaderBucket : this->actors)
+		{
+			for (auto& vaoBucket : shaderBucket.second)
+			{
+				for (unsigned int i = 0; i < vaoBucket.second.size(); i++)
+				{
+					if (vaoBucket.second.at(i)->isDynamic())
+					{
+						vaoBucket.second.at(i)->updatePreviousTransform();
+					}
+				}
+			}
+		}
 	}
 
-	Actor* Stage::addActor(const std::string& name)
+	Actor* Stage::addActor(const std::string& name, Mesh* mesh, Material* material)
 	{
-		this->actors.push_back(std::make_unique<Actor>(name));
+		// ogl uses 0 to indicate error, so we'll never have an index of 0, so we use that for empty
+		unsigned int shaderProgramId = material == nullptr ? 0 : material->getShader()->id;
+		unsigned int vaoToUse = mesh == nullptr ? 0 : mesh->getGpuMesh()->VAO;
 
-		return this->actors.back().get();
+		std::unique_ptr<Actor> a = std::make_unique<Actor>(name);
+		a->setMesh(mesh);
+
+		if(material) // actor default to EmptyMaterial if none provided
+			a->setMaterial(material);
+
+		Actor* ptrA = a.get(); // save raw pointer for return after move
+
+		this->actors[shaderProgramId][vaoToUse].push_back(std::move(a));
+
+		return ptrA;
 	}
 
-	int Stage::getActorIndex(const std::string& name)
+	std::optional<std::vector<unsigned int>> Stage::getActorIndex(const std::string& name)
 	{
-		for (int i = 0; i < this->actors.size(); i++)
-			if (this->actors.at(i)->getName() == name)
-				return i;
+		for (auto& shaderBucket : this->actors)
+		{
+			for (auto& vaoBucket : shaderBucket.second)
+			{
+				for (unsigned int i = 0; i < vaoBucket.second.size(); i++)
+				{
+					if (vaoBucket.second.at(i)->getName() == name)
+					{
+						return std::vector<unsigned int>{ shaderBucket.first, vaoBucket.first, i };
+					}
+				}
+			}
+		}
 
-		return -1;
+		return std::nullopt;
 	}
 
-	int Stage::getActorIndex(const Actor* a)
+	std::optional<std::vector<unsigned int>> Stage::getActorIndex(const Actor* a)
 	{
-		for (int i = 0; i < this->actors.size(); i++)
-			if (this->actors.at(i).get() == a)
-				return i;
+		for (auto& shaderBucket : this->actors)
+		{
+			for (auto& vaoBucket : shaderBucket.second)
+			{
+				for (unsigned int i = 0; i < vaoBucket.second.size(); i++)
+				{
+					if (vaoBucket.second.at(i).get() == a)
+					{
+						return std::vector<unsigned int>{ shaderBucket.first, vaoBucket.first, i };
+					}
+				}
+			}
+		}
 
-		return -1;
+		return std::nullopt;
 	}
 
 	Actor* Stage::getActor(const std::string& name)
 	{
-		return this->actors.at(this->getActorIndex(name)).get();
+		std::optional<std::vector<unsigned int>> actorIndex = this->getActorIndex(name);
+
+		if (!actorIndex.has_value())
+			return nullptr;
+
+		auto ai = actorIndex.value();
+
+		return this->actors[ai[0]][ai[1]].at(ai[2]).get();
 	}
 
-	void Stage::_removeActor(int actorIndex)
+	void Stage::_removeActor(std::optional<std::vector<unsigned int>> actorIndex)
 	{		
-		this->actors.erase(this->actors.begin() + actorIndex);
+		if (!actorIndex.has_value())
+			return;
+
+		auto ai = actorIndex.value();
+
+		this->actors[ai[0]][ai[1]].erase(this->actors[ai[0]][ai[1]].begin() + ai[2]);
 	}
 
 	void Stage::removeActor(const Actor* a)

@@ -4,6 +4,7 @@
 #include <string>
 #include <optional>
 #include <memory>
+#include <unordered_map>
 
 #include "glm/glm.hpp"
 
@@ -27,17 +28,16 @@ namespace vel
 
 		std::vector<Camera*>							cameras; // pointer managed by asset manager since multiple stages can use the same camera
 
-		// TODO: needs to be unordered_map where keys are of type int or MaterialType (which will be an enum)
-		std::vector<std::unique_ptr<Actor>>				actors;
+		std::unordered_map<unsigned int, std::unordered_map<unsigned int, std::vector<std::unique_ptr<Actor>>>> actors;
 
 		std::vector<std::unique_ptr<Armature>>			armatures;	// multiple actors can be associated with the same armature (arms, hands, gun1, gun2, etc for example)
 																	// so the memory managed by the stage vs the actor (noting this because it through me for a bit when I
 																	// came back to it the last time)
 		std::vector<std::unique_ptr<TextActor>>			textActors;
 
-		int												getActorIndex(const std::string& name);
-		int												getActorIndex(const Actor*);
-		void											_removeActor(int actorIndex);
+		std::optional<std::vector<unsigned int>>		getActorIndex(const std::string& name);
+		std::optional<std::vector<unsigned int>>		getActorIndex(const Actor* a);
+		void											_removeActor(std::optional<std::vector<unsigned int>> actorIndex);
 
 		int												getArmatureIndex(const std::string& name);
 
@@ -57,11 +57,11 @@ namespace vel
 
 		void											updateTextActors();
 
-		Actor*											addActor(const std::string& name);
+		Actor*											addActor(const std::string& name, Mesh* mesh = nullptr, Material* material = nullptr);
 		void											removeActor(const std::string& name);
 		void											removeActor(const Actor* a);
 		Actor*											getActor(const std::string& name);
-		std::vector<std::unique_ptr<Actor>>&			getActors();
+		std::unordered_map<unsigned int, std::unordered_map<unsigned int, std::vector<std::unique_ptr<Actor>>>>& getActors();
 
 		Armature*										addArmature(Armature* a, const std::string& defaultAnimation, const std::vector<std::string>& actors);
 		Armature*										getArmature(const std::string& armatureName);

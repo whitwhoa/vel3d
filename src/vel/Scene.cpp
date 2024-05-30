@@ -384,24 +384,38 @@ namespace vel
 				// loop through all renderables and build a vector of actors which use an alpha channel, draw opaques
 				this->transparentActors.clear();
 
-				for (auto& a : s->getActors())
+
+				for (auto& shaderBucket : s->getActors())
 				{
-					if (!a->isVisible())
-						continue;
-
-					if (actorsFirstPass)
-						a->getMaterial()->preDraw(frameTime);
-
-					// Pool transparents/translucents for render after opaques
-					if(a->getMaterial()->getHasAlphaChannel() || a->getMaterial()->getColor().w < 1.0f)
+					for (auto& vaoBucket : shaderBucket.second)
 					{
-						float dist = glm::length(this->cameraPosition - a->getTransform().getTranslation());
-						this->transparentActors.push_back(std::pair<float, Actor*>(dist, a.get()));
-						continue;
-					}
+						for (unsigned int i = 0; i < vaoBucket.second.size(); i++)
+						{
+							Actor* a = vaoBucket.second.at(i).get();
 
-					// Draw Opaques
-					a->getMaterial()->draw(alpha, gpu, a.get(), this->cameraViewMatrix, this->cameraProjectionMatrix);
+							if (!a->getMesh() || !a->isVisible() || !a->getMaterial()->getShader())
+								continue;
+
+							if (actorsFirstPass)
+								a->getMaterial()->preDraw(frameTime);
+
+							// Pool transparents/translucents for render after opaques
+							if (a->getMaterial()->getHasAlphaChannel() || a->getMaterial()->getColor().w < 1.0f)
+							{
+								float dist = glm::length(this->cameraPosition - a->getTransform().getTranslation());
+								this->transparentActors.push_back(std::pair<float, Actor*>(dist, a));
+								continue;
+							}
+
+							// Draw Opaque
+
+							gpu->useShader(a->getMaterial()->getShader()); // only alters gpu state if necessary
+							gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
+							gpu->setActiveMaterial(a->getMaterial());
+							
+							a->getMaterial()->draw(alpha, gpu, a, this->cameraViewMatrix, this->cameraProjectionMatrix);
+						}
+					}
 				}
 
 				actorsFirstPass = false;
@@ -418,7 +432,15 @@ namespace vel
 				// Draw all transparent/translucent actors
 				for (std::vector<std::pair<float, Actor*>>::reverse_iterator it = transparentActors.rbegin(); it != transparentActors.rend(); ++it)
 				{
+					// update gpu states, inefficient to do this for every actor, but transparents should be limited, and other solutions require
+					// re-architecting the renderer, adding more complexity, and making this unusable for probably another entire year...so no thank you
+					
 					auto a = it->second;
+
+					gpu->useShader(a->getMaterial()->getShader()); // only alters gpu state if necessary
+					gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
+					gpu->setActiveMaterial(a->getMaterial());
+
 					a->getMaterial()->draw(alpha, gpu, a, this->cameraViewMatrix, this->cameraProjectionMatrix);
 				}
 
