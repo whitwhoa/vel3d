@@ -26,8 +26,8 @@ namespace vel
 	class Actor
 	{
 	private:
-		static unsigned int copyCount;
-		static unsigned int getNextCopyCount();
+		//static unsigned int copyCount;
+		//static unsigned int getNextCopyCount();
 
 		std::string										name;
 		bool											visible;

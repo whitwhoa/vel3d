@@ -7,12 +7,12 @@
 
 namespace vel
 {
-	unsigned int Actor::copyCount = 0;
+	//unsigned int Actor::copyCount = 0;
 
-	unsigned int Actor::getNextCopyCount()
-	{
-		return ++copyCount;
-	}
+	//unsigned int Actor::getNextCopyCount()
+	//{
+	//	return ++copyCount;
+	//}
 
 	Actor::Actor(std::string name) :
 		name(name),
@@ -29,7 +29,8 @@ namespace vel
 	{}
 
 	Actor::Actor(const Actor& a) : 
-		name(a.getName() + "_" + std::to_string(Actor::getNextCopyCount())),
+		//name(a.getName() + "_" + std::to_string(Actor::getNextCopyCount())),
+		name(a.getName()),
 		visible(a.isVisible()),
 		dynamic(a.isDynamic()),
 		transform(a.getTransform()),
@@ -46,7 +47,8 @@ namespace vel
 		if (this == &a)
 			return *this; // handle self-assignment
 
-		this->name = a.getName() + "_" + std::to_string(Actor::getNextCopyCount());
+		//this->name = a.getName() + "_" + std::to_string(Actor::getNextCopyCount());
+		this->name = a.getName();
 		this->visible = a.isVisible();
 		this->dynamic = a.isDynamic();
 		this->transform = a.getTransform();

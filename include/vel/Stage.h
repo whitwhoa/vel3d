@@ -58,6 +58,7 @@ namespace vel
 		void											updateTextActors();
 
 		Actor*											addActor(const std::string& name, Mesh* mesh = nullptr, Material* material = nullptr);
+		Actor*											addActor(const Actor& actorIn);
 		void											removeActor(const std::string& name);
 		void											removeActor(const Actor* a);
 		Actor*											getActor(const std::string& name);

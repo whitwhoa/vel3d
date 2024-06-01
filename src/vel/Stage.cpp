@@ -150,6 +150,21 @@ namespace vel
 		}
 	}
 
+	Actor* Stage::addActor(const Actor& actorIn)
+	{
+		// ogl uses 0 to indicate error, so we'll never have an index of 0, so we use that for empty
+		unsigned int shaderProgramId = actorIn.getMaterial()->getShader() == nullptr ? 0 : actorIn.getMaterial()->getShader()->id;
+		unsigned int vaoToUse = !actorIn.getMesh()->getGpuMesh().has_value() ? 0 : actorIn.getMesh()->getGpuMesh()->VAO;
+
+		std::unique_ptr<Actor> a = std::make_unique<Actor>(actorIn);
+
+		Actor* ptrA = a.get(); // save raw pointer for return after move
+
+		this->actors[shaderProgramId][vaoToUse].push_back(std::move(a));
+
+		return ptrA;
+	}
+
 	Actor* Stage::addActor(const std::string& name, Mesh* mesh, Material* material)
 	{
 		// ogl uses 0 to indicate error, so we'll never have an index of 0, so we use that for empty
