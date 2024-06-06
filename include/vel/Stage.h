@@ -31,7 +31,7 @@ namespace vel
 		std::unordered_map<unsigned int, std::unordered_map<unsigned int, std::vector<std::unique_ptr<Actor>>>> actors;
 
 		std::vector<std::unique_ptr<Armature>>			armatures;	// multiple actors can be associated with the same armature (arms, hands, gun1, gun2, etc for example)
-																	// so the memory managed by the stage vs the actor (noting this because it through me for a bit when I
+																	// so the memory is managed by the stage vs the actor (noting this because it through me for a bit when I
 																	// came back to it the last time)
 		std::vector<std::unique_ptr<TextActor>>			textActors;
 
