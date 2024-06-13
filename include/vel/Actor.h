@@ -93,6 +93,7 @@ namespace vel
 		void											setParentArmatureBone(ArmatureBone* b);
 
 		void											addChildActor(Actor* a);
+		std::vector<Actor*>&							getChildActors();
 
 		Transform&										getTransform();
 		const Transform&								getTransform() const;

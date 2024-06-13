@@ -231,6 +231,11 @@ namespace vel
 		}		
 	}
 
+	std::vector<Actor*>& Actor::getChildActors()
+	{
+		return this->childActors;
+	}
+
 	void Actor::setParentArmatureBone(ArmatureBone* b)
 	{
 		// set the parent relationship
