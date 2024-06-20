@@ -163,4 +163,34 @@ namespace vel
 		return distrib(gen) == 1;
 	}
 
+	glm::quat calculateRotation(const glm::vec3& from, const glm::vec3& to)
+	{
+		glm::vec3 f = glm::normalize(from);
+		glm::vec3 t = glm::normalize(to);
+
+		// Check if the vectors are almost parallel
+		if (glm::length(glm::cross(f, t)) < 1e-6) {
+			// If they are almost parallel, the rotation is zero or 180 degrees
+			if (glm::dot(f, t) > 0.99999f) {
+				// Zero rotation
+				return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+			}
+			else {
+				// 180 degree rotation around an orthogonal axis
+				glm::vec3 orthogonal = glm::abs(f.x) > glm::abs(f.z) ? glm::vec3(-f.y, f.x, 0.0f) : glm::vec3(0.0f, -f.z, f.y);
+				orthogonal = glm::normalize(orthogonal);
+				return glm::angleAxis(glm::pi<float>(), orthogonal);
+			}
+		}
+
+		// Calculate the rotation axis and angle
+		glm::vec3 axis = glm::normalize(glm::cross(f, t));
+		float angle = glm::acos(glm::dot(f, t));
+
+		// Create the quaternion from axis and angle
+		glm::quat rotation = glm::angleAxis(angle, axis);
+
+		return rotation;
+	}
+
 }

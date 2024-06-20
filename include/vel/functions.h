@@ -33,4 +33,5 @@ namespace vel
 	bool isPowerOfTwo(int n);
 	float lerpf(float a, float b, float f);
 	bool randomFiftyFifty();
+	glm::quat calculateRotation(const glm::vec3& from, const glm::vec3& to);
 }
