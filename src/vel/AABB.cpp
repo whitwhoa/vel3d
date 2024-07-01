@@ -2,6 +2,14 @@
 
 namespace vel
 {
+	AABB::AABB(glm::vec3 min, glm::vec3 max) :
+		firstPass(true),
+		minEdge(min),
+		maxEdge(max)
+	{
+
+	}
+
 	AABB::AABB(std::vector<glm::vec3>& inputVectors) :
 		firstPass(true)
 	{
@@ -129,6 +137,13 @@ namespace vel
 	glm::vec3 AABB::getMaxEdge()
 	{
 		return this->maxEdge;
+	}
+
+	bool AABB::contains(glm::vec3 v)
+	{
+		return v.x >= this->minEdge.x && v.x <= this->maxEdge.x &&
+			v.y >= this->minEdge.y && v.y <= this->maxEdge.y &&
+			v.z >= this->minEdge.z && v.z <= this->maxEdge.z;
 	}
 
 }

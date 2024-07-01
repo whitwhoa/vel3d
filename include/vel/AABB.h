@@ -17,8 +17,14 @@ namespace vel
 		std::vector<glm::vec3>			corners;
 
 	public:
-										AABB(std::vector<glm::vec3>& inputVectors);
-										AABB(const std::vector<Vertex>& inputVertices);
+		
+		// Construct using a vector of vertices, where min/max edges are generated
+		// as the encompassing volumn of vector of vertices
+		AABB(std::vector<glm::vec3>& inputVectors);
+		AABB(const std::vector<Vertex>& inputVertices);
+
+		// Construct AABB using a min vector and max vector
+		AABB(glm::vec3 min, glm::vec3 max);
 		
 		const std::vector<glm::vec3>&	getCorners();
 		glm::vec3						getFarthestCorner();
@@ -26,6 +32,8 @@ namespace vel
 		glm::vec3						getHalfExtents();
 		glm::vec3						getMinEdge();
 		glm::vec3						getMaxEdge();
+
+		bool							contains(glm::vec3 v);
 
 	};
 }
