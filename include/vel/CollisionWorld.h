@@ -79,6 +79,8 @@ namespace vel
 		static void								getTriangleVertices(const btStridingMeshInterface* meshInterface, int triangleIndex, btVector3& v0, btVector3& v1, btVector3& v2, int& index0, int& index1, int& index2);
 
 		const std::string&						getName();
+
+		void									removeCollisionShape(const std::string& name);
 			
 	};
 

@@ -76,6 +76,16 @@ namespace vel
 		this->collisionShapes.clear();
 	}
 
+	void CollisionWorld::removeCollisionShape(const std::string& name)
+	{
+		auto it = this->collisionShapes.find(name);
+		if (it != this->collisionShapes.end())
+		{
+			delete it->second;
+			this->collisionShapes.erase(it);
+		}
+	}
+
 	const std::string& CollisionWorld::getName()
 	{
 		return this->name;
