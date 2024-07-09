@@ -52,6 +52,8 @@ namespace vel
 
 		AABB&								getAABB();
 
+		void								appendVertices(const std::vector<Vertex>& vs);
+
 	};
     
 }

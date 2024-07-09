@@ -119,4 +119,12 @@ namespace vel
         return this->gpuMesh;
     }
 
+	// utility function for when we use a mesh object to store a group of vertices
+	// for the purpose of generating an AABB
+	void Mesh::appendVertices(const std::vector<Vertex>& vs)
+	{
+		this->vertices.reserve(this->vertices.size() + vs.size());
+		this->vertices.insert(this->vertices.end(), vs.begin(), vs.end());
+	}
+
 }
