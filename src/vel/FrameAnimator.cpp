@@ -1,11 +1,11 @@
 #include <iostream>
 
-#include "vel\TextureAnimator.h"
+#include "vel\FrameAnimator.h"
 
 namespace vel
 {
 
-	TextureAnimator::TextureAnimator(float frameCount, float fps) :
+	FrameAnimator::FrameAnimator(float frameCount, float fps) :
 		frameCount(frameCount),
 		framesPerSecond(fps),
 		currentFrame(0),
@@ -16,42 +16,42 @@ namespace vel
 		reverse(false)
 	{}
 
-	void TextureAnimator::setReverse(bool r)
+	void FrameAnimator::setReverse(bool r)
 	{
 		this->reverse = r;
 	}
 
-	bool TextureAnimator::getIsPlayingReversed()
+	bool FrameAnimator::getIsPlayingReversed()
 	{
 		return this->reverse;
 	}
 
-	unsigned int TextureAnimator::getCurrentFrame()
+	unsigned int FrameAnimator::getCurrentFrame()
 	{
 		return this->currentFrame;
 	}
 
-	void TextureAnimator::setPaused(bool p)
+	void FrameAnimator::setPaused(bool p)
 	{
 		this->paused = p;
 	}
 
-	bool TextureAnimator::getPaused()
+	bool FrameAnimator::getPaused()
 	{
 		return this->paused;
 	}
 
-	void TextureAnimator::setFramesPerSecond(float fps)
+	void FrameAnimator::setFramesPerSecond(float fps)
 	{
 		this->framesPerSecond = fps;
 	}
 
-	void TextureAnimator::setPauseAfterCycles(unsigned int c)
+	void FrameAnimator::setPauseAfterCycles(unsigned int c)
 	{
 		this->pauseAfterCycles = c;
 	}
 
-	//unsigned int TextureAnimator::update(float frameTime)
+	//unsigned int FrameAnimator::update(float frameTime)
 	//{
 	//	if (this->paused)
 	//		return this->currentFrame;
@@ -84,7 +84,7 @@ namespace vel
 	//	return this->currentFrame;
 	//}
 
-	unsigned int TextureAnimator::update(float frameTime)
+	unsigned int FrameAnimator::update(float frameTime)
 	{
 		if (this->paused)
 			return this->currentFrame;

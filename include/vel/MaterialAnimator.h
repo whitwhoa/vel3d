@@ -3,14 +3,14 @@
 #include <string>
 #include <vector>
 
-#include "vel/TextureAnimator.h"
+#include "vel/FrameAnimator.h"
 
 namespace vel
 {
 	class MaterialAnimator
 	{
 	private:
-		std::vector<TextureAnimator>	textureAnimators;
+		std::vector<FrameAnimator>	textureAnimators;
 
 	public:
 		MaterialAnimator();

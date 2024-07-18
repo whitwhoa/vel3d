@@ -3,7 +3,7 @@
 namespace vel
 {
 
-	class TextureAnimator
+	class FrameAnimator
 	{
 	private:
 		float				frameCount;
@@ -16,7 +16,7 @@ namespace vel
 		bool				reverse;
 
 	public:
-		TextureAnimator(float frameCount, float fps);
+		FrameAnimator(float frameCount, float fps);
 
 		unsigned int		update(float frameTime);
 

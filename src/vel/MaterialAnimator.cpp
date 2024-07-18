@@ -16,7 +16,7 @@ namespace vel
 
 	void MaterialAnimator::addTextureAnimator(float frameCount, float fps)
 	{
-		this->textureAnimators.push_back(TextureAnimator(frameCount, fps));
+		this->textureAnimators.push_back(FrameAnimator(frameCount, fps));
 	}
 
 	void MaterialAnimator::update(float frameTime)
