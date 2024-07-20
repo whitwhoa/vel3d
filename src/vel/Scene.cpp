@@ -272,6 +272,19 @@ namespace vel
 		return static_cast<RGBALightmapMaterial*>(pMaterial);
 	}
 
+	DiffuseCausticMaterial* Scene::addDiffuseCausticMaterial(const std::string& name)
+	{
+		Shader* diffuseCausticMaterialShader = this->assetManager->loadShader("diffuseCausticMaterialShader",
+			"uber.vert", "uber.frag", DiffuseCausticMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<DiffuseCausticMaterial> m = std::make_unique<DiffuseCausticMaterial>(name, diffuseCausticMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<DiffuseCausticMaterial*>(pMaterial);
+	}
+
 
 
 	Shader* Scene::getShader(const std::string& name)
@@ -422,6 +435,7 @@ namespace vel
 
 				// Draw transparents/translucents
 				gpu->enableBlend2();
+				//gpu->disableDepthMask();
 
 				// not proud of this, but it gets the job done for the time being, loop through all transparent actors and sort by their distance
 				// from the current camera position
@@ -443,6 +457,8 @@ namespace vel
 
 					a->getMaterial()->draw(alpha, gpu, a, this->cameraViewMatrix, this->cameraProjectionMatrix);
 				}
+
+				//gpu->enableDepthMask();
 
 			} // end for each camera
 

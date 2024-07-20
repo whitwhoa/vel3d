@@ -112,5 +112,8 @@ namespace vel
 		void								setDefaultShader(Shader* s);
 		void								setDefaultWhiteTextureHandle(uint64_t th);
 
+		void								disableDepthMask();
+		void								enableDepthMask();
+
 	};
 }

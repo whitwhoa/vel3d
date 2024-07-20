@@ -469,10 +469,22 @@ namespace vel
 
 		// Determine if path is a directory or file, if directory then load each file in the directory as a texture frame
 		if (std::filesystem::is_directory(path))
-			for (const auto & entry : std::filesystem::directory_iterator(path))
-				texture->frames.push_back(this->generateTextureData(entry.path().string()));
+		{
+			std::map<int, std::string> orderedFiles;
+
+			for (const auto& entry : std::filesystem::directory_iterator(path))
+			{
+				orderedFiles[std::stoi(vel::explode_string(entry.path().filename().string(), '.')[0])] = entry.path().string();
+			}
+
+			for(auto& of : orderedFiles)
+				texture->frames.push_back(this->generateTextureData(of.second));
+		}
 		else
+		{
 			texture->frames.push_back(this->generateTextureData(path));
+		}
+			
 
 		// loop over all frames and if any of them have alpha channel, set alpha channel member of texture to true
 		texture->alphaChannel = false;

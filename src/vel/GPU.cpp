@@ -663,6 +663,16 @@ namespace vel
 		glDrawElements(GL_TRIANGLES, this->activeMesh->getGpuMesh()->indiceCount, GL_UNSIGNED_INT, 0);
 	}
 
+	void GPU::disableDepthMask()
+	{
+		glDepthMask(GL_FALSE);
+	}
+
+	void GPU::enableDepthMask()
+	{
+		glDepthMask(GL_TRUE);
+	}
+
 	void GPU::enableDepthTest()
 	{
 		glEnable(GL_DEPTH_TEST);
@@ -683,7 +693,8 @@ namespace vel
 	{
 		glEnable(GL_BLEND);
 		glBlendEquation(GL_FUNC_ADD);
-		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		//glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
     
     void GPU::disableBlend()

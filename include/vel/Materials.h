@@ -12,3 +12,4 @@
 #include "vel/DiffuseAmbientCubeSkinnedMaterial.h"
 #include "vel/RGBAMaterial.h"
 #include "vel/RGBALightmapMaterial.h"
+#include "vel/DiffuseCausticMaterial.h"
