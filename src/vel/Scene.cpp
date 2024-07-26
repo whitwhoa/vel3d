@@ -285,6 +285,19 @@ namespace vel
 		return static_cast<DiffuseCausticMaterial*>(pMaterial);
 	}
 
+	DiffuseCausticLightmapMaterial* Scene::addDiffuseCausticLightmapMaterial(const std::string& name)
+	{
+		Shader* diffuseCausticLightmapMaterialShader = this->assetManager->loadShader("diffuseCausticLightmapMaterialShader",
+			"uber.vert", "uber.frag", DiffuseCausticLightmapMaterial::shaderDefs); // returns existing if already loaded
+
+		std::unique_ptr<DiffuseCausticLightmapMaterial> m = std::make_unique<DiffuseCausticLightmapMaterial>(name, diffuseCausticLightmapMaterialShader);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<DiffuseCausticLightmapMaterial*>(pMaterial);
+	}
+
 
 
 	Shader* Scene::getShader(const std::string& name)
