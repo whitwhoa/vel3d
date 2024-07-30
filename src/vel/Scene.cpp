@@ -404,7 +404,7 @@ namespace vel
 
 
 				// setup gl state to render to framebuffer
-				gpu->setRenderTarget(c->getRenderTarget()->FBO, true); // should always write to depth buffer here
+				gpu->setRenderTarget(c->getRenderTarget()->opaqueFBO, true); // should always write to depth buffer here
 				gpu->updateViewportSize(c->getResolution().x, c->getResolution().y);
 				
 				// loop through all renderables and build a vector of actors which use an alpha channel, draw opaques
@@ -517,7 +517,7 @@ namespace vel
 		{
 			for (auto c : s->getCameras())
 			{
-				gpu->setRenderTarget(c->getRenderTarget()->FBO, true);
+				gpu->setRenderTarget(c->getRenderTarget()->opaqueFBO, true);
 				gpu->clearBuffers(0.0f, 0.0f, 0.0f, 0.0f);
 			}
 		}

@@ -235,9 +235,11 @@ namespace vel
 	void GPU::clearRenderTarget(RenderTarget* rt)
 	{
 		glMakeTextureHandleNonResidentARB(rt->texture.frames.at(0).dsaHandle);
+		glMakeTextureHandleNonResidentARB(rt->texture.frames.at(1).dsaHandle);
 		glDeleteTextures(1, &rt->texture.frames.at(0).id);
-		glDeleteRenderbuffers(1, &rt->RBO);
-		glDeleteFramebuffers(1, &rt->FBO);
+		glDeleteTextures(1, &rt->texture.frames.at(1).id);
+
+		glDeleteFramebuffers(1, &rt->opaqueFBO);
 	}
 
 	void GPU::loadShader(Shader* s)
@@ -314,42 +316,46 @@ namespace vel
 		RenderTarget rt;
 		rt.resolution = glm::ivec2(width, height);
 
-		TextureData td;
-		rt.texture.frames.push_back(td);
+		TextureData opaqueTD, depthTD;
+		rt.texture.frames.push_back(opaqueTD);
+		rt.texture.frames.push_back(depthTD);
 		
 
-		glGenFramebuffers(1, &rt.FBO);
+		glGenFramebuffers(1, &rt.opaqueFBO);
 		glGenTextures(1, &rt.texture.frames.at(0).id);
-		glGenRenderbuffers(1, &rt.RBO);
+		glGenTextures(1, &rt.texture.frames.at(1).id);
 
 		this->updateRenderTarget(&rt);
 
 		// obtain texture's DSA handle
 		rt.texture.frames.at(0).dsaHandle = glGetTextureHandleARB(rt.texture.frames.at(0).id);
+		rt.texture.frames.at(1).dsaHandle = glGetTextureHandleARB(rt.texture.frames.at(1).id);
 
 		// set texture's DSA handle as resident so it can be accessed in shaders
 		glMakeTextureHandleResidentARB(rt.texture.frames.at(0).dsaHandle);
+		glMakeTextureHandleResidentARB(rt.texture.frames.at(1).dsaHandle);
 
 		return rt;
 	}
 
 	void GPU::updateRenderTarget(RenderTarget* rt)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, rt->FBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, rt->opaqueFBO);
 
+		// configure opaque texture
 		glBindTexture(GL_TEXTURE_2D, rt->texture.frames.at(0).id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, rt->resolution.x, rt->resolution.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, rt->resolution.x, rt->resolution.y, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->texture.frames.at(0).id, 0);
 
-		glBindRenderbuffer(GL_RENDERBUFFER, rt->RBO);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, rt->resolution.x, rt->resolution.y);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rt->RBO);
+		// configure depth texture
+		glBindTexture(GL_TEXTURE_2D, rt->texture.frames.at(1).id);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, rt->resolution.x, rt->resolution.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt->texture.frames.at(1).id, 0);
+
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
