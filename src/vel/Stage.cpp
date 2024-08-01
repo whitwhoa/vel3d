@@ -78,7 +78,7 @@ namespace vel
 		this->clearDepthBuffer = b;
 	}
 
-	std::unordered_map<unsigned int, std::unordered_map<unsigned int, std::vector<std::unique_ptr<Actor>>>>& Stage::getActors()
+	std::map<ActCompositeKey, std::vector<std::unique_ptr<Actor>>>& Stage::getActors()
 	{
 		return this->actors;
 	}
@@ -135,24 +135,18 @@ namespace vel
 	{
 		// OMG we loop through all actors twice 0_0 once here then once in the render loop...wow,
 		// well...I guess if it ain't broke...
-		for (auto& shaderBucket : this->actors)
-		{
-			for (auto& vaoBucket : shaderBucket.second)
-			{
-				for (unsigned int i = 0; i < vaoBucket.second.size(); i++)
-				{
-					if (vaoBucket.second.at(i)->isDynamic())
-					{
-						vaoBucket.second.at(i)->updatePreviousTransform();
-					}
-				}
-			}
-		}
+		//
+		// !TODO: There has to be a better way to do this...
+		for (auto& pair : this->actors) 
+			for (auto& actor : pair.second) 
+				actor->updatePreviousTransform();
+
 	}
 
 	Actor* Stage::addActor(const Actor& actorIn)
 	{
 		// ogl uses 0 to indicate error, so we'll never have an index of 0, so we use that for empty
+		unsigned int fboToUse = actorIn.getMaterial()->getHasAlphaChannel() ? 1 : 2; // always either opaque or has alpha
 		unsigned int shaderProgramId = actorIn.getMaterial()->getShader() == nullptr ? 0 : actorIn.getMaterial()->getShader()->id;
 		unsigned int vaoToUse = !actorIn.getMesh()->getGpuMesh().has_value() ? 0 : actorIn.getMesh()->getGpuMesh()->VAO;
 
@@ -160,7 +154,9 @@ namespace vel
 
 		Actor* ptrA = a.get(); // save raw pointer for return after move
 
-		this->actors[shaderProgramId][vaoToUse].push_back(std::move(a));
+		ActCompositeKey key = {fboToUse, shaderProgramId, vaoToUse};
+
+		this->actors[key].push_back(std::move(a));
 
 		return ptrA;
 	}
@@ -168,6 +164,10 @@ namespace vel
 	Actor* Stage::addActor(const std::string& name, Mesh* mesh, Material* material)
 	{
 		// ogl uses 0 to indicate error, so we'll never have an index of 0, so we use that for empty
+		unsigned int fboToUse = 1; // always either opaque or has alpha
+		if(material != nullptr)
+			fboToUse = material->getHasAlphaChannel() ? 1 : 2;
+
 		unsigned int shaderProgramId = material == nullptr ? 0 : material->getShader()->id;
 		unsigned int vaoToUse = mesh == nullptr ? 0 : mesh->getGpuMesh()->VAO;
 
@@ -179,43 +179,45 @@ namespace vel
 
 		Actor* ptrA = a.get(); // save raw pointer for return after move
 
-		this->actors[shaderProgramId][vaoToUse].push_back(std::move(a));
+		ActCompositeKey key = { fboToUse, shaderProgramId, vaoToUse };
+
+		this->actors[key].push_back(std::move(a));
 
 		return ptrA;
 	}
 
-	std::optional<std::vector<unsigned int>> Stage::getActorIndex(const std::string& name)
+	std::optional<std::pair<ActCompositeKey, unsigned int>>	Stage::getActorLocation(const std::string& name)
 	{
-		for (auto& shaderBucket : this->actors)
+		for (const auto& pair : this->actors)
 		{
-			for (auto& vaoBucket : shaderBucket.second)
+			unsigned int i = 0;
+			for (const auto& actor : pair.second)
 			{
-				for (unsigned int i = 0; i < vaoBucket.second.size(); i++)
+				if (actor->getName() == name)
 				{
-					if (vaoBucket.second.at(i)->getName() == name)
-					{
-						return std::vector<unsigned int>{ shaderBucket.first, vaoBucket.first, i };
-					}
+					return std::pair<ActCompositeKey, unsigned int>(pair.first, i);
 				}
+
+				i++;
 			}
 		}
 
 		return std::nullopt;
 	}
 
-	std::optional<std::vector<unsigned int>> Stage::getActorIndex(const Actor* a)
+	std::optional<std::pair<ActCompositeKey, unsigned int>>	Stage::getActorLocation(const Actor* a)
 	{
-		for (auto& shaderBucket : this->actors)
+		for (const auto& pair : this->actors)
 		{
-			for (auto& vaoBucket : shaderBucket.second)
+			unsigned int i = 0;
+			for (const auto& actor : pair.second)
 			{
-				for (unsigned int i = 0; i < vaoBucket.second.size(); i++)
+				if (actor.get() == a)
 				{
-					if (vaoBucket.second.at(i).get() == a)
-					{
-						return std::vector<unsigned int>{ shaderBucket.first, vaoBucket.first, i };
-					}
+					return std::pair<ActCompositeKey, unsigned int>(pair.first, i);
 				}
+
+				i++;
 			}
 		}
 
@@ -224,34 +226,32 @@ namespace vel
 
 	Actor* Stage::getActor(const std::string& name)
 	{
-		std::optional<std::vector<unsigned int>> actorIndex = this->getActorIndex(name);
+		for (const auto& pair : this->actors) 
+			for (const auto& actor : pair.second) 
+				if (actor->getName() == name)
+					return actor.get();
 
-		if (!actorIndex.has_value())
-			return nullptr;
-
-		auto ai = actorIndex.value();
-
-		return this->actors[ai[0]][ai[1]].at(ai[2]).get();
+		return nullptr;
 	}
 
-	void Stage::_removeActor(std::optional<std::vector<unsigned int>> actorIndex)
+	void Stage::_removeActor(std::optional<std::pair<ActCompositeKey, unsigned int>> actorLocation)
 	{		
-		if (!actorIndex.has_value())
+		if (!actorLocation.has_value())
 			return;
 
-		auto ai = actorIndex.value();
+		auto al = actorLocation.value();
 
-		this->actors[ai[0]][ai[1]].erase(this->actors[ai[0]][ai[1]].begin() + ai[2]);
+		this->actors[al.first].erase(this->actors[al.first].begin() + al.second);
 	}
 
 	void Stage::removeActor(const Actor* a)
 	{
-		this->_removeActor(this->getActorIndex(a));
+		this->_removeActor(this->getActorLocation(a));
 	}
 
 	void Stage::removeActor(const std::string& name)
 	{
-		this->_removeActor(this->getActorIndex(name));
+		this->_removeActor(this->getActorLocation(name));
 	}
 
 	int Stage::getTextActorIndex(const std::string& name)
@@ -287,7 +287,7 @@ namespace vel
 	{
 		TextActor* ta = this->textActors.at(textActorIndex).get();
 
-		this->_removeActor(this->getActorIndex(ta->actor));
+		this->_removeActor(this->getActorLocation(ta->actor));
 
 		this->textActors.erase(this->textActors.begin() + textActorIndex);
 	}

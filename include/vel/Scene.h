@@ -66,19 +66,18 @@ namespace vel
 
 		Camera*								addCamera(const std::string& name, CameraType type);
 
-		DiffuseMaterial*					addDiffuseMaterial(const std::string& name);
-		DiffuseLightmapMaterial*			addDiffuseLightmapMaterial(const std::string& name);
-		DiffuseAnimatedMaterial*			addDiffuseAnimatedMaterial(const std::string& name);
-		DiffuseAnimatedLightmapMaterial*	addDiffuseAnimatedLightmapMaterial(const std::string& name);
-		DiffuseSkinnedMaterial*				addDiffuseSkinnedMaterial(const std::string& name);
-		TextMaterial*						addTextMaterial(const std::string& name);
-		DiffuseAmbientCubeMaterial*			addDiffuseAmbientCubeMaterial(const std::string& name);
-		DiffuseAmbientCubeSkinnedMaterial*	addDiffuseAmbientCubeSkinnedMaterial(const std::string& name);
-		RGBAMaterial*						addRGBAMaterial(const std::string& name);
-		RGBALightmapMaterial*				addRGBALightmapMaterial(const std::string& name);
-		
-		DiffuseCausticMaterial*				addDiffuseCausticMaterial(const std::string& name);
-		DiffuseCausticLightmapMaterial*		addDiffuseCausticLightmapMaterial(const std::string& name);
+		DiffuseMaterial*					addDiffuseMaterial(const std::string& name, bool hasAlpha = false);
+		DiffuseLightmapMaterial*			addDiffuseLightmapMaterial(const std::string& name, bool hasAlpha = false);
+		DiffuseAnimatedMaterial*			addDiffuseAnimatedMaterial(const std::string& name, bool hasAlpha = false);
+		DiffuseAnimatedLightmapMaterial*	addDiffuseAnimatedLightmapMaterial(const std::string& name, bool hasAlpha = false);
+		DiffuseSkinnedMaterial*				addDiffuseSkinnedMaterial(const std::string& name, bool hasAlpha = false);
+		TextMaterial*						addTextMaterial(const std::string& name, bool hasAlpha = false);
+		DiffuseAmbientCubeMaterial*			addDiffuseAmbientCubeMaterial(const std::string& name, bool hasAlpha = false);
+		DiffuseAmbientCubeSkinnedMaterial*	addDiffuseAmbientCubeSkinnedMaterial(const std::string& name, bool hasAlpha = false);
+		RGBAMaterial*						addRGBAMaterial(const std::string& name, bool hasAlpha = false);
+		RGBALightmapMaterial*				addRGBALightmapMaterial(const std::string& name, bool hasAlpha = false);
+		DiffuseCausticMaterial*				addDiffuseCausticMaterial(const std::string& name, bool hasAlpha = false);
+		DiffuseCausticLightmapMaterial*		addDiffuseCausticLightmapMaterial(const std::string& name, bool hasAlpha = false);
 
 
 		TextActor*							addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,

@@ -4,7 +4,7 @@
 #include <string>
 #include <optional>
 #include <memory>
-#include <unordered_map>
+#include <map>
 
 #include "glm/glm.hpp"
 
@@ -16,6 +16,18 @@
 namespace vel
 {
 	class Scene; // ?
+
+	struct ActCompositeKey 
+	{
+		unsigned int fbo;
+		unsigned int shader;
+		unsigned int vao;
+
+		bool operator<(const ActCompositeKey& other) const 
+		{
+			return std::tie(fbo, shader, vao) < std::tie(other.fbo, other.shader, other.vao);
+		}
+	};
 	
 	class Stage
 	{
@@ -28,16 +40,17 @@ namespace vel
 
 		std::vector<Camera*>							cameras; // pointer managed by asset manager since multiple stages can use the same camera
 
-		std::unordered_map<unsigned int, std::unordered_map<unsigned int, std::vector<std::unique_ptr<Actor>>>> actors;
+		// FBO:SHADER:VAO:ACTORS - done this way to limit opengl state changes
+		std::map<ActCompositeKey, std::vector<std::unique_ptr<Actor>>> actors;
 
 		std::vector<std::unique_ptr<Armature>>			armatures;	// multiple actors can be associated with the same armature (arms, hands, gun1, gun2, etc for example)
 																	// so the memory is managed by the stage vs the actor (noting this because it through me for a bit when I
 																	// came back to it the last time)
 		std::vector<std::unique_ptr<TextActor>>			textActors;
 
-		std::optional<std::vector<unsigned int>>		getActorIndex(const std::string& name);
-		std::optional<std::vector<unsigned int>>		getActorIndex(const Actor* a);
-		void											_removeActor(std::optional<std::vector<unsigned int>> actorIndex);
+		std::optional<std::pair<ActCompositeKey, unsigned int>>	getActorLocation(const std::string& name);
+		std::optional<std::pair<ActCompositeKey, unsigned int>>	getActorLocation(const Actor* a);
+		void											_removeActor(std::optional<std::pair<ActCompositeKey, unsigned int>> actorLocation);
 
 		int												getArmatureIndex(const std::string& name);
 
@@ -62,7 +75,7 @@ namespace vel
 		void											removeActor(const std::string& name);
 		void											removeActor(const Actor* a);
 		Actor*											getActor(const std::string& name);
-		std::unordered_map<unsigned int, std::unordered_map<unsigned int, std::vector<std::unique_ptr<Actor>>>>& getActors();
+		std::map<ActCompositeKey, std::vector<std::unique_ptr<Actor>>>& getActors();
 
 		Armature*										addArmature(Armature* a, const std::string& defaultAnimation, const std::vector<std::string>& actors);
 		Armature*										getArmature(const std::string& armatureName);

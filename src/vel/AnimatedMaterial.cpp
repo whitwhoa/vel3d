@@ -13,8 +13,8 @@ namespace vel
 		this->addTexture(t);
 		this->materialAnimator.addTextureAnimator(t->frames.size(), fps);
 
-		if (t->alphaChannel)
-			this->setHasAlphaChannel(true);
+		//if (t->alphaChannel)
+		//	this->setHasAlphaChannel(true);
 	}
 
 	void AnimatedMaterial::pauseAnimatedTextureAfterCycles(unsigned int textureId, unsigned int cycles)

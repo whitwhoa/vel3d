@@ -311,52 +311,91 @@ namespace vel
 		s->id = id;
 	}
 
-	RenderTarget GPU::createRenderTarget(unsigned int width, unsigned int height)
+	RenderTarget GPU::createRenderTarget(const std::string& name, unsigned int width, unsigned int height)
 	{
 		RenderTarget rt;
 		rt.resolution = glm::ivec2(width, height);
 
-		TextureData opaqueTD, depthTD;
-		rt.texture.frames.push_back(opaqueTD);
-		rt.texture.frames.push_back(depthTD);
-		
+		TextureData opaqueTD, depthTD, accumTD, revealTD;
+		rt.opaqueTexture.frames.push_back(opaqueTD);
+		rt.opaqueTexture.alphaChannel = false;
+		rt.opaqueTexture.freeAfterGPULoad = false;
+		rt.opaqueTexture.uvWrapping = 0;
+		rt.opaqueTexture.name = name + "_opaqueTexture";
+
+		rt.depthTexture.frames.push_back(depthTD);
+		rt.depthTexture.alphaChannel = false;
+		rt.depthTexture.freeAfterGPULoad = false;
+		rt.depthTexture.uvWrapping = 0;
+		rt.depthTexture.name = name + "_depthTexture";
+
+		rt.accumTexture.frames.push_back(accumTD);
+		rt.accumTexture.alphaChannel = true;
+		rt.accumTexture.freeAfterGPULoad = false;
+		rt.accumTexture.uvWrapping = 0;
+		rt.accumTexture.name = name + "_accumTexture";
+
+		rt.revealTexture.frames.push_back(revealTD);
+		rt.revealTexture.alphaChannel = true;
+		rt.revealTexture.freeAfterGPULoad = false;
+		rt.revealTexture.uvWrapping = 0;
+		rt.revealTexture.name = name + "_revealTexture";
 
 		glGenFramebuffers(1, &rt.opaqueFBO);
-		glGenTextures(1, &rt.texture.frames.at(0).id);
-		glGenTextures(1, &rt.texture.frames.at(1).id);
+		glGenFramebuffers(1, &rt.alphaFBO);
+
+		glGenTextures(1, &rt.opaqueTexture.frames.at(0).id);
+		glGenTextures(1, &rt.depthTexture.frames.at(0).id);
+		glGenTextures(1, &rt.accumTexture.frames.at(0).id);
+		glGenTextures(1, &rt.revealTexture.frames.at(0).id);
+		
 
 		this->updateRenderTarget(&rt);
 
+
 		// obtain texture's DSA handle
-		rt.texture.frames.at(0).dsaHandle = glGetTextureHandleARB(rt.texture.frames.at(0).id);
-		rt.texture.frames.at(1).dsaHandle = glGetTextureHandleARB(rt.texture.frames.at(1).id);
+		rt.opaqueTexture.frames.at(0).dsaHandle = glGetTextureHandleARB(rt.opaqueTexture.frames.at(0).id);
+		rt.depthTexture.frames.at(0).dsaHandle = glGetTextureHandleARB(rt.depthTexture.frames.at(0).id);
+		rt.accumTexture.frames.at(0).dsaHandle = glGetTextureHandleARB(rt.accumTexture.frames.at(0).id);
+		rt.revealTexture.frames.at(0).dsaHandle = glGetTextureHandleARB(rt.revealTexture.frames.at(0).id);
 
 		// set texture's DSA handle as resident so it can be accessed in shaders
-		glMakeTextureHandleResidentARB(rt.texture.frames.at(0).dsaHandle);
-		glMakeTextureHandleResidentARB(rt.texture.frames.at(1).dsaHandle);
+		glMakeTextureHandleResidentARB(rt.opaqueTexture.frames.at(0).dsaHandle);
+		glMakeTextureHandleResidentARB(rt.depthTexture.frames.at(0).dsaHandle);
+		glMakeTextureHandleResidentARB(rt.accumTexture.frames.at(0).dsaHandle);
+		glMakeTextureHandleResidentARB(rt.revealTexture.frames.at(0).dsaHandle);
+
 
 		return rt;
 	}
 
 	void GPU::updateRenderTarget(RenderTarget* rt)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, rt->opaqueFBO);
+		//
+		// Configure opaqueFBO
+		//
 
-		// configure opaque texture
-		glBindTexture(GL_TEXTURE_2D, rt->texture.frames.at(0).id);
+		// opaque texture
+		glBindTexture(GL_TEXTURE_2D, rt->opaqueTexture.frames.at(0).id);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, rt->resolution.x, rt->resolution.y, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->texture.frames.at(0).id, 0);
 
-		// configure depth texture
-		glBindTexture(GL_TEXTURE_2D, rt->texture.frames.at(1).id);
+		// depth texture
+		glBindTexture(GL_TEXTURE_2D, rt->depthTexture.frames.at(0).id);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, rt->resolution.x, rt->resolution.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt->texture.frames.at(1).id, 0);
+		
+		// unbind texture (not necessary, but we do it anyway)
+		glBindTexture(GL_TEXTURE_2D, 0);
 
+		// associate textures with opaqueFBO
+		glBindFramebuffer(GL_FRAMEBUFFER, rt->opaqueFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->opaqueTexture.frames.at(0).id, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt->depthTexture.frames.at(0).id, 0);
 
+		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
 			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
@@ -365,6 +404,50 @@ namespace vel
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+		//
+		// Configure alphaFBO
+		//
+
+		// accum texture
+		glBindTexture(GL_TEXTURE_2D, rt->accumTexture.frames.at(0).id);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, rt->resolution.x, rt->resolution.y, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		// reveal texture
+		glBindTexture(GL_TEXTURE_2D, rt->revealTexture.frames.at(0).id);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, rt->resolution.x, rt->resolution.y, 0, GL_RED, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		// unbind texture (not necessary, but we do it anyway)
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		// associate textures with alphaFBO
+		glBindFramebuffer(GL_FRAMEBUFFER, rt->alphaFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->accumTexture.frames.at(0).id, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, rt->revealTexture.frames.at(0).id, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt->depthTexture.frames.at(0).id, 0);
+
+		const GLenum transparentDrawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		glDrawBuffers(2, transparentDrawBuffers);
+
+		// verify success
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+			std::cin.get();
+			exit(EXIT_FAILURE);
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+
+
+
 	}
 
 	void GPU::loadMesh(Mesh* m)

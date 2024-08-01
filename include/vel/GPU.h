@@ -64,7 +64,7 @@ namespace vel
 		void								loadTexture(Texture* t);
 		void								loadFontBitmapTexture(FontBitmap* fb);
 
-		RenderTarget						createRenderTarget(unsigned int width, unsigned int height);
+		RenderTarget						createRenderTarget(const std::string& name, unsigned int width, unsigned int height);
 		void								updateRenderTarget(RenderTarget* rt);
 		void								clearRenderTarget(RenderTarget* rt);
 

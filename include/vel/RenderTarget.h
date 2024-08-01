@@ -9,8 +9,14 @@ namespace vel
 	struct RenderTarget
 	{
 		glm::ivec2 resolution;
-		unsigned int opaqueFBO;
 
-		Texture texture;		
+		unsigned int opaqueFBO;
+		unsigned int alphaFBO;
+
+		Texture opaqueTexture;
+		Texture depthTexture;
+
+		Texture accumTexture;
+		Texture revealTexture;
 	};
 }

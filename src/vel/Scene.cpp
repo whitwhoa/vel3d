@@ -142,12 +142,23 @@ namespace vel
 	
 
 
-	DiffuseMaterial* Scene::addDiffuseMaterial(const std::string& name)
+	DiffuseMaterial* Scene::addDiffuseMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* diffuseMaterialShader = this->assetManager->loadShader("diffuseMaterialShader", 
-			"uber.vert", "uber.frag", DiffuseMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = DiffuseMaterial::shaderDefs;
+		std::string shaderName = "diffuseMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* diffuseMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseMaterial> m = std::make_unique<DiffuseMaterial>(name, diffuseMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -155,12 +166,23 @@ namespace vel
 		return static_cast<DiffuseMaterial*>(pMaterial);
 	}
 
-	DiffuseLightmapMaterial* Scene::addDiffuseLightmapMaterial(const std::string& name)
+	DiffuseLightmapMaterial* Scene::addDiffuseLightmapMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* diffuseLightmapMaterialShader = this->assetManager->loadShader("diffuseLightmapMaterialShader",
-			"uber.vert", "uber.frag", DiffuseLightmapMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = DiffuseLightmapMaterial::shaderDefs;
+		std::string shaderName = "diffuseLightmapMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* diffuseLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseLightmapMaterial> m = std::make_unique<DiffuseLightmapMaterial>(name, diffuseLightmapMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -168,12 +190,23 @@ namespace vel
 		return static_cast<DiffuseLightmapMaterial*>(pMaterial);
 	}
 
-	DiffuseAnimatedMaterial* Scene::addDiffuseAnimatedMaterial(const std::string& name)
+	DiffuseAnimatedMaterial* Scene::addDiffuseAnimatedMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* diffuseAnimatedMaterialShader = this->assetManager->loadShader("diffuseAnimatedMaterialShader",
-			"uber.vert", "uber.frag", DiffuseAnimatedMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = DiffuseAnimatedMaterial::shaderDefs;
+		std::string shaderName = "diffuseAnimatedMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* diffuseAnimatedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseAnimatedMaterial> m = std::make_unique<DiffuseAnimatedMaterial>(name, diffuseAnimatedMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -181,12 +214,23 @@ namespace vel
 		return static_cast<DiffuseAnimatedMaterial*>(pMaterial);
 	}
 
-	DiffuseAnimatedLightmapMaterial* Scene::addDiffuseAnimatedLightmapMaterial(const std::string& name)
+	DiffuseAnimatedLightmapMaterial* Scene::addDiffuseAnimatedLightmapMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* diffuseAnimatedLightmapMaterialShader = this->assetManager->loadShader("diffuseAnimatedLightmapMaterialShader",
-			"uber.vert", "uber.frag", DiffuseAnimatedLightmapMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = DiffuseAnimatedLightmapMaterial::shaderDefs;
+		std::string shaderName = "diffuseAnimatedLightmapMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* diffuseAnimatedLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseAnimatedLightmapMaterial> m = std::make_unique<DiffuseAnimatedLightmapMaterial>(name, diffuseAnimatedLightmapMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -194,12 +238,23 @@ namespace vel
 		return static_cast<DiffuseAnimatedLightmapMaterial*>(pMaterial);
 	}
 
-	DiffuseSkinnedMaterial* Scene::addDiffuseSkinnedMaterial(const std::string& name)
+	DiffuseSkinnedMaterial* Scene::addDiffuseSkinnedMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* diffuseSkinnedMaterialShader = this->assetManager->loadShader("diffuseSkinnedMaterialShader",
-			"uber.vert", "uber.frag", DiffuseSkinnedMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = DiffuseSkinnedMaterial::shaderDefs;
+		std::string shaderName = "diffuseSkinnedMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* diffuseSkinnedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseSkinnedMaterial> m = std::make_unique<DiffuseSkinnedMaterial>(name, diffuseSkinnedMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -207,12 +262,23 @@ namespace vel
 		return static_cast<DiffuseSkinnedMaterial*>(pMaterial);
 	}
 
-	TextMaterial* Scene::addTextMaterial(const std::string& name)
+	TextMaterial* Scene::addTextMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* textMaterialShader = this->assetManager->loadShader("textMaterialShader",
-			"uber.vert", "uber.frag", TextMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = TextMaterial::shaderDefs;
+		std::string shaderName = "textMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* textMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<TextMaterial> m = std::make_unique<TextMaterial>(name, textMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -220,12 +286,23 @@ namespace vel
 		return static_cast<TextMaterial*>(pMaterial);
 	}
 
-	DiffuseAmbientCubeMaterial* Scene::addDiffuseAmbientCubeMaterial(const std::string& name)
+	DiffuseAmbientCubeMaterial* Scene::addDiffuseAmbientCubeMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* diffuseAmbientCubeMaterialShader = this->assetManager->loadShader("diffuseAmbientCubeMaterialShader",
-			"uber.vert", "uber.frag", DiffuseAmbientCubeMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = DiffuseAmbientCubeMaterial::shaderDefs;
+		std::string shaderName = "diffuseAmbientCubeMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* diffuseAmbientCubeMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseAmbientCubeMaterial> m = std::make_unique<DiffuseAmbientCubeMaterial>(name, diffuseAmbientCubeMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -233,12 +310,23 @@ namespace vel
 		return static_cast<DiffuseAmbientCubeMaterial*>(pMaterial);
 	}
 
-	DiffuseAmbientCubeSkinnedMaterial* Scene::addDiffuseAmbientCubeSkinnedMaterial(const std::string& name)
+	DiffuseAmbientCubeSkinnedMaterial* Scene::addDiffuseAmbientCubeSkinnedMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* diffuseAmbientCubeSkinnedMaterialShader = this->assetManager->loadShader("diffuseAmbientCubeSkinnedMaterialShader",
-			"uber.vert", "uber.frag", DiffuseAmbientCubeSkinnedMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = DiffuseAmbientCubeSkinnedMaterial::shaderDefs;
+		std::string shaderName = "diffuseAmbientCubeSkinnedMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* diffuseAmbientCubeSkinnedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseAmbientCubeSkinnedMaterial> m = std::make_unique<DiffuseAmbientCubeSkinnedMaterial>(name, diffuseAmbientCubeSkinnedMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -246,12 +334,23 @@ namespace vel
 		return static_cast<DiffuseAmbientCubeSkinnedMaterial*>(pMaterial);
 	}
 
-	RGBAMaterial* Scene::addRGBAMaterial(const std::string& name)
+	RGBAMaterial* Scene::addRGBAMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* RGBAMaterialShader = this->assetManager->loadShader("RGBAMaterialShader",
-			"uber.vert", "uber.frag", RGBAMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = RGBAMaterial::shaderDefs;
+		std::string shaderName = "RGBAMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* RGBAMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<RGBAMaterial> m = std::make_unique<RGBAMaterial>(name, RGBAMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -259,12 +358,23 @@ namespace vel
 		return static_cast<RGBAMaterial*>(pMaterial);
 	}
 
-	RGBALightmapMaterial* Scene::addRGBALightmapMaterial(const std::string& name)
+	RGBALightmapMaterial* Scene::addRGBALightmapMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* RGBALightmapMaterialShader = this->assetManager->loadShader("RGBALightmapMaterialShader",
-			"uber.vert", "uber.frag", RGBALightmapMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = RGBALightmapMaterial::shaderDefs;
+		std::string shaderName = "RGBALightmapMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* RGBALightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<RGBALightmapMaterial> m = std::make_unique<RGBALightmapMaterial>(name, RGBALightmapMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -272,12 +382,23 @@ namespace vel
 		return static_cast<RGBALightmapMaterial*>(pMaterial);
 	}
 
-	DiffuseCausticMaterial* Scene::addDiffuseCausticMaterial(const std::string& name)
+	DiffuseCausticMaterial* Scene::addDiffuseCausticMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* diffuseCausticMaterialShader = this->assetManager->loadShader("diffuseCausticMaterialShader",
-			"uber.vert", "uber.frag", DiffuseCausticMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = DiffuseCausticMaterial::shaderDefs;
+		std::string shaderName = "diffuseCausticMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* diffuseCausticMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseCausticMaterial> m = std::make_unique<DiffuseCausticMaterial>(name, diffuseCausticMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -285,12 +406,23 @@ namespace vel
 		return static_cast<DiffuseCausticMaterial*>(pMaterial);
 	}
 
-	DiffuseCausticLightmapMaterial* Scene::addDiffuseCausticLightmapMaterial(const std::string& name)
+	DiffuseCausticLightmapMaterial* Scene::addDiffuseCausticLightmapMaterial(const std::string& name, bool hasAlpha)
 	{
-		Shader* diffuseCausticLightmapMaterialShader = this->assetManager->loadShader("diffuseCausticLightmapMaterialShader",
-			"uber.vert", "uber.frag", DiffuseCausticLightmapMaterial::shaderDefs); // returns existing if already loaded
+		std::vector<std::string> defs = DiffuseCausticLightmapMaterial::shaderDefs;
+		std::string shaderName = "diffuseCausticLightmapMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* diffuseCausticLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseCausticLightmapMaterial> m = std::make_unique<DiffuseCausticLightmapMaterial>(name, diffuseCausticLightmapMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -405,7 +537,7 @@ namespace vel
 
 				// setup gl state to render to framebuffer
 				gpu->setRenderTarget(c->getRenderTarget()->opaqueFBO, true); // should always write to depth buffer here
-				gpu->updateViewportSize(c->getResolution().x, c->getResolution().y);
+				gpu->updateViewportSize(c->getResolution().x, c->getResolution().y); // why?
 				
 				// loop through all renderables and build a vector of actors which use an alpha channel, draw opaques
 				this->transparentActors.clear();
@@ -472,6 +604,8 @@ namespace vel
 				}
 
 				//gpu->enableDepthMask();
+
+				// !TODO: use composite shader to draw into cameraFBO
 
 			} // end for each camera
 

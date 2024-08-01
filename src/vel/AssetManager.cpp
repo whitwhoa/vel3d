@@ -656,9 +656,14 @@ namespace vel
 		Camera* cameraPtr = this->cameras.back().first.get();
 
 		cameraPtr->setGpu(this->gpu);
-		cameraPtr->setRenderTarget(this->gpu->createRenderTarget(cameraPtr->getResolution().x, cameraPtr->getResolution().y));
+		cameraPtr->setRenderTarget(this->gpu->createRenderTarget(
+			(cameraPtr->getName() + "_RT"), 
+			cameraPtr->getResolution().x, 
+			cameraPtr->getResolution().y
+		));
+
 		cameraPtr->getRenderTarget()->texture.name = cameraPtr->getName() + "_RT";
-		cameraPtr->getRenderTarget()->texture.alphaChannel = false;
+		cameraPtr->getRenderTarget()->texture.alphaChannel = false; // ?
 
 		return cameraPtr;
 	}
