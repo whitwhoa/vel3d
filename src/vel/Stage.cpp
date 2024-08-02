@@ -146,7 +146,7 @@ namespace vel
 	Actor* Stage::addActor(const Actor& actorIn)
 	{
 		// ogl uses 0 to indicate error, so we'll never have an index of 0, so we use that for empty
-		unsigned int fboToUse = actorIn.getMaterial()->getHasAlphaChannel() ? 1 : 2; // always either opaque or has alpha
+		unsigned int fboToUse = actorIn.getMaterial()->getHasAlphaChannel() ? 2 : 1; // always either opaque or has alpha
 		unsigned int shaderProgramId = actorIn.getMaterial()->getShader() == nullptr ? 0 : actorIn.getMaterial()->getShader()->id;
 		unsigned int vaoToUse = !actorIn.getMesh()->getGpuMesh().has_value() ? 0 : actorIn.getMesh()->getGpuMesh()->VAO;
 
@@ -166,7 +166,7 @@ namespace vel
 		// ogl uses 0 to indicate error, so we'll never have an index of 0, so we use that for empty
 		unsigned int fboToUse = 1; // always either opaque or has alpha
 		if(material != nullptr)
-			fboToUse = material->getHasAlphaChannel() ? 1 : 2;
+			fboToUse = material->getHasAlphaChannel() ? 2 : 1;
 
 		unsigned int shaderProgramId = material == nullptr ? 0 : material->getShader()->id;
 		unsigned int vaoToUse = mesh == nullptr ? 0 : mesh->getGpuMesh()->VAO;

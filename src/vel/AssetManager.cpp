@@ -662,9 +662,6 @@ namespace vel
 			cameraPtr->getResolution().y
 		));
 
-		cameraPtr->getRenderTarget()->texture.name = cameraPtr->getName() + "_RT";
-		cameraPtr->getRenderTarget()->texture.alphaChannel = false; // ?
-
 		return cameraPtr;
 	}
 

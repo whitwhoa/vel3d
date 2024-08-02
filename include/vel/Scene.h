@@ -49,8 +49,6 @@ namespace vel
 		std::vector<Material*> 				materialsInUse;
 		std::vector<FontBitmap*> 			fontBitmapsInUse;
 		std::vector<Camera*>				camerasInUse;
-		
-		std::vector<std::pair<float, Actor*>> transparentActors;
 
 		glm::vec3							cameraPosition;
 		glm::mat4							cameraProjectionMatrix;

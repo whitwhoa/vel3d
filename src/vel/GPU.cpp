@@ -20,10 +20,14 @@ namespace vel
 {
 	GPU::GPU() :
 		screenShader(nullptr),
+		compositeShader(nullptr),
 		activeShader(nullptr),
 		activeMesh(nullptr),
 		activeMaterial(nullptr),
-		screenSpaceMesh(Mesh("screenSpaceMesh"))
+		activeRenderTarget(nullptr),
+		screenSpaceMesh(Mesh("screenSpaceMesh")),
+		zeroFillerVec(glm::vec4(0.0f)),
+		oneFillerVec(1.0f)
 	{
         this->enableDepthTest();
 		this->enableBackfaceCulling();
@@ -39,14 +43,75 @@ namespace vel
 		this->clearMesh(&this->screenSpaceMesh);
 	}
 
+	void GPU::setOpaqueRenderState()
+	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+		glDepthMask(GL_TRUE);
+		glDisable(GL_BLEND);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->opaqueFBO);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+
+	void GPU::setAlphaRenderState()
+	{
+		glDepthMask(GL_FALSE);
+		glEnable(GL_BLEND);
+		glBlendFunci(0, GL_ONE, GL_ONE);
+		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+		glBlendEquation(GL_FUNC_ADD);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->alphaFBO);
+		glClearBufferfv(GL_COLOR, 0, &this->zeroFillerVec[0]);
+		glClearBufferfv(GL_COLOR, 1, &this->oneFillerVec[0]);
+	}
+
+	void GPU::setCompositeRenderState()
+	{
+		glDepthFunc(GL_ALWAYS);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->opaqueFBO);
+	}
+
+	void GPU::composeFBOs()
+	{
+		this->setCompositeRenderState();
+		
+		this->useShader(this->compositeShader);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, this->activeRenderTarget->accumTexture.frames.at(0).id);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, this->activeRenderTarget->revealTexture.frames.at(0).id);
+		
+		this->useMesh(&this->screenSpaceMesh);
+
+		this->drawGpuMesh();		
+	}
+
+	void GPU::setGLDebugMessage(const std::string& message)
+	{
+		glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_MARKER, 0,
+			GL_DEBUG_SEVERITY_NOTIFICATION, -1, message.c_str());
+	}
+
 	void GPU::setDefaultWhiteTextureHandle(uint64_t th)
 	{
 		this->defaultWhiteTextureHandle = th;
 	}
 
-	void GPU::setDefaultShader(Shader* s)
+	void GPU::setScreenShader(Shader* s)
 	{
 		this->screenShader = s;
+	}
+
+	void GPU::setCompositeShader(Shader* s)
+	{
+		this->compositeShader = s;
 	}
 
 	void GPU::drawScreen(GLuint64 dsaHandle, glm::vec4 screenColor)
@@ -74,19 +139,19 @@ namespace vel
 		this->drawGpuMesh();
 	}
 
-	void GPU::setRenderTarget(unsigned int FBO, bool useDepthBuffer)
+	void GPU::setRenderTarget(RenderTarget* rt)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-		
-		if (useDepthBuffer)
-			glEnable(GL_DEPTH_TEST);
-		else
-			glDisable(GL_DEPTH_TEST);
+		this->activeRenderTarget = rt;
 	}
 
 	void GPU::updateViewportSize(unsigned int width, unsigned int height)
 	{
 		glViewport(0, 0, width, height);
+	}
+
+	void GPU::setScreenRenderTarget()
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	void GPU::initScreenSpaceMesh()
@@ -234,12 +299,17 @@ namespace vel
 
 	void GPU::clearRenderTarget(RenderTarget* rt)
 	{
-		glMakeTextureHandleNonResidentARB(rt->texture.frames.at(0).dsaHandle);
-		glMakeTextureHandleNonResidentARB(rt->texture.frames.at(1).dsaHandle);
-		glDeleteTextures(1, &rt->texture.frames.at(0).id);
-		glDeleteTextures(1, &rt->texture.frames.at(1).id);
+		glMakeTextureHandleNonResidentARB(rt->opaqueTexture.frames.at(0).dsaHandle);
+		glMakeTextureHandleNonResidentARB(rt->depthTexture.frames.at(0).dsaHandle);
+		glMakeTextureHandleNonResidentARB(rt->accumTexture.frames.at(0).dsaHandle);
+		glMakeTextureHandleNonResidentARB(rt->revealTexture.frames.at(0).dsaHandle);
+		glDeleteTextures(1, &rt->opaqueTexture.frames.at(0).id);
+		glDeleteTextures(1, &rt->depthTexture.frames.at(0).id);
+		glDeleteTextures(1, &rt->accumTexture.frames.at(0).id);
+		glDeleteTextures(1, &rt->revealTexture.frames.at(0).id);
 
 		glDeleteFramebuffers(1, &rt->opaqueFBO);
+		glDeleteFramebuffers(1, &rt->alphaFBO);
 	}
 
 	void GPU::loadShader(Shader* s)
@@ -804,6 +874,22 @@ namespace vel
 	{
 		glClearColor(r, g, b, a);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+
+	void GPU::clearRenderTargetBuffers(float r, float g, float b, float a)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->opaqueFBO);
+		this->clearBuffers(r,g,b,a);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->alphaFBO);
+		glClearBufferfv(GL_COLOR, 0, &this->zeroFillerVec[0]);
+		glClearBufferfv(GL_COLOR, 1, &this->oneFillerVec[0]);
+	}
+
+	void GPU::clearScreenBuffer(float r, float g, float b, float a)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		this->clearBuffers(r, g, b, a);
 	}
 
 	void GPU::drawLinesOnly()

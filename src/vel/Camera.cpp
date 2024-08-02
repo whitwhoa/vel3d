@@ -128,7 +128,7 @@ namespace vel
 		{
 			LOG_TO_CLI_AND_FILE("viewport size altered\n");
 
-			RenderTarget rt = this->gpu->createRenderTarget(currentResolution.x, currentResolution.y);
+			RenderTarget rt = this->gpu->createRenderTarget((this->getName() + "_RT"), currentResolution.x, currentResolution.y);
 			this->gpu->clearRenderTarget(&this->renderTarget.value());
 			this->renderTarget = rt;
 		}

@@ -38,11 +38,13 @@ namespace vel
     {		
 		this->assetManager->loadShader("debug", "debug.vert", "debug.frag"); // used for bullet's debug drawer
 		this->assetManager->loadShader("screen", "screen.vert", "screen.frag"); // used for rendering texture to screen buffer
+		this->assetManager->loadShader("composite", "composite.vert", "composite.frag"); // used for rendering texture to screen buffer
 		this->assetManager->loadShader("text", "uber.vert", "uber.frag", {"IS_TEXT"}); // used for rendering text
 
 		Texture* ptrDefaultWhite = this->assetManager->loadTexture("defaultWhite", "data/textures/defaults/default.jpg");
 
-		this->gpu->setDefaultShader(this->assetManager->getShader("screen"));
+		this->gpu->setScreenShader(this->assetManager->getShader("screen"));
+		this->gpu->setCompositeShader(this->assetManager->getShader("composite"));
 		this->gpu->setDefaultWhiteTextureHandle(ptrDefaultWhite->frames.at(0).dsaHandle);
 
     }

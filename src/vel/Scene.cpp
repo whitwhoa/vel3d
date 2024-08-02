@@ -511,9 +511,7 @@ namespace vel
 
 	void Scene::draw(GPU* gpu, float frameTime, float alpha)
 	{
-		gpu->enableDepthTest(); // insure depth buffer is active
 		gpu->enableBackfaceCulling(); // insure backface culling is occurring
-        gpu->disableBlend(); // disable blending for opaque objects
 
 		// loop through all stages
 		for (auto& s : this->stages)
@@ -522,9 +520,6 @@ namespace vel
 
 			if (!s->isVisible())
 				continue;
-
-			if (s->getClearDepthBuffer())
-				gpu->clearDepthBuffer();
 
 			for (auto c : s->getCameras())
 			{
@@ -535,88 +530,56 @@ namespace vel
 				this->cameraViewMatrix = c->getViewMatrix();
 
 
-				// setup gl state to render to framebuffer
-				gpu->setRenderTarget(c->getRenderTarget()->opaqueFBO, true); // should always write to depth buffer here
-				gpu->updateViewportSize(c->getResolution().x, c->getResolution().y); // why?
+				gpu->updateViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different sizes
+				gpu->setRenderTarget(c->getRenderTarget());
 				
-				// loop through all renderables and build a vector of actors which use an alpha channel, draw opaques
-				this->transparentActors.clear();
+				
+				gpu->setOpaqueRenderState();
 
 
-				for (auto& shaderBucket : s->getActors())
+				bool foundFirstAlpha = false;
+
+				for (auto& pair : s->getActors())
 				{
-					for (auto& vaoBucket : shaderBucket.second)
+					for (auto& a : pair.second)
 					{
-						for (unsigned int i = 0; i < vaoBucket.second.size(); i++)
+						if (!a->getMesh() || !a->isVisible() || !a->getMaterial()->getShader())
+							continue;
+
+						if (a->getMaterial()->getHasAlphaChannel() && !foundFirstAlpha)
 						{
-							Actor* a = vaoBucket.second.at(i).get();
-
-							if (!a->getMesh() || !a->isVisible() || !a->getMaterial()->getShader())
-								continue;
-
-							if (actorsFirstPass)
-								a->getMaterial()->preDraw(frameTime);
-
-							// Pool transparents/translucents for render after opaques
-							if (a->getMaterial()->getHasAlphaChannel() || a->getMaterial()->getColor().w < 1.0f)
-							{
-								float dist = glm::length(this->cameraPosition - a->getTransform().getTranslation());
-								this->transparentActors.push_back(std::pair<float, Actor*>(dist, a));
-								continue;
-							}
-
-							// Draw Opaque
-
-							gpu->useShader(a->getMaterial()->getShader()); // only alters gpu state if necessary
-							gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
-							gpu->setActiveMaterial(a->getMaterial());
-							
-							a->getMaterial()->draw(alpha, gpu, a, this->cameraViewMatrix, this->cameraProjectionMatrix);
+							foundFirstAlpha = true;
+							gpu->setAlphaRenderState();
 						}
+
+						if (actorsFirstPass)
+							a->getMaterial()->preDraw(frameTime);
+
+						gpu->useShader(a->getMaterial()->getShader()); // only alters gpu state if necessary
+						gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
+						gpu->setActiveMaterial(a->getMaterial());
+
+						a->getMaterial()->draw(alpha, gpu, a.get(), this->cameraViewMatrix, this->cameraProjectionMatrix);
+
 					}
 				}
 
 				actorsFirstPass = false;
 
-				// Draw transparents/translucents
-				gpu->enableBlend2();
-				//gpu->disableDepthMask();
+				gpu->composeFBOs();
 
-				// not proud of this, but it gets the job done for the time being, loop through all transparent actors and sort by their distance
-				// from the current camera position
-				std::sort(transparentActors.begin(), transparentActors.end(), [](auto &left, auto &right) {
-					return left.first < right.first;
-				});
-
-				// Draw all transparent/translucent actors
-				for (std::vector<std::pair<float, Actor*>>::reverse_iterator it = transparentActors.rbegin(); it != transparentActors.rend(); ++it)
-				{
-					// update gpu states, inefficient to do this for every actor, but transparents should be limited, and other solutions require
-					// re-architecting the renderer, adding more complexity, and making this unusable for probably another entire year...so no thank you
-					
-					auto a = it->second;
-
-					gpu->useShader(a->getMaterial()->getShader()); // only alters gpu state if necessary
-					gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
-					gpu->setActiveMaterial(a->getMaterial());
-
-					a->getMaterial()->draw(alpha, gpu, a, this->cameraViewMatrix, this->cameraProjectionMatrix);
-				}
-
-				//gpu->enableDepthMask();
-
-				// !TODO: use composite shader to draw into cameraFBO
 
 			} // end for each camera
 
 		} // end for each stage
 
+
 		// all stage camera's framebuffers are now updated, loop through each stage camera and check if it should display it's contents 
 
 		// now bind back to default framebuffer and draw a quad plane with the attached framebuffer texture
 		// enable blending of each renderable stage "layer"
-		gpu->setRenderTarget(0, false);
 		gpu->enableBlend2();
+		gpu->setScreenRenderTarget();
 		gpu->updateViewportSize(this->getWindowSize().x, this->getWindowSize().y);
 
 		for (auto& s : this->stages)
@@ -626,7 +589,7 @@ namespace vel
 
 			for (auto c : s->getCameras())
 				if (c->isFinalRenderCam())
-					gpu->drawScreen(c->getRenderTarget()->texture.frames.at(0).dsaHandle, this->screenColor);
+					gpu->drawScreen(c->getRenderTarget()->opaqueTexture.frames.at(0).dsaHandle, this->screenColor);
 		}
 
 		// moving collision debug draw event as final thing as it draws directly to the screen buffer, and I don't want to have to 
@@ -651,14 +614,12 @@ namespace vel
 		{
 			for (auto c : s->getCameras())
 			{
-				gpu->setRenderTarget(c->getRenderTarget()->opaqueFBO, true);
-				gpu->clearBuffers(0.0f, 0.0f, 0.0f, 0.0f);
+				gpu->setRenderTarget(c->getRenderTarget());
+				gpu->clearRenderTargetBuffers(0.0f, 0.0f, 0.0f, 0.0f);
 			}
 		}
 
-		// clear default screen buffer
-		gpu->setRenderTarget(0, false);
-		gpu->clearBuffers(0.0f, 0.0f, 0.0f, 1.0f);
+		gpu->clearScreenBuffer(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 
 

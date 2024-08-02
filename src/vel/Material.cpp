@@ -31,8 +31,8 @@ namespace vel
 	{
 		this->textures.push_back(t);
 
-		if (t->alphaChannel)
-			this->hasAlphaChannel = true;
+		//if (t->alphaChannel)
+		//	this->hasAlphaChannel = true;
 	}
 
 	std::vector<Texture*>& Material::getTextures()

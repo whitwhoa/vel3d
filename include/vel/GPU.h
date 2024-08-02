@@ -26,7 +26,9 @@ namespace vel
 	{
 	private:
         Shader*								screenShader;
+		Shader*								compositeShader;
 		uint64_t							defaultWhiteTextureHandle;
+		RenderTarget*						activeRenderTarget;
 		Shader*								activeShader;
 		Mesh*								activeMesh;
 		Material*							activeMaterial;
@@ -41,6 +43,9 @@ namespace vel
 
 		Mesh								screenSpaceMesh;
 		void								initScreenSpaceMesh();
+
+		glm::vec4							zeroFillerVec;
+		glm::vec4							oneFillerVec;
 
 
 	public:
@@ -105,15 +110,29 @@ namespace vel
 		void								updateLightmapTextureUBO(GLuint64 dsaHandle);
 
 		void								updateViewportSize(unsigned int width, unsigned int height);
-		void								setRenderTarget(unsigned int FBO, bool depth);
+		void								setRenderTarget(RenderTarget* rt);
 
 		void								drawScreen(GLuint64 dsaHandle, glm::vec4 screenColor);
 
-		void								setDefaultShader(Shader* s);
+		void								setScreenShader(Shader* s);
+		void								setCompositeShader(Shader* s);
 		void								setDefaultWhiteTextureHandle(uint64_t th);
 
 		void								disableDepthMask();
 		void								enableDepthMask();
+
+
+
+		void								setOpaqueRenderState();
+		void								setAlphaRenderState();
+		void								setCompositeRenderState();
+		void								composeFBOs();
+		void								setScreenRenderTarget();
+
+		void								clearRenderTargetBuffers(float r, float g, float b, float a);
+		void								clearScreenBuffer(float r, float g, float b, float a);
+
+		void								setGLDebugMessage(const std::string& message);
 
 	};
 }
