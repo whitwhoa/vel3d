@@ -27,9 +27,14 @@ namespace vel
 		activeRenderTarget(nullptr),
 		screenSpaceMesh(Mesh("screenSpaceMesh")),
 		zeroFillerVec(glm::vec4(0.0f)),
-		oneFillerVec(1.0f)
+		oneFillerVec(1.0f),
+		activeClearColorValues(glm::vec4(0.0f)),
+		activeViewportSize(glm::ivec2(0,0)),
+		activeFramebuffer(-1)
 	{
-        this->enableDepthTest();
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+        //this->enableDepthTest();
 		this->enableBackfaceCulling();
 		this->initBoneUBO();
 		this->initTextureUBO();
@@ -49,10 +54,15 @@ namespace vel
 		glDepthFunc(GL_LESS);
 		glDepthMask(GL_TRUE);
 		glDisable(GL_BLEND);
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		//glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->opaqueFBO);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		if (this->activeFramebuffer != this->activeRenderTarget->opaqueFBO)
+		{
+			this->activeFramebuffer = this->activeRenderTarget->opaqueFBO;
+			glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->opaqueFBO);
+			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		}
+		
 	}
 
 	void GPU::setAlphaRenderState()
@@ -63,9 +73,14 @@ namespace vel
 		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
 		glBlendEquation(GL_FUNC_ADD);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->alphaFBO);
-		glClearBufferfv(GL_COLOR, 0, &this->zeroFillerVec[0]);
-		glClearBufferfv(GL_COLOR, 1, &this->oneFillerVec[0]);
+		if (this->activeFramebuffer != this->activeRenderTarget->alphaFBO)
+		{
+			this->activeFramebuffer = this->activeRenderTarget->alphaFBO;
+			glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->alphaFBO);
+			//glClearBufferfv(GL_COLOR, 0, &this->zeroFillerVec[0]);
+			//glClearBufferfv(GL_COLOR, 1, &this->oneFillerVec[0]);
+		}
+		
 	}
 
 	void GPU::setCompositeRenderState()
@@ -74,7 +89,12 @@ namespace vel
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->opaqueFBO);
+		if (this->activeFramebuffer != this->activeRenderTarget->opaqueFBO)
+		{
+			this->activeFramebuffer = this->activeRenderTarget->opaqueFBO;
+			glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->opaqueFBO);
+			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		}
 	}
 
 	void GPU::composeFBOs()
@@ -146,12 +166,17 @@ namespace vel
 
 	void GPU::updateViewportSize(unsigned int width, unsigned int height)
 	{
-		glViewport(0, 0, width, height);
+		if (width != this->activeViewportSize.x || height != this->activeViewportSize.y)
+		{
+			this->activeViewportSize = glm::ivec2(width, height);
+			glViewport(0, 0, width, height);
+		}
 	}
 
 	void GPU::setScreenRenderTarget()
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		if (this->activeFramebuffer != 0)
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	void GPU::initScreenSpaceMesh()
@@ -872,7 +897,13 @@ namespace vel
 
 	void GPU::clearBuffers(float r, float g, float b, float a)
 	{
-		glClearColor(r, g, b, a);
+		if (r != this->activeClearColorValues.x || g != this->activeClearColorValues.y ||
+			b != this->activeClearColorValues.z || a != this->activeClearColorValues.w)
+		{
+			this->activeClearColorValues = glm::vec4(r,g,b,a);
+			glClearColor(r, g, b, a);
+		}
+
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 

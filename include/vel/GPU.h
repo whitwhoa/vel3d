@@ -47,6 +47,10 @@ namespace vel
 		glm::vec4							zeroFillerVec;
 		glm::vec4							oneFillerVec;
 
+		glm::vec4							activeClearColorValues;
+		glm::ivec2							activeViewportSize;
+		int									activeFramebuffer;
+
 
 	public:
 		GPU();

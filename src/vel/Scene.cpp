@@ -511,7 +511,7 @@ namespace vel
 
 	void Scene::draw(GPU* gpu, float frameTime, float alpha)
 	{
-		gpu->enableBackfaceCulling(); // insure backface culling is occurring
+		//gpu->enableBackfaceCulling(); // insure backface culling is occurring
 
 		// loop through all stages
 		for (auto& s : this->stages)
@@ -578,7 +578,7 @@ namespace vel
 
 		// now bind back to default framebuffer and draw a quad plane with the attached framebuffer texture
 		// enable blending of each renderable stage "layer"
-		gpu->enableBlend2();
+		//gpu->enableBlend2();
 		gpu->setScreenRenderTarget();
 		gpu->updateViewportSize(this->getWindowSize().x, this->getWindowSize().y);
 
