@@ -7,7 +7,7 @@
 
 #include "glm/glm.hpp"
 
-
+#include "vel/RawInputHandler.h"
 #include "vel/InputState.h"
 #include "vel/Config.h"
 
@@ -37,6 +37,8 @@ namespace vel
 
 		std::map<std::string, ImFont*> imguiFonts;
 		bool				imguiFrameOpen;
+
+        RawInputHandler*     inputHandler;
 
         void				setMouse();
         void				setScroll();

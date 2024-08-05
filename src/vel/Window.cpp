@@ -2,7 +2,10 @@
 
 
 #include "glad/gl.h"
+
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3.h"
+#include "GLFW/glfw3native.h"
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -16,6 +19,14 @@
 // could be because of multiple monitors all running different refresh rates
 
 //TODO: Need to refactor this to use Log.h
+
+// Window procedure for handling raw input messages
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	if (uMsg == WM_INPUT) {
+		// Process raw input here if needed
+	}
+	return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
 
 namespace vel
 {
@@ -76,7 +87,8 @@ namespace vel
 		vsync(c.VSYNC),
 		scrollX(0.0f),
 		scrollY(0.0f),
-		imguiFrameOpen(false)
+		imguiFrameOpen(false),
+		inputHandler(nullptr)
     {
 		this->inputState.mouseSensitivity = c.MOUSE_SENSITIVITY;
 
@@ -134,6 +146,14 @@ namespace vel
         {
 
             glfwMakeContextCurrent(this->glfwWindow);
+
+			HWND hwnd = glfwGetWin32Window(this->glfwWindow);
+
+			this->inputHandler = new RawInputHandler(hwnd);
+
+			// Set the custom window procedure
+			SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)WindowProc);
+			
 
 			if(this->vsync)
 				glfwSwapInterval(1); // 0 = no vsync 1 = vsync
@@ -456,9 +476,20 @@ namespace vel
 
 	void Window::updateInputState()
 	{
-		glfwPollEvents();
-		setMouse();
-		setScroll();
+		//glfwPollEvents();
+		//setMouse();
+		//setScroll();
+
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
+		this->inputHandler->Update();
+
+		this->inputState.mouseXPos = (float)this->inputHandler->GetState().mouseX;
+		this->inputState.mouseYPos = (float)this->inputHandler->GetState().mouseY;
 	}
 
     void Window::update() 
