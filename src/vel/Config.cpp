@@ -22,7 +22,11 @@ namespace vel
 
 		MOUSE_SENSITIVITY(std::stof(this->userConfigParams["mouseSensitivity"])),
 
-		VSYNC(this->userConfigParams["vsync"] == "0" ? false : true)
+		VSYNC(this->userConfigParams["vsync"] == "0" ? false : true),
+
+        MSAA(vel::sin_vector(this->userConfigParams["msaa"], {"0", "2", "4", "8", "16"}) ? 
+            std::stoi(this->userConfigParams["msaa"]) : 0)
+
 	{};
 
     std::map<std::string, std::string> Config::loadFromFile(std::string path)

@@ -101,6 +101,9 @@ namespace vel
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 		}
 
+		// Enable MSAA
+		if(c.MSAA > 0)
+			glfwWindowHint(GLFW_SAMPLES, c.MSAA);
         
         
 
@@ -134,6 +137,8 @@ namespace vel
         {
 
             glfwMakeContextCurrent(this->glfwWindow);
+
+			
 
 			if(this->vsync)
 				glfwSwapInterval(1); // 0 = no vsync 1 = vsync
@@ -169,6 +174,9 @@ namespace vel
 					glfwSetInputMode(this->glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 				}
 
+				// Enable multi-sampling in OpenGL
+				if (c.MSAA > 0)
+					glEnable(GL_MULTISAMPLE);
 
 
 				if (c.OPENGL_DEBUG_CONTEXT)

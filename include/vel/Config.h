@@ -48,5 +48,7 @@ namespace vel
 		float								MOUSE_SENSITIVITY;
 		bool								VSYNC;
 
+		int									MSAA;
+
     };
 }
