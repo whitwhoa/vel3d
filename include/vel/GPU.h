@@ -138,5 +138,9 @@ namespace vel
 
 		void								setGLDebugMessage(const std::string& message);
 
+		glm::ivec2							getActiveViewportSize();
+
+		void								drawLines(unsigned int pointCount);
+
 	};
 }

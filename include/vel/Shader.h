@@ -16,6 +16,7 @@ namespace vel
 		unsigned int id;
 		std::string name;
 		std::string vertCode;
+		std::string geomCode;
 		std::string fragCode;
 		std::unordered_map<std::string, GLint> uniformLocations;
 	};

@@ -12,6 +12,7 @@
 #include "vel/Actor.h"
 #include "vel/Camera.h"
 #include "vel/TextActor.h"
+#include "vel/LineActor.h"
 
 namespace vel
 {
@@ -47,6 +48,7 @@ namespace vel
 																	// so the memory is managed by the stage vs the actor (noting this because it through me for a bit when I
 																	// came back to it the last time)
 		std::vector<std::unique_ptr<TextActor>>			textActors;
+		std::vector<std::unique_ptr<LineActor>>			lineActors;
 
 		std::optional<std::pair<ActCompositeKey, unsigned int>>	getActorLocation(const std::string& name);
 		std::optional<std::pair<ActCompositeKey, unsigned int>>	getActorLocation(const Actor* a);
@@ -57,6 +59,10 @@ namespace vel
 		int												getTextActorIndex(const std::string& name);
 		int												getTextActorIndex(const TextActor*);
 		void											_removeTextActor(int textActorIndex);
+
+		int												getLineActorIndex(const std::string& name);
+		int												getLineActorIndex(const LineActor*);
+		void											_removeLineActor(int lineActorIndex);
 
 
 	public:
@@ -69,6 +75,7 @@ namespace vel
 		void											updateArmatureAnimations(float runTime);
 
 		void											updateTextActors();
+		void											updateLineActors();
 
 		Actor*											addActor(const std::string& name, Mesh* mesh = nullptr, Material* material = nullptr);
 		Actor*											addActor(const Actor& actorIn);
@@ -84,6 +91,11 @@ namespace vel
 		TextActor*										getTextActor(const std::string& name);
 		void											removeTextActor(TextActor*);
 		void											removeTextActor(const std::string& name);
+
+		LineActor*										addLineActor(std::unique_ptr<LineActor> ta);
+		LineActor*										getLineActor(const std::string& name);
+		void											removeLineActor(LineActor*);
+		void											removeLineActor(const std::string& name);
 
 		void											addCamera(Camera* c);
 		Camera*											getCamera(const std::string& name);

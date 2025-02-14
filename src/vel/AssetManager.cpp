@@ -97,7 +97,7 @@ namespace vel
 		return remainingShaderCode.str();
 	}
 
-	Shader* AssetManager::loadShader(const std::string& name, const std::string& vertFile, const std::string& fragFile, std::vector<std::string> defs)
+	Shader* AssetManager::loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, const std::string& fragFile, std::vector<std::string> defs)
 	{
 		int shaderIndex = this->getShaderIndex(name);
 
@@ -115,37 +115,57 @@ namespace vel
 
 		// retrieve the vertex/fragment source code from filePath
 		std::string vertexCode;
+		std::string geomCode;
 		std::string fragmentCode;
 
 		try
 		{
+			// Process vertex shader script
 			vertexCode = this->loadShaderFile("data/shaders/" + vertFile);
-			fragmentCode = this->loadShaderFile("data/shaders/" + fragFile);
-
 			std::string topVertexLines = this->getTopShaderLines(vertexCode, 10);
-			std::string topFragmentLines = this->getTopShaderLines(fragmentCode, 10);
 			std::string bottomVertexLines = this->getBottomShaderLines(vertexCode, 10);
-			std::string bottomFragmentLines = this->getBottomShaderLines(fragmentCode, 10);
-
 			std::stringstream preprocessedVertexCode;
-			std::stringstream preprocessedFragmentCode;
-
 			preprocessedVertexCode << topVertexLines;
-			preprocessedFragmentCode << topFragmentLines;
-
-
-			// preload defs into scripts
-			for (const auto& def : defs)
-			{
+			
+			for (const auto& def : defs) // preload defs into scripts
 				preprocessedVertexCode << "#define " << def << "\n";
-				preprocessedFragmentCode << "#define " << def << "\n";
-			}
 
 			preprocessedVertexCode << bottomVertexLines;
-			preprocessedFragmentCode << bottomFragmentLines;
 
 			vertexCode = preprocessedVertexCode.str();
+
+
+			// Process Geometry shader script
+			if (geomFile != "")
+			{
+				geomCode = this->loadShaderFile("data/shaders/" + geomFile);
+				std::string topGeomLines = this->getTopShaderLines(geomCode, 10);
+				std::string bottomGeomLines = this->getBottomShaderLines(geomCode, 10);
+				std::stringstream preprocessedGeomCode;
+				preprocessedGeomCode << topGeomLines;
+
+				for (const auto& def : defs) // preload defs into scripts
+					preprocessedGeomCode << "#define " << def << "\n";
+
+				preprocessedGeomCode << bottomGeomLines;
+
+				geomCode = preprocessedGeomCode.str();
+			}
+			
+
+			// Process fragment shader script
+			fragmentCode = this->loadShaderFile("data/shaders/" + fragFile);
+			std::string topFragmentLines = this->getTopShaderLines(fragmentCode, 10);
+			std::string bottomFragmentLines = this->getBottomShaderLines(fragmentCode, 10);
+			std::stringstream preprocessedFragmentCode;
+			preprocessedFragmentCode << topFragmentLines;
+
+			for (const auto& def : defs) // preload defs into scripts
+				preprocessedFragmentCode << "#define " << def << "\n";
+
+			preprocessedFragmentCode << bottomFragmentLines;			
 			fragmentCode = preprocessedFragmentCode.str();
+
 		}
 		catch (std::ifstream::failure e)
 		{
@@ -158,6 +178,7 @@ namespace vel
 		std::unique_ptr<Shader> s = std::make_unique<Shader>();
 		s->name = name;
 		s->vertCode = vertexCode;
+		s->geomCode = geomCode;
 		s->fragCode = fragmentCode;
 
 		this->shaders.push_back(std::pair<std::unique_ptr<Shader>, int>(std::move(s), 1));

@@ -126,10 +126,6 @@ namespace vel
 		return fb;
 	}
 
-	void Scene::loadShader(const std::string& name, const std::string& vertFile, const std::string& fragFile)
-	{
-		this->shadersInUse.push_back(this->assetManager->loadShader(name, vertFile, fragFile));
-	}
 	
 	Texture* Scene::loadTexture(const std::string& name, const std::string& path, bool freeAfterGPULoad, unsigned int uvWrapping)
 	{
@@ -140,7 +136,6 @@ namespace vel
 		return t;
 	}
 	
-
 
 	DiffuseMaterial* Scene::addDiffuseMaterial(const std::string& name, bool hasAlpha)
 	{
@@ -153,7 +148,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* diffuseMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(diffuseMaterialShader);
 
 		std::unique_ptr<DiffuseMaterial> m = std::make_unique<DiffuseMaterial>(name, diffuseMaterialShader);
 
@@ -177,7 +173,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* diffuseLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(diffuseLightmapMaterialShader);
 
 		std::unique_ptr<DiffuseLightmapMaterial> m = std::make_unique<DiffuseLightmapMaterial>(name, diffuseLightmapMaterialShader);
 
@@ -201,7 +198,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* diffuseAnimatedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseAnimatedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(diffuseAnimatedMaterialShader);
 
 		std::unique_ptr<DiffuseAnimatedMaterial> m = std::make_unique<DiffuseAnimatedMaterial>(name, diffuseAnimatedMaterialShader);
 
@@ -225,7 +223,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* diffuseAnimatedLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseAnimatedLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(diffuseAnimatedLightmapMaterialShader);
 
 		std::unique_ptr<DiffuseAnimatedLightmapMaterial> m = std::make_unique<DiffuseAnimatedLightmapMaterial>(name, diffuseAnimatedLightmapMaterialShader);
 
@@ -249,7 +248,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* diffuseSkinnedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseSkinnedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(diffuseSkinnedMaterialShader);
 
 		std::unique_ptr<DiffuseSkinnedMaterial> m = std::make_unique<DiffuseSkinnedMaterial>(name, diffuseSkinnedMaterialShader);
 
@@ -273,7 +273,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* textMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* textMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(textMaterialShader);
 
 		std::unique_ptr<TextMaterial> m = std::make_unique<TextMaterial>(name, textMaterialShader);
 
@@ -297,7 +298,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* diffuseAmbientCubeMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseAmbientCubeMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(diffuseAmbientCubeMaterialShader);
 
 		std::unique_ptr<DiffuseAmbientCubeMaterial> m = std::make_unique<DiffuseAmbientCubeMaterial>(name, diffuseAmbientCubeMaterialShader);
 
@@ -321,7 +323,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* diffuseAmbientCubeSkinnedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseAmbientCubeSkinnedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(diffuseAmbientCubeSkinnedMaterialShader);
 
 		std::unique_ptr<DiffuseAmbientCubeSkinnedMaterial> m = std::make_unique<DiffuseAmbientCubeSkinnedMaterial>(name, diffuseAmbientCubeSkinnedMaterialShader);
 
@@ -345,7 +348,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* RGBAMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* RGBAMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(RGBAMaterialShader);
 
 		std::unique_ptr<RGBAMaterial> m = std::make_unique<RGBAMaterial>(name, RGBAMaterialShader);
 
@@ -356,6 +360,31 @@ namespace vel
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<RGBAMaterial*>(pMaterial);
+	}
+
+	RGBALineMaterial* Scene::addRGBALineMaterial(const std::string& name, bool hasAlpha)
+	{
+		std::vector<std::string> defs = RGBALineMaterial::shaderDefs;
+		std::string shaderName = "RGBALineMaterialShader";
+
+		if (hasAlpha)
+		{
+			defs.push_back("HAS_ALPHA");
+			shaderName += "Alpha";
+		}
+
+		Shader* RGBALineMaterialShader = this->assetManager->loadShader(shaderName, "line.vert", "line.geom", "line.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(RGBALineMaterialShader);
+
+		std::unique_ptr<RGBALineMaterial> m = std::make_unique<RGBALineMaterial>(name, RGBALineMaterialShader);
+
+		if (hasAlpha)
+			m->setHasAlphaChannel(true);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<RGBALineMaterial*>(pMaterial);
 	}
 
 	RGBALightmapMaterial* Scene::addRGBALightmapMaterial(const std::string& name, bool hasAlpha)
@@ -369,7 +398,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* RGBALightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* RGBALightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(RGBALightmapMaterialShader);
 
 		std::unique_ptr<RGBALightmapMaterial> m = std::make_unique<RGBALightmapMaterial>(name, RGBALightmapMaterialShader);
 
@@ -393,7 +423,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* diffuseCausticMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseCausticMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(diffuseCausticMaterialShader);
 
 		std::unique_ptr<DiffuseCausticMaterial> m = std::make_unique<DiffuseCausticMaterial>(name, diffuseCausticMaterialShader);
 
@@ -417,7 +448,8 @@ namespace vel
 			shaderName += "Alpha";
 		}
 
-		Shader* diffuseCausticLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseCausticLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(diffuseCausticLightmapMaterialShader);
 
 		std::unique_ptr<DiffuseCausticLightmapMaterial> m = std::make_unique<DiffuseCausticLightmapMaterial>(name, diffuseCausticLightmapMaterialShader);
 
@@ -460,6 +492,30 @@ namespace vel
 		this->animationTime += delta;
 		for (auto& s : this->stages)
 			s->updateArmatureAnimations(this->animationTime);
+	}
+
+	LineActor* Scene::addLineActor(Stage* stage, const std::string& name, std::vector<glm::vec2> points, glm::vec4 color)
+	{
+		// create the LineActor
+		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);
+
+		// create the mesh
+		Mesh* pMesh = this->assetManager->addMesh(std::move(LineActor::pointsToMesh(name, points)));
+		this->meshesInUse.push_back(pMesh);
+
+		// create material
+		Material* pMaterial = this->addRGBALineMaterial(name + "_material", color.w < 0.999f);
+		pMaterial->setColor(color);
+
+		// create actor
+		Actor* pActor = stage->addActor(name);
+		pActor->setMesh(pMesh);
+		pActor->setMaterial(pMaterial);
+
+		// add actor pointer to LineActor
+		la->actor = pActor;
+
+		return stage->addLineActor(std::move(la));
 	}
 
 	// Has to be this way, otherwise Scene can't track the generated mesh. Live with it.

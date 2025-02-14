@@ -319,4 +319,59 @@ namespace vel
 		}
 	}
 
+	///////////
+
+	int Stage::getLineActorIndex(const std::string& name)
+	{
+		for (int i = 0; i < this->lineActors.size(); i++)
+			if (this->lineActors.at(i)->name == name)
+				return i;
+
+		return -1;
+	}
+
+	int Stage::getLineActorIndex(const LineActor* a)
+	{
+		for (int i = 0; i < this->lineActors.size(); i++)
+			if (this->lineActors.at(i).get() == a)
+				return i;
+
+		return -1;
+	}
+
+	LineActor* Stage::addLineActor(std::unique_ptr<LineActor> la)
+	{
+		this->lineActors.push_back(std::move(la));
+		return this->lineActors.back().get();
+	}
+
+	LineActor* Stage::getLineActor(const std::string& name)
+	{
+		return this->lineActors.at(this->getLineActorIndex(name)).get();
+	}
+
+	void Stage::_removeLineActor(int lineActorIndex)
+	{
+		LineActor* la = this->lineActors.at(lineActorIndex).get();
+
+		this->_removeActor(this->getActorLocation(la->actor));
+
+		this->lineActors.erase(this->lineActors.begin() + lineActorIndex);
+	}
+
+	void Stage::removeLineActor(LineActor* la)
+	{
+		this->_removeLineActor(this->getLineActorIndex(la));
+	}
+
+	void Stage::removeLineActor(const std::string& name)
+	{
+		this->_removeLineActor(this->getLineActorIndex(name));
+	}
+
+	void Stage::updateLineActors()
+	{
+		// TODO
+	}
+
 }

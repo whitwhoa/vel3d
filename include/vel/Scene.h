@@ -18,6 +18,7 @@
 #include "vel/FontGlyphInfo.h"
 #include "vel/AssetManager.h"
 #include "vel/HeadlessScene.h"
+#include "vel/LineActor.h"
 
 #include "vel/Material.h"
 #include "vel/DiffuseMaterial.h"
@@ -29,6 +30,7 @@
 #include "vel/DiffuseAmbientCubeMaterial.h"
 #include "vel/DiffuseAmbientCubeSkinnedMaterial.h"
 #include "vel/RGBAMaterial.h"
+#include "vel/RGBALineMaterial.h"
 #include "vel/RGBALightmapMaterial.h"
 #include "vel/DiffuseCausticMaterial.h"
 #include "vel/DiffuseCausticLightmapMaterial.h"
@@ -58,7 +60,6 @@ namespace vel
 		
 	protected:
 		const InputState*					inputState;
-		void								loadShader(const std::string& name, const std::string& vertFile, const std::string& fragFile);
 		Texture*							loadTexture(const std::string& name, const std::string& path, bool freeAfterGPULoad = true, unsigned int uvWrapping = 1);
 		FontBitmap*							loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath);
 
@@ -73,6 +74,7 @@ namespace vel
 		DiffuseAmbientCubeMaterial*			addDiffuseAmbientCubeMaterial(const std::string& name, bool hasAlpha = false);
 		DiffuseAmbientCubeSkinnedMaterial*	addDiffuseAmbientCubeSkinnedMaterial(const std::string& name, bool hasAlpha = false);
 		RGBAMaterial*						addRGBAMaterial(const std::string& name, bool hasAlpha = false);
+		RGBALineMaterial*					addRGBALineMaterial(const std::string& name, bool hasAlpha = false);
 		RGBALightmapMaterial*				addRGBALightmapMaterial(const std::string& name, bool hasAlpha = false);
 		DiffuseCausticMaterial*				addDiffuseCausticMaterial(const std::string& name, bool hasAlpha = false);
 		DiffuseCausticLightmapMaterial*		addDiffuseCausticLightmapMaterial(const std::string& name, bool hasAlpha = false);
@@ -80,6 +82,9 @@ namespace vel
 
 		TextActor*							addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
 												TextActorAlignment alignment = TextActorAlignment::LEFT_ALIGN, glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+		LineActor*							addLineActor(Stage* stage, const std::string& name, std::vector<glm::vec2> points, 
+												glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 		Shader*								getShader(const std::string& name);
 		Texture*							getTexture(const std::string& name);

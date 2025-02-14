@@ -339,19 +339,18 @@ namespace vel
 
 	void GPU::loadShader(Shader* s)
 	{
-		const char* vShaderCode = s->vertCode.c_str();
-		const char* fShaderCode = s->fragCode.c_str();
-
-		// 2. compile shaders
 		int success;
 		char infoLog[512];
 
-		// vertex Shader
+
+		/////////////////////////////////////////////////////////
+		// Vertex Shader
+		/////////////////////////////////////////////////////////
+		const char* vShaderCode = s->vertCode.c_str();
 		unsigned int vertex;
 		vertex = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(vertex, 1, &vShaderCode, NULL);
 		glCompileShader(vertex);
-
 
 		// if compile errors, log and exit
 		glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
@@ -363,7 +362,32 @@ namespace vel
 		};
 
 
-		// fragment Shader
+		/////////////////////////////////////////////////////////
+		// Geometry Shader
+		/////////////////////////////////////////////////////////
+		unsigned int geometry = 0;
+		if (s->geomCode != "")
+		{
+			const char* gShaderCode = s->geomCode.c_str();
+			geometry = glCreateShader(GL_GEOMETRY_SHADER);
+			glShaderSource(geometry, 1, &gShaderCode, NULL);
+			glCompileShader(geometry);
+
+			// if compile errors, log and exit
+			glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
+			if (!success) {
+				glGetShaderInfoLog(geometry, 512, NULL, infoLog);
+				std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << "\n";
+				std::cin.get();
+				exit(EXIT_FAILURE);
+			};
+		}
+
+
+		/////////////////////////////////////////////////////////
+		// Fragment Shader
+		/////////////////////////////////////////////////////////
+		const char* fShaderCode = s->fragCode.c_str();
 		unsigned int fragment;
 		fragment = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(fragment, 1, &fShaderCode, NULL);
@@ -380,11 +404,16 @@ namespace vel
 		};
 
 
+		/////////////////////////////////////////////////////////
+		// Shader Program
+		/////////////////////////////////////////////////////////
+
 		unsigned int id;
 
-		// shader Program
 		id = glCreateProgram();
 		glAttachShader(id, vertex);
+		if(geometry > 0)
+			glAttachShader(id, geometry);
 		glAttachShader(id, fragment);
 		glLinkProgram(id);
 
@@ -400,8 +429,8 @@ namespace vel
 
 		// delete the shaders as they're linked into our program now and no longer necessary
 		glDeleteShader(vertex);
+		glDeleteShader(geometry);
 		glDeleteShader(fragment);
-
 
 		s->id = id;
 	}
@@ -735,6 +764,11 @@ namespace vel
 		return this->activeMaterial;
 	}
 
+	glm::ivec2 GPU::getActiveViewportSize()
+	{
+		return this->activeViewportSize;
+	}
+
 	void GPU::useShader(Shader* s)
 	{
 		if (s == nullptr || this->activeShader == s)
@@ -831,26 +865,6 @@ namespace vel
 		this->activeMaterial = m;
 	}
 
-	void GPU::drawGpuMesh()
-	{
-		// The naive approach. But after researching how to optimize this for 3 days I decided to leave it alone
-		// until there's an actual reason to complicate things.
-		//
-		// TODO: Coming back to this years later, we should definitely refactor so that we don't have to swap
-		// buffer objects for each different object, just pack all of our vertex data into the same buffer
-		// and draw elements of that object individually using glDrawElementsBaseVertex()... I think that's the right
-		// method, need to confirm... doing this will greatly reduce the number of state switches, especially since
-		// we now use DSA textures
-		//
-		// OK, Years later again, I looked into this after implementing a material system, and I have actor objects
-		// setup in 2d unordered_maps where the final value is a vector and I only switch shader program and vao
-		// when necessary, but each unique mesh is still it's own buffer object. My intention was to implement what
-		// I spoke of above, but honestly...if I can accomplish what I want to accomplish with this paradigm, then
-		// it really doesn't necessitate the extra work, because I would have to rework quite a bit of logic, and
-		// it's just not worth the time if it's not required
-		glDrawElements(GL_TRIANGLES, this->activeMesh->getGpuMesh()->indiceCount, GL_UNSIGNED_INT, 0);
-	}
-
 	void GPU::disableDepthMask()
 	{
 		glDepthMask(GL_FALSE);
@@ -931,6 +945,31 @@ namespace vel
 	void GPU::finish()
 	{
 		glFinish();
+	}
+
+	void GPU::drawGpuMesh()
+	{
+		// The naive approach. But after researching how to optimize this for 3 days I decided to leave it alone
+		// until there's an actual reason to complicate things.
+		//
+		// TODO: Coming back to this years later, we should definitely refactor so that we don't have to swap
+		// buffer objects for each different object, just pack all of our vertex data into the same buffer
+		// and draw elements of that object individually using glDrawElementsBaseVertex()... I think that's the right
+		// method, need to confirm... doing this will greatly reduce the number of state switches, especially since
+		// we now use DSA textures
+		//
+		// OK, Years later again, I looked into this after implementing a material system, and I have actor objects
+		// setup in 2d unordered_maps where the final value is a vector and I only switch shader program and vao
+		// when necessary, but each unique mesh is still it's own buffer object. My intention was to implement what
+		// I spoke of above, but honestly...if I can accomplish what I want to accomplish with this paradigm, then
+		// it really doesn't necessitate the extra work, because I would have to rework quite a bit of logic, and
+		// it's just not worth the time if it's not required
+		glDrawElements(GL_TRIANGLES, this->activeMesh->getGpuMesh()->indiceCount, GL_UNSIGNED_INT, 0);
+	}
+
+	void GPU::drawLines(unsigned int pointCount)
+	{
+		glDrawArrays(GL_LINES, 0, pointCount);
 	}
 
 	void GPU::debugDrawCollisionWorld(CollisionDebugDrawer* cdd)
