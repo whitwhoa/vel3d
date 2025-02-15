@@ -168,6 +168,7 @@ namespace vel
 	{
 		if (width != this->activeViewportSize.x || height != this->activeViewportSize.y)
 		{
+			//std::cout << width << "," << height << " --GPU\n";
 			this->activeViewportSize = glm::ivec2(width, height);
 			glViewport(0, 0, width, height);
 		}

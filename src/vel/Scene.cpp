@@ -76,6 +76,11 @@ namespace vel
 		return this->assetManager->getCamera(name);
 	}
 
+	std::vector<Camera*>& Scene::getCamerasInUse()
+	{
+		return this->camerasInUse;
+	}
+
 
 	void Scene::freeAssets()
 	{

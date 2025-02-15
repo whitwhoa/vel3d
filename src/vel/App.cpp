@@ -224,6 +224,25 @@ namespace vel
 		return this->currentTime;
 	}
 
+	void App::checkWindowSize()
+	{
+		if (this->config.LOCK_RES_TO_WIN && this->window->getWindowSizeChanged())
+		{
+			this->window->setWindowSizeChanged(false);
+			glm::ivec2 ws = this->window->getWindowSize();
+
+			for (auto& s : this->scenes)
+			{
+				s->setWindowSize(ws.x, ws.y);
+
+				for (auto& c : s->getCamerasInUse())
+				{
+					c->setResolution(ws.x, ws.y);
+				}
+			}
+		}		
+	}
+
     void App::execute()
     {
         this->fixedLogicTime = 1 / this->config.LOGIC_TICK;
@@ -239,6 +258,8 @@ namespace vel
 
             this->newTime = this->time();
             this->frameTime = this->newTime - this->currentTime;
+
+			this->checkWindowSize();
 
             if (this->frameTime >= (1 / this->config.MAX_RENDER_FPS)) // cap max fps
             {
@@ -266,7 +287,7 @@ namespace vel
 					this->activeScene->updateTextActors();
 					this->activeScene->updateFixedAnimations(this->fixedLogicTime);
 					this->activeScene->postPhysics(this->fixedLogicTime);
-                    
+
 					this->update();
 
                     this->accumulator -= this->fixedLogicTime;

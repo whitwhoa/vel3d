@@ -25,7 +25,8 @@ namespace vel
 		VSYNC(this->userConfigParams["vsync"] == "0" ? false : true),
 
         MSAA(vel::sin_vector(this->userConfigParams["msaa"], {"0", "2", "4", "8", "16"}) ? 
-            std::stoi(this->userConfigParams["msaa"]) : 0)
+            std::stoi(this->userConfigParams["msaa"]) : 0),
+        LOCK_RES_TO_WIN(this->userConfigParams["lockResToWin"] == "0" ? false : true)
 
 	{};
 

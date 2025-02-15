@@ -46,6 +46,8 @@ namespace vel
 
         void											displayAverageFrameTime();
         void											calculateAverageFrameTime();
+
+        void                                            checkWindowSize();
     
 
     public:

@@ -70,7 +70,9 @@ namespace vel
     Window::Window(Config c) :
 		windowMode(c.WINDOW_MODE),
         windowSize(glm::ivec2(c.WINDOW_WIDTH, c.WINDOW_HEIGHT)),
-		resolution(glm::ivec2(c.RESOLUTION_X, c.RESOLUTION_Y)),
+		lockResToWin(c.LOCK_RES_TO_WIN),
+		resolution(c.LOCK_RES_TO_WIN ? glm::ivec2(c.WINDOW_WIDTH, c.WINDOW_HEIGHT) : glm::ivec2(c.RESOLUTION_X, c.RESOLUTION_Y)),
+		windowSizeChanged(false),
 		cursorHidden(c.CURSOR_HIDDEN),
 		useImGui(c.USE_IMGUI),
 		vsync(c.VSYNC),
@@ -198,7 +200,7 @@ namespace vel
 				}
 
 
-                // Set default viewport size loaded from config file
+                // Set default viewport size
                 glViewport(0, 0, this->windowSize.x, this->windowSize.y);
 
 
@@ -445,7 +447,48 @@ namespace vel
 		
 		});
 
+		// Window size updated
+		glfwSetFramebufferSizeCallback(this->glfwWindow, [](GLFWwindow* window, int width, int height) {
+
+			// get this from window
+			void* data = glfwGetWindowUserPointer(window);
+			Window* w = static_cast<Window*>(data);
+
+			if (w->getLockResToWin())
+			{
+				w->setWindowSize(glm::ivec2(width, height));
+				w->setResolution(glm::ivec2(width, height));
+				w->setWindowSizeChanged(true);
+			}
+
+		});
+
     }
+
+	bool Window::getWindowSizeChanged()
+	{
+		return this->windowSizeChanged;
+	}
+
+	void Window::setWindowSizeChanged(bool sc) 
+	{
+		this->windowSizeChanged = sc;
+	}
+
+	void Window::setWindowSize(glm::ivec2 ws)
+	{
+		this->windowSize = ws;
+	}
+
+	void Window::setResolution(glm::ivec2 res)
+	{
+		this->resolution = res;
+	}
+
+	bool Window::getLockResToWin()
+	{
+		return this->lockResToWin;
+	}
 
 	bool Window::getImguiFrameOpen()
 	{

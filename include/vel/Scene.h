@@ -119,6 +119,7 @@ namespace vel
 		void								setScreenColor(glm::vec4 c);
 		void								clearScreenColor();
 
+		std::vector<Camera*>&				getCamerasInUse();
 		
 
 	};

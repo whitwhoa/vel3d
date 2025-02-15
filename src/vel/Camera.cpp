@@ -123,6 +123,8 @@ namespace vel
 	{
 		glm::ivec2 currentResolution = this->resolution;
 
+		//std::cout << this->resolution.x << "," << this->resolution.y << "\n";
+
 		// if current viewport size does not equal the previous tick's viewport size, we have to rebuild the render target
 		if (currentResolution != this->previousResolution)
 		{

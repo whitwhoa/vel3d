@@ -49,6 +49,7 @@ namespace vel
 		bool								VSYNC;
 
 		int									MSAA;
+		bool								LOCK_RES_TO_WIN;
 
     };
 }
