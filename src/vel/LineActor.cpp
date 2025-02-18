@@ -1,7 +1,9 @@
 
 
+#include "vel/RGBALineMaterial.h"
 #include "vel/Mesh.h"
 #include "vel/LineActor.h"
+
 
 namespace vel
 {
@@ -29,6 +31,11 @@ namespace vel
 		m->setVertices(meshVertices);
 		
 		return m;
+	}
+
+	void LineActor::setThickness(float t)
+	{
+		reinterpret_cast<RGBALineMaterial*>(this->actor->getMaterial())->setLineThickness(t);
 	}
 
 

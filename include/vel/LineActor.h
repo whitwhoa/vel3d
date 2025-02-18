@@ -19,5 +19,7 @@ namespace vel
 
 		static std::unique_ptr<Mesh> pointsToMesh(const std::string& name, std::vector<glm::vec2> points);
 
+		void setThickness(float t);
+
 	};
 }
