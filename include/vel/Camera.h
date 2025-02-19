@@ -73,5 +73,7 @@ namespace vel
 
 		void					setRenderTarget(RenderTarget rt);
 		RenderTarget*			getRenderTarget();
+
+		float					getFovScale();
 	};
 }

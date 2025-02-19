@@ -92,6 +92,11 @@ namespace vel
 		return this->resolution;
 	}
 
+	float Camera::getFovScale()
+	{
+		return this->fovScale;
+	}
+
 	void Camera::updateProjectionMatrix()
 	{
 		glm::vec2 vps = this->resolution;
