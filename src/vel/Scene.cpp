@@ -499,7 +499,8 @@ namespace vel
 			s->updateArmatureAnimations(this->animationTime);
 	}
 
-	LineActor* Scene::addLineActor(Stage* stage, const std::string& name, std::vector<glm::vec2> points, glm::vec4 color)
+	//LineActor* Scene::addLineActor(Stage* stage, const std::string& name, std::vector<glm::vec2> points, glm::vec4 color)
+	LineActor* Scene::addLineActor(Stage* stage, const std::string& name, std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>> points, std::vector<glm::vec4> colors)
 	{
 		// create the LineActor
 		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);
@@ -508,9 +509,21 @@ namespace vel
 		Mesh* pMesh = this->assetManager->addMesh(std::move(LineActor::pointsToMesh(name, points)));
 		this->meshesInUse.push_back(pMesh);
 
+		bool hasAlpha = false;
+		for (auto& c : colors)
+		{
+			if (c.w < 0.999f)
+			{
+				hasAlpha = true;
+				break;
+			}
+		}
+
 		// create material
-		Material* pMaterial = this->addRGBALineMaterial(name + "_material", color.w < 0.999f);
-		pMaterial->setColor(color);
+		RGBALineMaterial* pMaterial = this->addRGBALineMaterial(name + "_material", hasAlpha);
+		for (size_t i = 0; i < colors.size(); i++)
+			pMaterial->setLineColor(i, colors[i]);
+		//pMaterial->setColor(color);
 
 		// create actor
 		Actor* pActor = stage->addActor(name);

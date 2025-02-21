@@ -17,7 +17,7 @@ namespace vel
 
 		LineActor(const std::string& name);
 
-		static std::unique_ptr<Mesh> pointsToMesh(const std::string& name, std::vector<glm::vec2> points);
+		static std::unique_ptr<Mesh> pointsToMesh(const std::string& name, std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>> points);
 
 		void setThickness(float t);
 
