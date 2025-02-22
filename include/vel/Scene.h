@@ -83,7 +83,7 @@ namespace vel
 		TextActor*							addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
 												TextActorAlignment alignment = TextActorAlignment::LEFT_ALIGN, glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-		LineActor*							addLineActor(Stage* stage, const std::string& name, std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>> points,
+		LineActor*							addLineActor(Stage* stage, const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points,
 												std::vector<glm::vec4> colors);
 
 		Shader*								getShader(const std::string& name);

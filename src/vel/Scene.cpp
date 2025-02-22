@@ -500,7 +500,7 @@ namespace vel
 	}
 
 	//LineActor* Scene::addLineActor(Stage* stage, const std::string& name, std::vector<glm::vec2> points, glm::vec4 color)
-	LineActor* Scene::addLineActor(Stage* stage, const std::string& name, std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>> points, std::vector<glm::vec4> colors)
+	LineActor* Scene::addLineActor(Stage* stage, const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points, std::vector<glm::vec4> colors)
 	{
 		// create the LineActor
 		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);

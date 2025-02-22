@@ -13,7 +13,7 @@ namespace vel
 		requiresUpdate(false)
 	{}
 
-	std::unique_ptr<Mesh> LineActor::pointsToMesh(const std::string& name, std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>> points)
+	std::unique_ptr<Mesh> LineActor::pointsToMesh(const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points)
 	{
 		std::vector<Vertex> meshVertices = {};
 
