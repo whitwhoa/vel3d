@@ -234,6 +234,7 @@ namespace vel
 			for (auto& s : this->scenes)
 			{
 				s->setWindowSize(ws.x, ws.y);
+				s->setResolution(ws.x, ws.y);
 
 				for (auto& c : s->getCamerasInUse())
 				{
