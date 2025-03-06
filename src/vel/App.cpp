@@ -285,7 +285,6 @@ namespace vel
 					this->activeScene->stepPhysics(this->fixedLogicTime);
 					this->activeScene->updatePreviousTransforms();
 					this->activeScene->fixedLoop(this->fixedLogicTime);
-					this->activeScene->updateTextActors();
 					this->activeScene->updateFixedAnimations(this->fixedLogicTime);
 					this->activeScene->postPhysics(this->fixedLogicTime);
 
@@ -299,6 +298,8 @@ namespace vel
 				float renderLerpInterval = (this->accumulator / this->fixedLogicTime);
 
 				this->activeScene->immediateLoop(this->frameTime, renderLerpInterval);
+				
+				this->activeScene->updateTextActors();
 
 
 				// clear all previous render target buffers, this is done here as doing it right before or right after
