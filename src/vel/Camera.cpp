@@ -101,12 +101,19 @@ namespace vel
 	{
 		glm::vec2 vps = this->resolution;
 
-		if (type == CameraType::ORTHOGRAPHIC)
+		if (this->type == CameraType::ORTHOGRAPHIC)
 		{
 			float aspect = vps.x / vps.y;
 			float sizeX = fovScale * aspect;
 			float sizeY = fovScale;
 			this->projectionMatrix = glm::ortho(-sizeX, sizeX, -sizeY, sizeY, this->nearPlane, this->farPlane);
+		}
+		else if (this->type == CameraType::SCREEN_SPACE)
+		{
+			// Set up a screen space orthographic projection that maps pixel coordinates.
+			// Here, the top-left corner is (0,0) and bottom-right is (vps.x, vps.y)
+			this->projectionMatrix = glm::ortho(0.0f, vps.x, vps.y, 0.0f, this->nearPlane, this->farPlane); // top left
+			//this->projectionMatrix = glm::ortho(0.0f, vps.x, 0.0f, vps.y, this->nearPlane, this->farPlane); // bottom left
 		}
 		else
 		{
@@ -121,6 +128,12 @@ namespace vel
 
 	void Camera::updateViewMatrix()
 	{
+		if (type == CameraType::SCREEN_SPACE)
+		{
+			this->viewMatrix = glm::mat4(1.0f);
+			return;
+		}
+
 		this->viewMatrix = glm::lookAt(this->position, this->lookAt, this->up);
 	}
 

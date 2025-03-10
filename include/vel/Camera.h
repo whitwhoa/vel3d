@@ -17,6 +17,7 @@ namespace vel
 
 	enum CameraType {
 		ORTHOGRAPHIC,
+		SCREEN_SPACE,
 		PERSPECTIVE
 	};
 
