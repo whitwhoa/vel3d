@@ -13,7 +13,37 @@ namespace vel
 		requiresUpdate(false)
 	{}
 
-	std::unique_ptr<Mesh> LineActor::pointsToMesh(const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points)
+	std::unique_ptr<Mesh> LineActor::pointsToMesh(const std::string& name, const std::vector<glm::vec2>& points)
+	{
+		std::vector<Vertex> meshVertices = {};
+
+		for (int i = 0; i < points.size(); i++)
+		{
+			Vertex v1;
+			v1.position = glm::vec3(points.at(i).x, points.at(i).y, 0.0f);
+			v1.normal = glm::vec3(0.0f, 0.0f, 1.0f);
+			v1.textureCoordinates = glm::vec2(0.0, 0.0);
+			v1.materialUBOIndex = 0;
+			meshVertices.push_back(v1);
+
+			if (i == points.size() - 1)
+				break;
+
+			Vertex v2;
+			v2.position = glm::vec3(points.at(i + 1).x, points.at(i + 1).y, 0.0f);
+			v2.normal = glm::vec3(0.0f, 0.0f, 1.0f);
+			v2.textureCoordinates = glm::vec2(0.0, 0.0);
+			v2.materialUBOIndex = 0;
+			meshVertices.push_back(v2);
+		}
+
+		std::unique_ptr<Mesh> m = std::make_unique<Mesh>(name + "_mesh");
+		m->setVertices(meshVertices);
+
+		return m;
+	}
+
+	std::unique_ptr<Mesh> LineActor::segmentsToMesh(const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points)
 	{
 		std::vector<Vertex> meshVertices = {};
 

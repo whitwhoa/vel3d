@@ -86,6 +86,9 @@ namespace vel
 		LineActor*							addLineActor(Stage* stage, const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points,
 												std::vector<glm::vec4> colors);
 
+		LineActor*							addContinuousLineActor(Stage* stage, const std::string& name, const std::vector<glm::vec2>& points, 
+												glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
 		Shader*								getShader(const std::string& name);
 		Texture*							getTexture(const std::string& name);
 		FontBitmap*							getFontBitmap(const std::string& name);

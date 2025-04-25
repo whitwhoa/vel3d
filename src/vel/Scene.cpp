@@ -506,7 +506,7 @@ namespace vel
 		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);
 
 		// create the mesh
-		Mesh* pMesh = this->assetManager->addMesh(std::move(LineActor::pointsToMesh(name, points)));
+		Mesh* pMesh = this->assetManager->addMesh(std::move(LineActor::segmentsToMesh(name, points)));
 		this->meshesInUse.push_back(pMesh);
 
 		bool hasAlpha = false;
@@ -531,6 +531,27 @@ namespace vel
 		pActor->setMaterial(pMaterial);
 
 		// add actor pointer to LineActor
+		la->actor = pActor;
+
+		return stage->addLineActor(std::move(la));
+	}
+
+	LineActor* Scene::addContinuousLineActor(Stage* stage, const std::string& name, const std::vector<glm::vec2>& points, glm::vec4 color)
+	{
+		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);
+
+		Mesh* pMesh = this->assetManager->addMesh(std::move(LineActor::pointsToMesh(name, points)));
+		this->meshesInUse.push_back(pMesh);
+
+		bool hasAlpha = color.w < 0.999f;
+
+		RGBALineMaterial* pMaterial = this->addRGBALineMaterial(name + "_material", hasAlpha);
+		pMaterial->setLineColor(0, color);
+
+		Actor* pActor = stage->addActor(name);
+		pActor->setMesh(pMesh);
+		pActor->setMaterial(pMaterial);
+
 		la->actor = pActor;
 
 		return stage->addLineActor(std::move(la));
