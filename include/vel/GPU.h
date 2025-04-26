@@ -26,6 +26,7 @@ namespace vel
 	{
 	private:
         Shader*								screenShader;
+		Shader*								postShader;
 		Shader*								compositeShader;
 		uint64_t							defaultWhiteTextureHandle;
 		RenderTarget*						activeRenderTarget;
@@ -51,9 +52,16 @@ namespace vel
 		glm::ivec2							activeViewportSize;
 		int									activeFramebuffer;
 
+		std::unique_ptr<unsigned int>		renderedFBO;
+		std::unique_ptr<Texture>			renderedFBOTexture;
+		bool								viewportSizeAltered;
+		void								createRenderedFBO(unsigned int width, unsigned int height);
+		void								clearRenderedFBO();
+
+		bool								useFXAA;
 
 	public:
-		GPU();
+		GPU(bool fxaa = false);
 		~GPU();
 		GPU(GPU&&) = default;
         void								enableDepthTest();
@@ -116,9 +124,10 @@ namespace vel
 		void								updateViewportSize(unsigned int width, unsigned int height);
 		void								setRenderTarget(RenderTarget* rt);
 
-		void								drawScreen(GLuint64 dsaHandle, glm::vec4 screenColor);
+		void								drawToRenderedFBO(GLuint64 dsaHandle);
 
 		void								setScreenShader(Shader* s);
+		void								setPostShader(Shader* s);
 		void								setCompositeShader(Shader* s);
 		void								setDefaultWhiteTextureHandle(uint64_t th);
 
@@ -131,7 +140,7 @@ namespace vel
 		void								setAlphaRenderState();
 		void								setCompositeRenderState();
 		void								composeFBOs();
-		void								setScreenRenderTarget();
+		void								setDefaultFrameBuffer();
 
 		void								clearRenderTargetBuffers(float r, float g, float b, float a);
 		void								clearScreenBuffer(float r, float g, float b, float a);
@@ -141,6 +150,16 @@ namespace vel
 		glm::ivec2							getActiveViewportSize();
 
 		void								drawLines(unsigned int pointCount);
+
+
+		void								updateRenderedViewportSize();
+
+											// adjust x,y,z as r,g,b for any color, adjust w as strength of the overlay tint
+		void								drawToScreen(glm::vec4 tint = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f));
+
+		void								clearRenderedFBO(float r, float g, float b, float a);
+
+		void								setRenderedFBO();
 
 	};
 }

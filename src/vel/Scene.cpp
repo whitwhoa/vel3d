@@ -22,7 +22,7 @@ namespace vel
 	Scene::Scene() :
 		inputState(nullptr),
 		animationTime(0.0f),
-		screenColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)),
+		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)),
 		HeadlessScene()
 	{
 		
@@ -112,14 +112,14 @@ namespace vel
 
 	}
 
-	void Scene::setScreenColor(glm::vec4 c)
+	void Scene::setScreenTint(glm::vec4 c)
 	{
-		this->screenColor = c;
+		this->screenTint = c;
 	}
 
-	void Scene::clearScreenColor()
+	void Scene::clearScreenTint()
 	{
-		this->screenColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		this->screenTint = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
 	}
 
 	FontBitmap* Scene::loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath)
@@ -674,8 +674,12 @@ namespace vel
 		// now bind back to default framebuffer and draw a quad plane with the attached framebuffer texture
 		// enable blending of each renderable stage "layer"
 		//gpu->enableBlend2();
-		gpu->setScreenRenderTarget();
+
 		gpu->updateViewportSize(this->getWindowSize().x, this->getWindowSize().y);
+		gpu->setRenderedFBO();
+
+		//gpu->setDefaultFrameBuffer();
+
 
 		for (auto& s : this->stages)
 		{
@@ -684,8 +688,14 @@ namespace vel
 
 			for (auto c : s->getCameras())
 				if (c->isFinalRenderCam())
-					gpu->drawScreen(c->getRenderTarget()->opaqueTexture.frames.at(0).dsaHandle, this->screenColor);
+					gpu->drawToRenderedFBO(c->getRenderTarget()->opaqueTexture.frames.at(0).dsaHandle);
 		}
+
+		// call post process to apply post process shader while drawing into the default framebuffer for display to screen
+		gpu->setDefaultFrameBuffer();
+		gpu->drawToScreen(this->screenTint);
+
+
 
 		// moving collision debug draw event as final thing as it draws directly to the screen buffer, and I don't want to have to 
 		// think about updating it right now
@@ -714,6 +724,7 @@ namespace vel
 			}
 		}
 
+		gpu->clearRenderedFBO(0.0f, 0.0f, 0.0f, 0.0f);
 		gpu->clearScreenBuffer(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 

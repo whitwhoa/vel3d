@@ -101,12 +101,7 @@ namespace vel
 		if (c.OPENGL_DEBUG_CONTEXT)
 		{
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
-		}
-
-		// Enable MSAA
-		if(c.MSAA > 0)
-			glfwWindowHint(GLFW_SAMPLES, c.MSAA);
-        
+		}        
         
 
         glfwSetErrorCallback([](int error, const char* description) {
@@ -175,10 +170,6 @@ namespace vel
 					glfwSetInputMode(this->glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 					glfwSetInputMode(this->glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 				}
-
-				// Enable multi-sampling in OpenGL
-				if (c.MSAA > 0)
-					glEnable(GL_MULTISAMPLE);
 
 
 				if (c.OPENGL_DEBUG_CONTEXT)

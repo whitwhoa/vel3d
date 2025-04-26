@@ -18,8 +18,9 @@
 
 namespace vel
 {
-	GPU::GPU() :
+	GPU::GPU(bool fxaa) :
 		screenShader(nullptr),
+		postShader(nullptr),
 		compositeShader(nullptr),
 		activeShader(nullptr),
 		activeMesh(nullptr),
@@ -29,10 +30,16 @@ namespace vel
 		zeroFillerVec(glm::vec4(0.0f)),
 		oneFillerVec(1.0f),
 		activeClearColorValues(glm::vec4(0.0f)),
-		activeViewportSize(glm::ivec2(0,0)),
-		activeFramebuffer(-1)
+		activeViewportSize(glm::ivec2(1280,720)),
+		activeFramebuffer(-1),
+
+		renderedFBO(nullptr),
+		renderedFBOTexture(nullptr),
+		viewportSizeAltered(false),
+
+		useFXAA(fxaa)
 	{
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // why?
 
         //this->enableDepthTest();
 		this->enableBackfaceCulling();
@@ -41,11 +48,103 @@ namespace vel
 		this->initLightMapTextureUBO();
 		this->initScreenSpaceMesh();
 
+		this->createRenderedFBO(this->activeViewportSize.x, this->activeViewportSize.y);
 	}
 
 	GPU::~GPU()
 	{
 		this->clearMesh(&this->screenSpaceMesh);
+	}
+
+	void GPU::createRenderedFBO(unsigned int width, unsigned int height)
+	{
+		TextureData td;
+		TextureData td2;
+
+		this->renderedFBOTexture = std::make_unique<Texture>();
+		this->renderedFBOTexture->name = "renderedFBOTexture";
+		this->renderedFBOTexture->frames.push_back(td);
+		this->renderedFBOTexture->frames.push_back(td2);
+		this->renderedFBOTexture->alphaChannel = true;
+		this->renderedFBOTexture->freeAfterGPULoad = false;
+		this->renderedFBOTexture->uvWrapping = 0;
+
+		unsigned int fboId = 0;
+		glGenFramebuffers(1, &fboId);
+		this->renderedFBO = std::make_unique<unsigned int>(fboId);
+
+		glGenTextures(1, &this->renderedFBOTexture->frames.at(0).id);
+		glGenTextures(1, &this->renderedFBOTexture->frames.at(1).id);
+
+		// color
+		glBindTexture(GL_TEXTURE_2D, this->renderedFBOTexture->frames.at(0).id);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		// depth
+		glBindTexture(GL_TEXTURE_2D, this->renderedFBOTexture->frames.at(1).id);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+
+		glBindTexture(GL_TEXTURE_2D, 0); // be safe
+
+		glBindFramebuffer(GL_FRAMEBUFFER, *this->renderedFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->renderedFBOTexture->frames.at(0).id, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->renderedFBOTexture->frames.at(1).id, 0);
+
+		GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+		glDrawBuffers(1, drawBuffers);
+
+
+		// verify success
+		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+		if (status != GL_FRAMEBUFFER_COMPLETE)
+		{
+			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete! Status code: " << status << std::endl;
+
+			switch (status)
+			{
+			case GL_FRAMEBUFFER_UNDEFINED:
+				std::cout << "GL_FRAMEBUFFER_UNDEFINED" << std::endl;
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT" << std::endl;
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT" << std::endl;
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER" << std::endl;
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER" << std::endl;
+				break;
+			case GL_FRAMEBUFFER_UNSUPPORTED:
+				std::cout << "GL_FRAMEBUFFER_UNSUPPORTED" << std::endl;
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE" << std::endl;
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS" << std::endl;
+				break;
+			default:
+				std::cout << "Unknown error" << std::endl;
+			}
+
+			std::cin.get();
+			exit(EXIT_FAILURE);
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0); // be safe
+
+
+		// obtain texture's DSA handle, and set texture's DSA handle as resident so it can be accessed in shaders
+		this->renderedFBOTexture->frames.at(0).dsaHandle = glGetTextureHandleARB(this->renderedFBOTexture->frames.at(0).id);
+		glMakeTextureHandleResidentARB(this->renderedFBOTexture->frames.at(0).dsaHandle);
 	}
 
 	void GPU::setOpaqueRenderState()
@@ -129,33 +228,44 @@ namespace vel
 		this->screenShader = s;
 	}
 
+	void GPU::setPostShader(Shader* s)
+	{
+		this->postShader = s;
+	}
+
 	void GPU::setCompositeShader(Shader* s)
 	{
 		this->compositeShader = s;
 	}
 
-	void GPU::drawScreen(GLuint64 dsaHandle, glm::vec4 screenColor)
+	void GPU::drawToRenderedFBO(GLuint64 dsaHandle)
 	{
 		this->useShader(this->screenShader);
 
-		//this->setShaderVec4("color", glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-		//this->setShaderMat4("mvp", glm::mat4(1.0f));
-
-		// send texture dsa id to ubo
 		this->updateTextureUBO(0, dsaHandle);
 
-		// send color to uniform
-		this->setShaderVec4("color", screenColor);
-
-		// clear the active lightmap texture
 		this->updateLightmapTextureUBO(this->defaultWhiteTextureHandle);
-
-		// set mesh
-		//this->activeMesh = &this->screenSpaceMesh;
 
 		this->useMesh(&this->screenSpaceMesh);
 
-		// draw mesh
+		this->drawGpuMesh();
+	}
+
+	void GPU::drawToScreen(glm::vec4 tint)
+	{
+		this->useShader(this->postShader);
+
+		this->updateTextureUBO(0, this->renderedFBOTexture->frames.at(0).dsaHandle);
+
+		this->setShaderVec4("tint", tint);
+		// don't have setShaderVec2 method right now, so use vec3 to get this done
+		this->setShaderVec3("resolution", glm::vec3(this->activeViewportSize.x, this->activeViewportSize.y, 0.0f));
+		this->setShaderBool("enableFXAA", this->useFXAA);
+
+		this->updateLightmapTextureUBO(this->defaultWhiteTextureHandle);
+
+		this->useMesh(&this->screenSpaceMesh);
+
 		this->drawGpuMesh();
 	}
 
@@ -168,13 +278,35 @@ namespace vel
 	{
 		if (width != this->activeViewportSize.x || height != this->activeViewportSize.y)
 		{
-			//std::cout << width << "," << height << " --GPU\n";
 			this->activeViewportSize = glm::ivec2(width, height);
+			this->updateRenderedViewportSize();
 			glViewport(0, 0, width, height);
+
 		}
 	}
 
-	void GPU::setScreenRenderTarget()
+	void GPU::updateRenderedViewportSize()
+	{
+		this->clearRenderedFBO();
+		this->createRenderedFBO(this->activeViewportSize.x, this->activeViewportSize.y);
+	}
+
+	void GPU::clearRenderedFBO()
+	{
+		glMakeTextureHandleNonResidentARB(this->renderedFBOTexture->frames.at(0).dsaHandle);
+		glDeleteTextures(1, &this->renderedFBOTexture->frames.at(0).id);
+		glDeleteTextures(1, &this->renderedFBOTexture->frames.at(1).id);
+
+		glDeleteFramebuffers(1, this->renderedFBO.get());
+	}
+
+	void GPU::setRenderedFBO()
+	{
+		if (this->activeFramebuffer != *this->renderedFBO)
+			glBindFramebuffer(GL_FRAMEBUFFER, *this->renderedFBO);
+	}
+
+	void GPU::setDefaultFrameBuffer()
 	{
 		if (this->activeFramebuffer != 0)
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -523,7 +655,7 @@ namespace vel
 		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
-			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete! 234sdgf" << std::endl;
 			std::cin.get();
 			exit(EXIT_FAILURE);
 		}
@@ -930,6 +1062,12 @@ namespace vel
 		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->alphaFBO);
 		glClearBufferfv(GL_COLOR, 0, &this->zeroFillerVec[0]);
 		glClearBufferfv(GL_COLOR, 1, &this->oneFillerVec[0]);
+	}
+
+	void GPU::clearRenderedFBO(float r, float g, float b, float a)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, *this->renderedFBO);
+		this->clearBuffers(r, g, b, a);
 	}
 
 	void GPU::clearScreenBuffer(float r, float g, float b, float a)

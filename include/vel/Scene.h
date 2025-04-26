@@ -44,7 +44,7 @@ namespace vel
 		glm::ivec2							resolution;
 
 		float								animationTime;
-		glm::vec4							screenColor;
+		glm::vec4							screenTint;
 
 		std::vector<Shader*>				shadersInUse;
 		std::vector<Texture*> 				texturesInUse;
@@ -119,8 +119,8 @@ namespace vel
 
 		void								updateTextActors();
 
-		void								setScreenColor(glm::vec4 c);
-		void								clearScreenColor();
+		void								setScreenTint(glm::vec4 c);
+		void								clearScreenTint();
 
 		std::vector<Camera*>&				getCamerasInUse();
 		
