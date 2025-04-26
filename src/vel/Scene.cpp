@@ -22,7 +22,7 @@ namespace vel
 	Scene::Scene() :
 		inputState(nullptr),
 		animationTime(0.0f),
-		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)),
+		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)),
 		HeadlessScene()
 	{
 		
