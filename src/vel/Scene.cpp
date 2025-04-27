@@ -19,11 +19,11 @@ using json = nlohmann::json;
 
 namespace vel
 {
-	Scene::Scene() :
+	Scene::Scene(const std::string& dataDir) :
 		inputState(nullptr),
 		animationTime(0.0f),
 		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)),
-		HeadlessScene()
+		HeadlessScene(dataDir)
 	{
 		
 	}

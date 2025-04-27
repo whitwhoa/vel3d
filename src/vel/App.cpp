@@ -42,7 +42,7 @@ namespace vel
 		this->assetManager->loadShader("composite", "composite.vert", "", "composite.frag"); // used for rendering texture to screen buffer
 		this->assetManager->loadShader("text", "uber.vert", "", "uber.frag", {"IS_TEXT"}); // used for rendering text
 
-		Texture* ptrDefaultWhite = this->assetManager->loadTexture("defaultWhite", "data/textures/defaults/default.jpg");
+		Texture* ptrDefaultWhite = this->assetManager->loadTexture("defaultWhite", this->config.DATA_DIR + "/textures/defaults/default.jpg");
 
 		this->gpu->setScreenShader(this->assetManager->getShader("screen"));
 		this->gpu->setPostShader(this->assetManager->getShader("post"));

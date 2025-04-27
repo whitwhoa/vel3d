@@ -22,12 +22,12 @@ namespace vel
 
 
     public:
-											Config();
+											Config(const std::string& dataDir = "data");
         // Application defined
+		std::string							DATA_DIR;
 		float								LOGIC_TICK = 60.0f;
 		bool								CURSOR_HIDDEN = false;
 		bool								USE_IMGUI = false;
-        //const std::string					LOG_PATH = "data/log.txt";
         bool                                OPENGL_DEBUG_CONTEXT = false;
 		std::string							APP_EXE_NAME = "MyApp.exe";
 		std::string							APP_NAME = "MyApp";

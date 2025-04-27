@@ -27,6 +27,7 @@ namespace vel
 	class AssetManager
 	{
 	private:
+		std::string													dataDir;
 		std::unique_ptr<MeshLoaderInterface>						meshLoader;
 		GPU*														gpu;
 		
@@ -66,7 +67,7 @@ namespace vel
 		
 
 	public:
-		AssetManager(std::unique_ptr<MeshLoaderInterface> ml, GPU* gpu);
+		AssetManager(const std::string& dataDir, std::unique_ptr<MeshLoaderInterface> ml, GPU* gpu);
 		~AssetManager();
 
 		std::string					loadShaderFile(const std::string& shaderPath);

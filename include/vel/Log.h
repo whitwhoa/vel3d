@@ -15,6 +15,8 @@ namespace vel
         std::deque<std::string>		fileBuffer;
         std::string					filePath;
 
+        static std::string          logDir;
+
                                     Log(std::string logFilePath);
         static Log*					instance;
         static Log&					get();
@@ -31,6 +33,7 @@ namespace vel
         static void			crash(const std::string& msg);
         static void			crashIfTrue(bool condition, const std::string& message);
         static void			crashIfFalse(bool condition, const std::string& message);
+        static void         setLogDir(const std::string& dir);
     };
 }
 

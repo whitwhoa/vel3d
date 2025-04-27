@@ -7,12 +7,18 @@
 namespace vel
 {
     Log* Log::instance = nullptr;
+    std::string Log::logDir = "data";
+
+    void Log::setLogDir(const std::string& dir)
+    {
+        Log::logDir = dir;
+    }
 
     Log& Log::get()
     {
         if (Log::instance == nullptr)
         {
-            static Log l("data/log.txt");
+            static Log l(Log::logDir + "/log.txt");
             Log::instance = &l;
         }
 

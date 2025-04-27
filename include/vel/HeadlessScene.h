@@ -13,6 +13,7 @@ namespace vel
 	class HeadlessScene
 	{
 	protected:
+		std::string								dataDir;
 		std::string								name = "";
 		AssetManager*							assetManager;
 		std::vector<std::unique_ptr<Stage>>		stages;
@@ -36,7 +37,7 @@ namespace vel
 		CollisionWorld*							getCollisionWorld(const std::string& name);
 
 	public:
-		HeadlessScene();
+		HeadlessScene(const std::string& dataDir);
 		~HeadlessScene();
 
 		void									setName(const std::string& n);

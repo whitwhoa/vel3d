@@ -23,7 +23,8 @@ using namespace std::chrono_literals;
 namespace vel
 {
 
-	AssetManager::AssetManager(std::unique_ptr<MeshLoaderInterface> ml, GPU* gpu) :
+	AssetManager::AssetManager(const std::string& dataDir, std::unique_ptr<MeshLoaderInterface> ml, GPU* gpu) :
+		dataDir(dataDir),
 		meshLoader(std::move(ml)),
 		gpu(gpu)
 	{}
@@ -121,7 +122,7 @@ namespace vel
 		try
 		{
 			// Process vertex shader script
-			vertexCode = this->loadShaderFile("data/shaders/" + vertFile);
+			vertexCode = this->loadShaderFile(this->dataDir + "/shaders/" + vertFile);
 			std::string topVertexLines = this->getTopShaderLines(vertexCode, 10);
 			std::string bottomVertexLines = this->getBottomShaderLines(vertexCode, 10);
 			std::stringstream preprocessedVertexCode;
@@ -138,7 +139,7 @@ namespace vel
 			// Process Geometry shader script
 			if (geomFile != "")
 			{
-				geomCode = this->loadShaderFile("data/shaders/" + geomFile);
+				geomCode = this->loadShaderFile(this->dataDir + "/shaders/" + geomFile);
 				std::string topGeomLines = this->getTopShaderLines(geomCode, 10);
 				std::string bottomGeomLines = this->getBottomShaderLines(geomCode, 10);
 				std::stringstream preprocessedGeomCode;
@@ -154,7 +155,7 @@ namespace vel
 			
 
 			// Process fragment shader script
-			fragmentCode = this->loadShaderFile("data/shaders/" + fragFile);
+			fragmentCode = this->loadShaderFile(this->dataDir + "/shaders/" + fragFile);
 			std::string topFragmentLines = this->getTopShaderLines(fragmentCode, 10);
 			std::string bottomFragmentLines = this->getBottomShaderLines(fragmentCode, 10);
 			std::stringstream preprocessedFragmentCode;

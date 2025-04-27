@@ -96,7 +96,7 @@ namespace vel
 		Material*							getMaterial(const std::string& name);
 
 	public:
-		Scene();
+		Scene(const std::string& dataDir);
 		~Scene();
 		virtual void						load() = 0;
 		virtual void						fixedLoop(float deltaTime) = 0;

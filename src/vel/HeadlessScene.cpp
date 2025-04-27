@@ -4,7 +4,8 @@
 
 namespace vel
 {
-	HeadlessScene::HeadlessScene() :
+	HeadlessScene::HeadlessScene(const std::string& dataDir) :
+		dataDir(dataDir),
 		name(""),
 		assetManager(nullptr),
 		fixedAnimationTime(0.0f)

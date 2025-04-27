@@ -8,9 +8,11 @@
 
 namespace vel
 {
-    Config::Config() :
-        userConfigParams(this->loadFromFile("data/config.ini")),
-
+    Config::Config(const std::string& dataDir) :
+        userConfigParams(this->loadFromFile(dataDir + "/config.ini")),
+        
+        DATA_DIR(dataDir),
+        
         WINDOW_MODE(this->userConfigParams["windowMode"] == "0" ? false : true),
         WINDOW_WIDTH(std::stoi(this->userConfigParams["windowWidth"])),
         WINDOW_HEIGHT(std::stoi(this->userConfigParams["windowHeight"])),
