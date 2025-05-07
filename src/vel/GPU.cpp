@@ -287,6 +287,9 @@ namespace vel
 
 	void GPU::updateRenderedViewportSize()
 	{
+		if (this->activeViewportSize.x == 0 || this->activeViewportSize.y == 0)
+			return;
+
 		this->clearRenderedFBO();
 		this->createRenderedFBO(this->activeViewportSize.x, this->activeViewportSize.y);
 	}

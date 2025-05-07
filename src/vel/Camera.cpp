@@ -139,6 +139,9 @@ namespace vel
 
 	void Camera::update()
 	{
+		if (this->resolution.x == 0 || this->resolution.y == 0)
+			return; // do not update FBOs when window is minimized
+
 		glm::ivec2 currentResolution = this->resolution;
 
 		//std::cout << this->resolution.x << "," << this->resolution.y << "\n";
