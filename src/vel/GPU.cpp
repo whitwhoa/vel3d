@@ -631,6 +631,9 @@ namespace vel
 
 	void GPU::updateRenderTarget(RenderTarget* rt)
 	{
+		if (rt->resolution.x == 0 || rt->resolution.y == 0)
+			return;
+
 		//
 		// Configure opaqueFBO
 		//
@@ -697,7 +700,7 @@ namespace vel
 		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
-			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete! gh66uhm" << std::endl;
 			std::cin.get();
 			exit(EXIT_FAILURE);
 		}
