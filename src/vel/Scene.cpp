@@ -557,17 +557,8 @@ namespace vel
 		return stage->addLineActor(std::move(la));
 	}
 
-	// Has to be this way, otherwise Scene can't track the generated mesh. Live with it.
-	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText,
-		FontBitmap* fb, TextActorAlignment alignment, glm::vec4 color)
+	TextActor* Scene::_addTextActor(Stage* stage, std::unique_ptr<TextActor> ta, FontBitmap* fb, glm::vec4 color)
 	{
-		// create the TextActor
-		std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
-		ta->name = name;
-		ta->text = theText;
-		ta->fontBitmap = fb;
-		ta->alignment = alignment;
-
 		// create the mesh using provided FontBitmap and text string
 		Mesh* pTam = this->assetManager->addMesh(std::move(this->assetManager->loadTextActorMesh(ta.get())));
 		this->meshesInUse.push_back(pTam);
@@ -579,17 +570,43 @@ namespace vel
 
 		// create actor
 		Actor* pTextActor = stage->addActor(name);
-		
+
 		pTextActor->setDynamic(false);
 		pTextActor->setVisible(true);
 		pTextActor->setMesh(pTam);
 		pTextActor->setMaterial(taMaterial);
-		
+
 		// add actor pointer to TextActor.actor
 		ta->actor = pTextActor;
 
 		// add new text actor to stage and return pointer
 		return stage->addTextActor(std::move(ta));
+	}
+
+	// Has to be this way, otherwise Scene can't track the generated mesh. Live with it.
+	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText,
+		FontBitmap* fb, TextActorAlignment alignment, glm::vec4 color)
+	{
+		std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
+		ta->name = name;
+		ta->text = theText;
+		ta->fontBitmap = fb;
+		ta->alignment = alignment;
+
+		return this->_addTextActor(stage, std::move(ta), fb, color);
+	}
+
+	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, FontBitmap* fb, const std::string& theText,
+		glm::vec4 color, TextActorAlignment alignment, TextActorVerticalAlignment vAlignment)
+	{
+		std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
+		ta->name = name;
+		ta->text = theText;
+		ta->fontBitmap = fb;
+		ta->alignment = alignment;
+		ta->vAlignment = vAlignment;
+
+		return this->_addTextActor(stage, std::move(ta), fb, color);
 	}
 
 	void Scene::updateTextActors()
