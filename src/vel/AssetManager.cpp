@@ -950,25 +950,39 @@ namespace vel
 		m->setVertices(meshVertices);
 		m->setIndices(meshIndices);
 
-		// recalculate vertex positions for center alignment (origin of mesh at center)
-		if (ta->alignment == TextActorAlignment::CENTER_ALIGN)
-		{
-			AABB maabb = m->getAABB();
-			float offsetAmount = maabb.getMaxEdge().x * 0.5f;
-			for (auto& v : m->getVertices())
-				v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
-		}
+		AABB maabb = m->getAABB();
 
 		// recalculate vertex positions for right alignment (origin of mesh at right edge)
 		if (ta->alignment == TextActorAlignment::RIGHT_ALIGN)
 		{
-			AABB maabb = m->getAABB();
 			float offsetAmount = maabb.getMaxEdge().x;
 			for (auto& v : m->getVertices())
 				v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
 		}
-
+		// recalculate vertex positions for center alignment (origin of mesh at center)
+		else if (ta->alignment == TextActorAlignment::CENTER_ALIGN)
+		{
+			float offsetAmount = maabb.getMaxEdge().x * 0.5f;
+			for (auto& v : m->getVertices())
+				v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
+		}
 		// default alignment is left
+
+		if (ta->vAlignment == TextActorVerticalAlignment::TOP_ALIGN)
+		{
+			float offsetAmount = maabb.getMaxEdge().y;
+			for (auto& v : m->getVertices())
+				v.position = glm::vec3(v.position.x, (v.position.y - offsetAmount), v.position.z);
+		}
+		else if (ta->vAlignment == TextActorVerticalAlignment::CENTER_ALIGN)
+		{
+			float offsetAmount = maabb.getMaxEdge().y * 0.5f;
+			for (auto& v : m->getVertices())
+				v.position = glm::vec3(v.position.x, (v.position.y - offsetAmount), v.position.z);
+		}
+		// default alignment is bottom
+
+
 		return m;
 	}
 
