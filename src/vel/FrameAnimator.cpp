@@ -51,54 +51,17 @@ namespace vel
 		this->pauseAfterCycles = c;
 	}
 
-	//unsigned int FrameAnimator::update(float frameTime)
-	//{
-	//	if (this->paused)
-	//		return this->currentFrame;
-
-	//	float numberOfFramesToPlayPerSecond = 1.0f / this->framesPerSecond;
-
-	//	unsigned int nextFrame = (unsigned int)(this->currentCycleTime / numberOfFramesToPlayPerSecond);
-
-	//	if (nextFrame == this->frameCount) // 0 based
-	//	{
-	//		if (this->pauseAfterCycles == this->currentCycle)
-	//		{
-	//			this->paused = true;
-	//			this->currentCycle = 1;
-	//		}
-	//		else
-	//		{
-	//			this->currentCycle += 1;
-	//		}
-	//		
-	//		this->currentCycleTime = 0.0f;
-
-	//		return this->currentFrame;
-	//	}
-
-	//	this->currentCycleTime += frameTime;
-
-	//	this->currentFrame = nextFrame;
-
-	//	return this->currentFrame;
-	//}
-
 	unsigned int FrameAnimator::update(float frameTime)
 	{
 		if (this->paused)
 			return this->currentFrame;
 
-		float numberOfFramesToPlayPerSecond = 1.0f / this->framesPerSecond;
+		float secondsPerFrame = 1.0f / this->framesPerSecond;
 
-		unsigned int nextFrame = (unsigned int)(this->currentCycleTime / numberOfFramesToPlayPerSecond);
-		unsigned int nextFrameReversed = (unsigned int)(this->frameCount - nextFrame);
-		nextFrameReversed = nextFrameReversed - 1; // zero based index
+		this->currentCycleTime += frameTime;
 
-		//std::cout << "nextFrame: " << nextFrame << "\n"
-		//	<< "nextFrameReversed: " << nextFrameReversed << std::endl;
-
-		if (nextFrame == this->frameCount) // 0 based
+		// Check if we completed a full animation cycle
+		if (this->currentCycleTime >= secondsPerFrame * this->frameCount)
 		{
 			if (this->pauseAfterCycles == this->currentCycle)
 			{
@@ -111,18 +74,17 @@ namespace vel
 			}
 
 			this->currentCycleTime = 0.0f;
-
-			return this->currentFrame;
 		}
 
-		this->currentCycleTime += frameTime;
+		unsigned int nextFrame = (unsigned int)(this->currentCycleTime / secondsPerFrame);
 
-		if (!this->reverse)
-			this->currentFrame = nextFrame;
-		else
-			this->currentFrame = nextFrameReversed;
+		// Clamp to last valid frame index
+		if (nextFrame >= this->frameCount)
+			nextFrame = this->frameCount - 1;
 
-		//std::cout << "this->currentFrame: " << this->currentFrame << std::endl;
+		unsigned int nextFrameReversed = (this->frameCount - nextFrame) - 1; // zero-based
+
+		this->currentFrame = this->reverse ? nextFrameReversed : nextFrame;
 
 		return this->currentFrame;
 	}
