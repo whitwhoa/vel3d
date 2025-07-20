@@ -5,7 +5,7 @@
 
 namespace vel
 {
-	enum TweenerDirection 
+	enum class TweenerDirection 
 	{
 		Forward,
 		Backward

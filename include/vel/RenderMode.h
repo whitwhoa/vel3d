@@ -2,7 +2,7 @@
 
 namespace vel
 {
-	enum RenderMode
+	enum class RenderMode
 	{
 		RGBA,
 		STATIC_DIFFUSE

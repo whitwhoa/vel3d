@@ -64,24 +64,27 @@ namespace vel
 
     void Log::crash(const std::string& msg)
     {
+        Log::toCli(msg);
         Log::toFile(msg);
         exit(EXIT_FAILURE);
     }
 
-    void Log::crashIfTrue(bool condition, const std::string& message)
+    void Log::crashIfTrue(bool condition, const std::string& msg)
     {
         if (condition)
         {
-            Log::toFile(message);
+            Log::toCli(msg);
+            Log::toFile(msg);
             exit(EXIT_FAILURE);
         }
     }
 
-    void Log::crashIfFalse(bool condition, const std::string& message)
+    void Log::crashIfFalse(bool condition, const std::string& msg)
     {
         if (!condition)
         {
-            Log::toFile(message);
+            Log::toCli(msg);
+            Log::toFile(msg);
             exit(EXIT_FAILURE);
         }
     }

@@ -15,7 +15,7 @@ namespace vel
 {
 	class GPU;
 
-	enum CameraType {
+	enum class CameraType {
 		ORTHOGRAPHIC,
 		SCREEN_SPACE,
 		PERSPECTIVE
