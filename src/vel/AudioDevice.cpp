@@ -6,19 +6,34 @@
 
 namespace vel
 {
+	unsigned int AudioDevice::nextSceneKey = 0;
+
 	AudioDevice::AudioDevice() :
-		currentBGM(nullptr)
+		currentSceneKey(0),
+		paused(false)
 	{
 		if (ma_engine_init(NULL, &this->engine) != MA_SUCCESS) 
 			LOG_CRASH("Failed to initialize audio engine.");
 
 		ma_sound_group_init(&this->engine, 0, NULL, &this->sfxGroup);
 		ma_sound_group_init(&this->engine, 0, NULL, &this->bgmGroup);
+
+		ma_engine_listener_set_world_up(&this->engine, 0, 0.0f, 1.0f, 0.0f);
 	}
 
 	AudioDevice::~AudioDevice()
 	{
 		
+	}
+
+	unsigned int AudioDevice::generateSceneKey()
+	{
+		return AudioDevice::nextSceneKey++;
+	}
+
+	void AudioDevice::setCurrentSceneKey(unsigned int key)
+	{
+		this->currentSceneKey = key;
 	}
 
 	void AudioDevice::loadBGM(const std::string& path)
@@ -33,7 +48,7 @@ namespace vel
 			LOG_CRASH("Failed to load BGM track: " + path);
 		}
 
-		this->sounds[name] = bgm;
+		this->bgmSounds[name] = bgm;
 	}
 
 	void AudioDevice::loadSFX(const std::string& path, bool spatial, bool looping)
@@ -52,7 +67,19 @@ namespace vel
 		if (spatial)
 			ma_sound_set_spatialization_enabled(sfx, MA_TRUE);
 
-		this->sounds[name] = sfx;
+		this->sfxSounds[name] = sfx;
 	}
+
+	void AudioDevice::setDevicePosition(const glm::vec3& p)
+	{
+		ma_engine_listener_set_position(&this->engine, 0, p.x, p.y, p.z);
+	}
+
+	void AudioDevice::setDeviceDirection(const glm::vec3& d)
+	{
+		ma_engine_listener_set_direction(&this->engine, 0, d.x, d.y, d.z);
+	}
+
+
 
 }
