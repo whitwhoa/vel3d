@@ -11,36 +11,25 @@
 /*
 	I've been pretty strict with usage of smart pointers up to this point. The way I'm going to work with this library, at least
 	initially, it's easier to just work with the raw pointers. Famous last words...
-
-	TODO:
-	Can we put tracking logic in this class, then disassociate it from AssetManager? That will make AudioDevice its own self contained
-	object that manages all aspects of Audio files and playback, etc
-	
-	^^ That should work just fine, just have to keep in mind that if you want to re-use loaded assets between scenes, to always load the
-	next scene before unloading the last scene, assuming you have all of your logic for loading and unloading sounds in Scene, but I mean,
-	that goes for anything, even the assets that use the asset manager, actually, yeah, so you'd load and unload sounds in the scene, like
-	add methods for doing that like we do for all of the other assets, and instead of using asset manager for audio, use the audio device,
-	so we'll need each scene to hold a pointer into an audio device if it is not headless...wait, scenes are already headless, Scene extends
-	HeadlessScene, so that should be just fine
-
-	App will hold pointer to AudioDevice, and pass it into each Scene during the call to app->addScene() just like it does for the instance
-	of asset manager
 */
 
 namespace vel
 {
-	class AssetManager;
-
 	class AudioDevice
 	{
 	private:
-		friend class AssetManager;
-
-		static unsigned int nextGroupKey;
+		static unsigned int nextGroupKey; /* Way to track group keys already used. Values do not need to be sequential */
 
 		ma_engine engine; /* Core logic engine for processing sound */
 		ma_sound_group sfxVolGroup; /* Sound group used for adjusting overall volume of sound effects */
 		ma_sound_group bgmVolGroup; /* Sound group used for adjusting overall volume of background tracks */
+
+		/*
+			Used to track how many times a call to load a particular sound has occurred. We only load the sound data (or file path if streaming)
+			one time and save it in either bgmSounds or sfxSounds, then when sounds are played, they are copied from these template containers.
+			The reason we are tracking usages is so that we can remove unnecessary templates.
+		*/
+		std::unordered_map<std::string, unsigned int> usages;
 
 		/* 
 			Key is filename without extension, value is the full path to the file. Since streams are not copyable, when we need a new one,
@@ -50,7 +39,7 @@ namespace vel
 		std::unordered_map<std::string, std::string> bgmSounds;
 
 		/* 
-			Holds sound templates, AssetManager tracks scene usage. When an object needs to play a sound, we obtain the pointer of the sound template 
+			Holds sound templates. When an object needs to play a sound, we obtain the pointer of the sound template 
 			via lookup of the string name. This isn't great, but objects won't be invoking sounds every tick, and if it ever becomes an issue, we can 
 			optimize down the road 
 		*/
@@ -89,29 +78,30 @@ namespace vel
 		std::unordered_map<unsigned int, std::unordered_set<ma_sound*>> unmanagedSFX;
 
 
-		/* 
-			Loads a background track into bgmSounds, meaning a track that streams and loops and is part of the bgmVolGroup sound group 
-		*/
-		void loadBGM(const std::string& path);
-
-		/* 
-			Loads an SFX track into sfxSounds, meaning a track that is preloaded and is a member of sfxVolGroup
-		*/
-		void loadSFX(const std::string& path);
-
-		/* 
-			Loop through all managedSFX and remove those which have stopped. Do not run if audio paused, as all sounds will be stopped during the 
-			pause (miniaudio apparently does not distinguish between playing but paused, vs concluded) 
-		*/
-		void cleanUpManagedSFX();
-
-
 	public:
 		AudioDevice();
 		~AudioDevice();
 
 		unsigned int generateGroupKey();
 		void setCurrentGroupKey(unsigned int key);
+
+		/*
+			Loads a background track into bgmSounds, meaning a track that streams and loops and is part of the bgmVolGroup sound group
+		*/
+		std::string loadBGM(const std::string& path);
+
+		/*
+			Loads an SFX track into sfxSounds, meaning a track that is preloaded and is a member of sfxVolGroup
+		*/
+		std::string loadSFX(const std::string& path);
+
+		/*
+			Loop through all managedSFX and remove those which have stopped. Do not run if audio paused, as all sounds will be stopped during the
+			pause (miniaudio apparently does not distinguish between playing but paused, vs concluded).
+
+			TODO: this will need to be called in the App update loop
+		*/
+		void cleanUpManagedSFX();
 
 		/* 
 			Sets the position of the listener 
@@ -166,7 +156,7 @@ namespace vel
 		/*
 			Initialize and play background track. Pulls filepath from bgmSounds, initializes a stream, saves pointer to currentBGM
 		*/
-		void initBGM(const std::string& name);
+		void playBGM(const std::string& name);
 
 		/*
 			Pause background track
@@ -187,5 +177,19 @@ namespace vel
 			Update SFX volume
 		*/
 		void updateSFXVolume(float vol);
+
+		/*
+			Remove all bgm, managed, and unmanaged sfx files for this group key (this would be the data generated from the
+			top level template files. We unload template files in another call, thus this function and removeSound() must
+			be called from a Scene to insure all sounds it is using are removed. Scene will track all sounds it uses when
+			loading them (like the rest of the assets), then when it is unloaded it calls removeGroup() passing in its group
+			id, and then for each sound it loaded calls removeSound() passing in the name of the sound)
+		*/
+		void removeGroup(unsigned int key);
+
+		/*
+			Loop over both bgmSounds and sfxSounds, either decrement their count or perform a full removal
+		*/
+		void removeSound(const std::string& name);
 	};
 }

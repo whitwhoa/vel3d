@@ -19,6 +19,7 @@
 #include "vel/AssetManager.h"
 #include "vel/HeadlessScene.h"
 #include "vel/LineActor.h"
+#include "vel/AudioDevice.h"
 
 #include "vel/Material.h"
 #include "vel/DiffuseMaterial.h"
@@ -51,6 +52,7 @@ namespace vel
 		std::vector<Material*> 				materialsInUse;
 		std::vector<FontBitmap*> 			fontBitmapsInUse;
 		std::vector<Camera*>				camerasInUse;
+		std::vector<std::string>			soundsInUse;
 
 		glm::vec3							cameraPosition;
 		glm::mat4							cameraProjectionMatrix;
@@ -61,8 +63,13 @@ namespace vel
 		
 	protected:
 		const InputState*					inputState;
+		AudioDevice*						audioDevice;
+		int									audioGroupKey;
 		Texture*							loadTexture(const std::string& name, const std::string& path, bool freeAfterGPULoad = true, unsigned int uvWrapping = 1);
 		FontBitmap*							loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath);
+
+		void								loadBGMSound(const std::string& path);
+		void								loadSFXSound(const std::string& path);
 
 		Camera*								addCamera(const std::string& name, CameraType type);
 
@@ -131,6 +138,10 @@ namespace vel
 		void								clearScreenTint();
 
 		std::vector<Camera*>&				getCamerasInUse();
+
+		void								setAudioDevice(AudioDevice* ad);
+
+		int									getAudioDeviceGroupKey();
 		
 
 	};

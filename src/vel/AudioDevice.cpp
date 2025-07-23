@@ -23,12 +23,65 @@ namespace vel
 
 	AudioDevice::~AudioDevice()
 	{
-		// TODO: clean-up all the things.
+		// Wipe currentBGM
+		for (auto& groupPair : this->currentBGM) 
+		{
+			for (auto& soundPair : groupPair.second) 
+			{
+				ma_sound_uninit(soundPair.second);
+				delete soundPair.second;
+			}
+		}
+		this->currentBGM.clear();
+
+		// Wipe managedSFX
+		for (auto& groupPair : this->managedSFX)
+		{
+			for (ma_sound* sound : groupPair.second) 
+			{
+				ma_sound_uninit(sound);
+				delete sound;
+			}
+		}
+		this->managedSFX.clear();
+
+		// Wipe unmanagedSFX
+		for (auto& groupPair : this->unmanagedSFX)
+		{
+			for (ma_sound* sound : groupPair.second) 
+			{
+				ma_sound_uninit(sound);
+				delete sound;
+			}
+		}
+		this->unmanagedSFX.clear();
+
+		// Wipe bgmSounds
+		this->bgmSounds.clear();
+
+		// Wipe sfxSounds
+		for (auto& soundPair : this->sfxSounds)
+		{
+			ma_sound_uninit(soundPair.second);
+			delete soundPair.second;
+		}
+		this->sfxSounds.clear();
+
+		// Wipe sound groups and engine
+		ma_sound_group_uninit(&this->bgmVolGroup);
+		ma_sound_group_uninit(&this->sfxVolGroup);
+		ma_engine_uninit(&this->engine);
 	}
 
 	unsigned int AudioDevice::generateGroupKey()
 	{
-		return AudioDevice::nextGroupKey++;
+		unsigned int key = AudioDevice::nextGroupKey++;
+
+		this->managedSFX.try_emplace(key);
+		this->unmanagedSFX.try_emplace(key);
+		this->currentBGM.try_emplace(key);
+
+		return key;
 	}
 
 	void AudioDevice::setCurrentGroupKey(unsigned int key)
@@ -36,27 +89,57 @@ namespace vel
 		this->currentGroupKey = key;
 	}
 
-	void AudioDevice::loadBGM(const std::string& path)
+	std::string AudioDevice::loadBGM(const std::string& path)
 	{
 		std::filesystem::path p(path);
 		std::string name = p.stem().string();
 
-		this->bgmSounds[name] = path;
-	}
-
-	void AudioDevice::loadSFX(const std::string& path)
-	{
-		std::filesystem::path p(path);
-		std::string name = p.stem().string();
-
-		ma_sound* sfx = new ma_sound;
-		if (ma_sound_init_from_file(&this->engine, path.c_str(), MA_SOUND_FLAG_DECODE, &this->sfxVolGroup, NULL, sfx) != MA_SUCCESS)
+		auto it = this->usages.find(name);
+		if (it != this->usages.end()) 
 		{
-			delete sfx;
-			LOG_CRASH("Failed to load sound: " + path);
+			it->second += 1;
+
+			LOG_TO_CLI_AND_FILE("Existing BGM, bypass reload: " + name);
+		}
+		else
+		{
+			this->bgmSounds[name] = path;
+			this->usages[name] = 1;
+
+			LOG_TO_CLI_AND_FILE("Loading new BGM: " + name);
 		}
 
-		this->sfxSounds[name] = sfx;
+		return name;
+	}
+
+	std::string AudioDevice::loadSFX(const std::string& path)
+	{
+		std::filesystem::path p(path);
+		std::string name = p.stem().string();
+
+		auto it = this->usages.find(name);
+		if (it != this->usages.end())
+		{
+			it->second += 1;
+
+			LOG_TO_CLI_AND_FILE("Existing SFX, bypass reload: " + name);
+		}
+		else
+		{
+			ma_sound* sfx = new ma_sound;
+			if (ma_sound_init_from_file(&this->engine, path.c_str(), MA_SOUND_FLAG_DECODE, &this->sfxVolGroup, NULL, sfx) != MA_SUCCESS)
+			{
+				delete sfx;
+				LOG_CRASH("Failed to load SFX: " + path);
+			}
+
+			this->sfxSounds[name] = sfx;
+			this->usages[name] = 1;
+
+			LOG_TO_CLI_AND_FILE("Loading new SFX: " + name);
+		}
+
+		return name;
 	}
 
 	void AudioDevice::cleanUpManagedSFX()
@@ -86,6 +169,7 @@ namespace vel
 	{
 		ma_sound_uninit(s);
 		this->unmanagedSFX.at(this->currentGroupKey).erase(s);
+		delete s;
 	}
 
 	void AudioDevice::setDevicePosition(const glm::vec3& p)
@@ -104,7 +188,7 @@ namespace vel
 
 		auto& activeBGM = this->currentBGM.at(this->currentGroupKey);
 		for (const auto& pair : activeBGM)
-			ma_sound_stop(pair.second); // first is key, second is value
+			ma_sound_stop(pair.second);
 
 		auto& activeManagedSFX = this->managedSFX.at(this->currentGroupKey);
 		for (ma_sound* s : activeManagedSFX)
@@ -121,7 +205,7 @@ namespace vel
 
 		auto& activeBGM = this->currentBGM.at(this->currentGroupKey);
 		for (const auto& pair : activeBGM)
-			ma_sound_start(pair.second); // first is key, second is value
+			ma_sound_start(pair.second);
 
 		auto& activeManagedSFX = this->managedSFX.at(this->currentGroupKey);
 		for (ma_sound* s : activeManagedSFX)
@@ -199,11 +283,14 @@ namespace vel
 		ma_sound_set_position(s, pos.x, pos.y, pos.z);
 	}
 
-	void AudioDevice::initBGM(const std::string& name)
+	void AudioDevice::playBGM(const std::string& name)
 	{
 		auto& bgmMap = this->currentBGM.at(this->currentGroupKey);
 		if (bgmMap.find(name) != bgmMap.end())
+		{
+			LOG_TO_CLI_AND_FILE("Skipping duplicate BGM init for: " + name);
 			return;
+		}
 
 		std::string path = this->bgmSounds[name];
 
@@ -235,6 +322,68 @@ namespace vel
 	void AudioDevice::updateSFXVolume(float vol)
 	{
 		ma_sound_group_set_volume(&this->sfxVolGroup, vol);
+	}
+
+	void AudioDevice::removeGroup(unsigned int key)
+	{
+		auto& activeBGM = this->currentBGM.at(key);
+		for (const auto& pair : activeBGM)
+		{
+			ma_sound_stop(pair.second);
+			ma_sound_uninit(pair.second);
+			delete pair.second;
+		}
+		this->currentBGM.erase(key);
+
+		auto& activeManagedSFX = this->managedSFX.at(key);
+		for (ma_sound* s : activeManagedSFX)
+		{
+			ma_sound_stop(s);
+			ma_sound_uninit(s);
+			delete s;
+		}
+		this->managedSFX.erase(key);
+
+		auto& activeUnmanagedSFX = this->unmanagedSFX.at(key);
+		for (ma_sound* s : activeUnmanagedSFX)
+		{
+			ma_sound_stop(s);
+			ma_sound_uninit(s);
+			delete s;
+		}
+		this->unmanagedSFX.erase(key);
+	}
+
+	void AudioDevice::removeSound(const std::string& name)
+	{
+		auto it = this->usages.find(name);
+		if (it == this->usages.end())
+		{
+			LOG_CRASH("Attempting to remove sound that does not exist: " + name);
+		}
+
+		this->usages[name]--;
+
+		if (this->usages[name] == 0)
+		{
+			LOG_TO_CLI_AND_FILE("Full remove sound template: " + name);
+
+			auto itBGM = this->bgmSounds.find(name);
+			if (itBGM != this->bgmSounds.end())
+			{
+				this->bgmSounds.erase(name);
+				return;
+			}
+			
+			ma_sound* tmpSFX = this->sfxSounds[name];
+			ma_sound_uninit(tmpSFX);
+			delete tmpSFX;
+			this->sfxSounds.erase(name);
+
+			return;
+		}
+
+		LOG_TO_CLI_AND_FILE("Decrement sound template usage count, retain: " + name);
 	}
 
 }

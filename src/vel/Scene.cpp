@@ -21,6 +21,8 @@ namespace vel
 {
 	Scene::Scene(const std::string& dataDir) :
 		inputState(nullptr),
+		audioDevice(nullptr),
+		audioGroupKey(-1),
 		animationTime(0.0f),
 		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)),
 		HeadlessScene(dataDir)
@@ -31,6 +33,27 @@ namespace vel
 	Scene::~Scene()
 	{
 		this->freeAssets();
+	}
+
+	void Scene::loadBGMSound(const std::string& path)
+	{
+		this->soundsInUse.push_back(this->audioDevice->loadBGM(path));
+	}
+
+	void Scene::loadSFXSound(const std::string& path)
+	{
+		this->soundsInUse.push_back(this->audioDevice->loadSFX(path));
+	}
+
+	void Scene::setAudioDevice(AudioDevice* ad)
+	{
+		this->audioDevice = ad;
+		this->audioGroupKey = ad->generateGroupKey();
+	}
+
+	int Scene::getAudioDeviceGroupKey()
+	{
+		return this->audioGroupKey;
 	}
 
 	void Scene::setInputState(const InputState* is)
@@ -109,6 +132,9 @@ namespace vel
 
 		for (auto& cw : this->collisionWorlds)
 			delete cw;
+
+		for (auto& s : this->soundsInUse)
+			this->audioDevice->removeSound(s);
 
 	}
 

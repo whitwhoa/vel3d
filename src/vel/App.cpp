@@ -20,6 +20,7 @@ namespace vel
 		window(w),
 		gpu(gpu),
 		assetManager(am),
+		audioDevice(nullptr),
 
 		activeScene(nullptr),
         startTime(std::chrono::high_resolution_clock::now()),
@@ -52,6 +53,11 @@ namespace vel
     }
 
 	void App::update() {}
+
+	void App::setAudioDevice(AudioDevice* ad)
+	{
+		this->audioDevice = ad;
+	}
 
 	Scene* App::getActiveScene()
 	{
@@ -108,13 +114,29 @@ namespace vel
 		LOG_TO_CLI_AND_FILE("Swapping to Scene: " + name);
 
 		for (auto& s : this->scenes)
+		{
 			if (s->getName() == name)
+			{
+				// pause current scene audio if it holds a valid group key
+				if (this->activeScene->getAudioDeviceGroupKey() != -1)
+					this->audioDevice->pauseCurrentGroup();
+
+				// update active scene
 				this->activeScene = s.get();
+				
+				// swap group keys in audio device and unpause all sounds if scene holds valid group key
+				if (this->activeScene->getAudioDeviceGroupKey() != -1)
+				{
+					this->audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
+					this->audioDevice->unpauseCurrentGroup();
+				}
+			}
+		}
 	}
 
     void App::addScene(std::unique_ptr<Scene> scene, bool makeActive)
     {
-		// TODO: unsure if this is required
+		// TODO: unsure if this is still required???
 		if(this->window != nullptr && this->window->getImguiFrameOpen())
 			this->forceImguiRender();
 
@@ -130,6 +152,7 @@ namespace vel
 		scene->setWindowSize(this->window->getWindowSize().x, this->window->getWindowSize().y);
 		scene->setResolution(this->window->getResolution().x, this->window->getResolution().y);
 		scene->setAssetManager(this->assetManager);
+		scene->setAudioDevice(this->audioDevice);
 		scene->setInputState(this->getInputState());
 		
 		this->scenes.push_back(std::move(scene));
@@ -139,7 +162,14 @@ namespace vel
 		ptrScene->load();
 
 		if (makeActive)
+		{
 			this->activeScene = ptrScene;
+			if (this->activeScene->getAudioDeviceGroupKey() != -1)
+				this->audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
+
+			// fresh load of scene, no sounds would be paused at this point, so no sounds need to be unpaused
+		}
+			
     }
 
     void App::close()
@@ -289,6 +319,7 @@ namespace vel
 					this->activeScene->fixedLoop(this->fixedLogicTime);
 					this->activeScene->updateFixedAnimations(this->fixedLogicTime);
 					this->activeScene->postPhysics(this->fixedLogicTime);
+					this->audioDevice->cleanUpManagedSFX();
 
 					this->update();
 

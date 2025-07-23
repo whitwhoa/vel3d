@@ -11,6 +11,7 @@
 #include "vel/GPU.h"
 #include "vel/Scene.h"
 #include "vel/AssetManager.h"
+#include "vel/AudioDevice.h"
 
 
 struct GLFWusercontext;
@@ -24,6 +25,7 @@ namespace vel
         Window*							                window;
 		GPU*	                						gpu;
 		AssetManager*               				    assetManager;
+        AudioDevice*                                    audioDevice;
 
         std::vector<std::unique_ptr<Scene>>				scenes;
 		Scene*											activeScene;
@@ -54,6 +56,8 @@ namespace vel
         App(Config conf, Window* w, GPU* gpu, AssetManager* am);
 
         virtual void                                    update(); // for extension
+
+        void                                            setAudioDevice(AudioDevice* ad);
 
         void											addScene(std::unique_ptr<Scene> scene, bool makeActive = false);
         const float									    time() const;
