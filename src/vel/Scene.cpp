@@ -734,6 +734,11 @@ namespace vel
 					gpu->drawToRenderedFBO(c->getRenderTarget()->opaqueTexture.frames.at(0).dsaHandle);
 		}
 
+		// TODO: would it be possible to implement functionality where a scene would hold a copy of the gpu rendered FBO texture
+		// at this state, so that it can be referenced as a texture via other logic? For exmaple if we want a menu scene, and 
+		// we want the background of the menu scene to be a blurred version of the last rendered frame of the scene that was
+		// just running, we could grab it from the scene and use it as a texture? Sounds like it shouldn't be too big of a deal.
+
 		// call post process to apply post process shader while drawing into the default framebuffer for display to screen
 		gpu->setDefaultFrameBuffer();
 		gpu->drawToScreen(this->screenTint);
