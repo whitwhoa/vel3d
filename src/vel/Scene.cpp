@@ -47,6 +47,9 @@ namespace vel
 
 	void Scene::setAudioDevice(AudioDevice* ad)
 	{
+		if (ad == nullptr)
+			return;
+
 		this->audioDevice = ad;
 		this->audioGroupKey = ad->generateGroupKey();
 	}

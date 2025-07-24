@@ -152,8 +152,10 @@ namespace vel
 		scene->setWindowSize(this->window->getWindowSize().x, this->window->getWindowSize().y);
 		scene->setResolution(this->window->getResolution().x, this->window->getResolution().y);
 		scene->setAssetManager(this->assetManager);
-		scene->setAudioDevice(this->audioDevice);
 		scene->setInputState(this->getInputState());
+
+		if (this->audioDevice)
+			scene->setAudioDevice(this->audioDevice);
 		
 		this->scenes.push_back(std::move(scene));
 
@@ -319,7 +321,9 @@ namespace vel
 					this->activeScene->fixedLoop(this->fixedLogicTime);
 					this->activeScene->updateFixedAnimations(this->fixedLogicTime);
 					this->activeScene->postPhysics(this->fixedLogicTime);
-					this->audioDevice->cleanUpManagedSFX();
+
+					if(this->audioDevice)
+						this->audioDevice->cleanUpManagedSFX();
 
 					this->update();
 
