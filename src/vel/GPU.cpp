@@ -90,8 +90,8 @@ namespace vel
 
 
 		glBindTexture(GL_TEXTURE_2D, 0); // be safe
-
-		glBindFramebuffer(GL_FRAMEBUFFER, *this->renderedFBO);
+		
+		this->bindFrameBuffer(*this->renderedFBO);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->renderedFBOTexture->frames.at(0).id, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->renderedFBOTexture->frames.at(1).id, 0);
 
@@ -139,7 +139,8 @@ namespace vel
 			exit(EXIT_FAILURE);
 		}
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0); // be safe
+		// be safe
+		this->bindFrameBuffer(0);
 
 
 		// obtain texture's DSA handle, and set texture's DSA handle as resident so it can be accessed in shaders
@@ -155,13 +156,7 @@ namespace vel
 		glDisable(GL_BLEND);
 		//glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-		if (this->activeFramebuffer != this->activeRenderTarget->opaqueFBO)
-		{
-			this->activeFramebuffer = this->activeRenderTarget->opaqueFBO;
-			glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->opaqueFBO);
-			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
-		
+		this->bindFrameBuffer(this->activeRenderTarget->opaqueFBO);		
 	}
 
 	void GPU::setAlphaRenderState()
@@ -172,14 +167,7 @@ namespace vel
 		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
 		glBlendEquation(GL_FUNC_ADD);
 
-		if (this->activeFramebuffer != this->activeRenderTarget->alphaFBO)
-		{
-			this->activeFramebuffer = this->activeRenderTarget->alphaFBO;
-			glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->alphaFBO);
-			//glClearBufferfv(GL_COLOR, 0, &this->zeroFillerVec[0]);
-			//glClearBufferfv(GL_COLOR, 1, &this->oneFillerVec[0]);
-		}
-		
+		this->bindFrameBuffer(this->activeRenderTarget->alphaFBO);
 	}
 
 	void GPU::setCompositeRenderState()
@@ -188,12 +176,7 @@ namespace vel
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		if (this->activeFramebuffer != this->activeRenderTarget->opaqueFBO)
-		{
-			this->activeFramebuffer = this->activeRenderTarget->opaqueFBO;
-			glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->opaqueFBO);
-			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
+		this->bindFrameBuffer(this->activeRenderTarget->opaqueFBO);
 	}
 
 	void GPU::composeFBOs()
@@ -305,14 +288,14 @@ namespace vel
 
 	void GPU::setRenderedFBO()
 	{
-		if (this->activeFramebuffer != *this->renderedFBO)
-			glBindFramebuffer(GL_FRAMEBUFFER, *this->renderedFBO);
+		glDepthMask(GL_TRUE); // insure we're writing to depth buffer (without this, we had to have two stages 
+							// each with a camera for rendering to work right, so i must be disabling it somewhere.
+		this->bindFrameBuffer(*this->renderedFBO);
 	}
 
 	void GPU::setDefaultFrameBuffer()
 	{
-		if (this->activeFramebuffer != 0)
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		this->bindFrameBuffer(0);
 	}
 
 	void GPU::initScreenSpaceMesh()
@@ -654,7 +637,7 @@ namespace vel
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// associate textures with opaqueFBO
-		glBindFramebuffer(GL_FRAMEBUFFER, rt->opaqueFBO);
+		this->bindFrameBuffer(rt->opaqueFBO);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->opaqueTexture.frames.at(0).id, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt->depthTexture.frames.at(0).id, 0);
 
@@ -666,7 +649,7 @@ namespace vel
 			exit(EXIT_FAILURE);
 		}
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		this->bindFrameBuffer(0);
 
 
 		//
@@ -689,7 +672,7 @@ namespace vel
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// associate textures with alphaFBO
-		glBindFramebuffer(GL_FRAMEBUFFER, rt->alphaFBO);
+		this->bindFrameBuffer(rt->alphaFBO);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->accumTexture.frames.at(0).id, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, rt->revealTexture.frames.at(0).id, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt->depthTexture.frames.at(0).id, 0);
@@ -705,12 +688,7 @@ namespace vel
 			exit(EXIT_FAILURE);
 		}
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-
-
-
+		this->bindFrameBuffer(0);
 	}
 
 	void GPU::loadMesh(Mesh* m)
@@ -1062,24 +1040,33 @@ namespace vel
 
 	void GPU::clearRenderTargetBuffers(float r, float g, float b, float a)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->opaqueFBO);
+		this->bindFrameBuffer(this->activeRenderTarget->opaqueFBO);
 		this->clearBuffers(r,g,b,a);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, this->activeRenderTarget->alphaFBO);
+		this->bindFrameBuffer(this->activeRenderTarget->alphaFBO);
 		glClearBufferfv(GL_COLOR, 0, &this->zeroFillerVec[0]);
 		glClearBufferfv(GL_COLOR, 1, &this->oneFillerVec[0]);
 	}
 
 	void GPU::clearRenderedFBO(float r, float g, float b, float a)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, *this->renderedFBO);
+		this->bindFrameBuffer(*this->renderedFBO);
 		this->clearBuffers(r, g, b, a);
 	}
 
 	void GPU::clearScreenBuffer(float r, float g, float b, float a)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		this->bindFrameBuffer(0);
 		this->clearBuffers(r, g, b, a);
+	}
+
+	void GPU::bindFrameBuffer(unsigned int fbo)
+	{
+		if (this->activeFramebuffer != fbo)
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+			this->activeFramebuffer = fbo;
+		}
 	}
 
 	void GPU::drawLinesOnly()

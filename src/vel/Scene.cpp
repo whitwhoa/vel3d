@@ -655,6 +655,7 @@ namespace vel
 		//gpu->enableBackfaceCulling(); // insure backface culling is occurring
 
 		// loop through all stages
+		int i = 0;
 		for (auto& s : this->stages)
 		{
 			bool actorsFirstPass = true;
@@ -679,6 +680,7 @@ namespace vel
 
 
 				bool foundFirstAlpha = false;
+
 
 				for (auto& pair : s->getActors())
 				{
@@ -705,9 +707,12 @@ namespace vel
 					}
 				}
 
+
+
 				actorsFirstPass = false;
 
 				gpu->composeFBOs();
+
 
 
 			} // end for each camera
@@ -725,7 +730,6 @@ namespace vel
 		gpu->setRenderedFBO();
 
 		//gpu->setDefaultFrameBuffer();
-
 
 		for (auto& s : this->stages)
 		{

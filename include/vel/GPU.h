@@ -60,6 +60,8 @@ namespace vel
 
 		bool								useFXAA;
 
+		void								bindFrameBuffer(unsigned int fbo);
+
 	public:
 		GPU(bool fxaa = false);
 		~GPU();
