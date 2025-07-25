@@ -652,6 +652,8 @@ namespace vel
 
 	void Scene::draw(GPU* gpu, float frameTime, float alpha)
 	{
+		//std::cout << "Scene::draw()-------------------------------------\n";
+
 		//gpu->enableBackfaceCulling(); // insure backface culling is occurring
 
 		// loop through all stages
@@ -671,8 +673,12 @@ namespace vel
 				this->cameraProjectionMatrix = c->getProjectionMatrix();
 				this->cameraViewMatrix = c->getViewMatrix();
 
-
-				gpu->updateViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different sizes
+				// TODO: this TANKS performance when you have multiple cameras of different resolutions because it causes
+				// the entire FBO to be destroyed and rebuilt here, AND again later in the function. This should only ever
+				// be called if the user adjusts resolution, not to adjust viewport size for different size cameras. So if
+				// keeping the multi camera per scene functionality, we must find a way around this....
+				gpu->updateCameraViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different sizes
+				
 				gpu->setRenderTarget(c->getRenderTarget());
 				
 				
@@ -726,7 +732,7 @@ namespace vel
 		// enable blending of each renderable stage "layer"
 		//gpu->enableBlend2();
 
-		gpu->updateViewportSize(this->getWindowSize().x, this->getWindowSize().y);
+		gpu->updateRenderedFBOViewportSize(this->getWindowSize().x, this->getWindowSize().y);
 		gpu->setRenderedFBO();
 
 		//gpu->setDefaultFrameBuffer();
@@ -742,7 +748,7 @@ namespace vel
 		}
 
 		// TODO: would it be possible to implement functionality where a scene would hold a copy of the gpu rendered FBO texture
-		// at this state, so that it can be referenced as a texture via other logic? For exmaple if we want a menu scene, and 
+		// at this state, so that it can be referenced as a texture via other logic? For example if we want a menu scene, and 
 		// we want the background of the menu scene to be a blurred version of the last rendered frame of the scene that was
 		// just running, we could grab it from the scene and use it as a texture? Sounds like it shouldn't be too big of a deal.
 

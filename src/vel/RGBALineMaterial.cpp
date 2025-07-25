@@ -24,8 +24,8 @@ namespace vel
 	void RGBALineMaterial::draw(float alphaTime, GPU* gpu, Actor* actor, const glm::mat4& viewMatrix, const glm::mat4& projMatrix)
 	{
 		gpu->setShaderFloat("uLineWidth", this->lineThickness);
-		gpu->setShaderFloat("uViewportWidth", (float)gpu->getActiveViewportSize().x);
-		gpu->setShaderFloat("uViewportHeight", (float)gpu->getActiveViewportSize().y);
+		gpu->setShaderFloat("uViewportWidth", (float)gpu->getActiveCameraViewportSize().x);
+		gpu->setShaderFloat("uViewportHeight", (float)gpu->getActiveCameraViewportSize().y);
 		gpu->setShaderMat4("lineColors", this->lineColors);
 		gpu->setShaderMat4("model", actor->getWorldRenderMatrix(alphaTime));
 		gpu->setShaderMat4("view", viewMatrix);

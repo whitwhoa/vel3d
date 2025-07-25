@@ -30,7 +30,8 @@ namespace vel
 		zeroFillerVec(glm::vec4(0.0f)),
 		oneFillerVec(1.0f),
 		activeClearColorValues(glm::vec4(0.0f)),
-		activeViewportSize(glm::ivec2(1280,720)),
+		activeRenderedFBOViewportSize(glm::ivec2(1280,720)),
+		activeCameraViewportSize(glm::ivec2(1280, 720)),
 		activeFramebuffer(-1),
 
 		renderedFBO(nullptr),
@@ -48,7 +49,7 @@ namespace vel
 		this->initLightMapTextureUBO();
 		this->initScreenSpaceMesh();
 
-		this->createRenderedFBO(this->activeViewportSize.x, this->activeViewportSize.y);
+		this->createRenderedFBO(this->activeRenderedFBOViewportSize.x, this->activeRenderedFBOViewportSize.y);
 	}
 
 	GPU::~GPU()
@@ -242,7 +243,7 @@ namespace vel
 
 		this->setShaderVec4("tint", tint);
 		// don't have setShaderVec2 method right now, so use vec3 to get this done
-		this->setShaderVec3("resolution", glm::vec3(this->activeViewportSize.x, this->activeViewportSize.y, 0.0f));
+		this->setShaderVec3("resolution", glm::vec3(this->activeRenderedFBOViewportSize.x, this->activeRenderedFBOViewportSize.y, 0.0f));
 		this->setShaderBool("enableFXAA", this->useFXAA);
 
 		this->updateLightmapTextureUBO(this->defaultWhiteTextureHandle);
@@ -257,24 +258,34 @@ namespace vel
 		this->activeRenderTarget = rt;
 	}
 
-	void GPU::updateViewportSize(unsigned int width, unsigned int height)
+	void GPU::updateCameraViewportSize(unsigned int width, unsigned int height)
 	{
-		if (width != this->activeViewportSize.x || height != this->activeViewportSize.y)
+		if (width != this->activeCameraViewportSize.x || height != this->activeCameraViewportSize.y)
 		{
-			this->activeViewportSize = glm::ivec2(width, height);
+			this->activeCameraViewportSize = glm::ivec2(width, height);
+			glViewport(0, 0, width, height);
+		}
+	}
+
+	void GPU::updateRenderedFBOViewportSize(unsigned int width, unsigned int height)
+	{
+		if (width != this->activeRenderedFBOViewportSize.x || height != this->activeRenderedFBOViewportSize.y)
+		{
+			this->activeRenderedFBOViewportSize = glm::ivec2(width, height);
 			this->updateRenderedViewportSize();
 			glViewport(0, 0, width, height);
-
 		}
 	}
 
 	void GPU::updateRenderedViewportSize()
 	{
-		if (this->activeViewportSize.x == 0 || this->activeViewportSize.y == 0)
+		if (this->activeRenderedFBOViewportSize.x == 0 || this->activeRenderedFBOViewportSize.y == 0)
 			return;
 
+		//std::cout << "Fully remove and rebuild renderdFBO \n";
+
 		this->clearRenderedFBO();
-		this->createRenderedFBO(this->activeViewportSize.x, this->activeViewportSize.y);
+		this->createRenderedFBO(this->activeRenderedFBOViewportSize.x, this->activeRenderedFBOViewportSize.y);
 	}
 
 	void GPU::clearRenderedFBO()
@@ -881,9 +892,9 @@ namespace vel
 		return this->activeMaterial;
 	}
 
-	glm::ivec2 GPU::getActiveViewportSize()
+	glm::ivec2 GPU::getActiveCameraViewportSize()
 	{
-		return this->activeViewportSize;
+		return this->activeCameraViewportSize;
 	}
 
 	void GPU::useShader(Shader* s)

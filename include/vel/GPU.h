@@ -49,7 +49,8 @@ namespace vel
 		glm::vec4							oneFillerVec;
 
 		glm::vec4							activeClearColorValues;
-		glm::ivec2							activeViewportSize;
+		glm::ivec2							activeRenderedFBOViewportSize;
+		glm::ivec2							activeCameraViewportSize;
 		int									activeFramebuffer;
 
 		std::unique_ptr<unsigned int>		renderedFBO;
@@ -123,7 +124,8 @@ namespace vel
 		void								updateTextureUBO(unsigned int index, GLuint64 dsaHandle);
 		void								updateLightmapTextureUBO(GLuint64 dsaHandle);
 
-		void								updateViewportSize(unsigned int width, unsigned int height);
+		void								updateCameraViewportSize(unsigned int width, unsigned int height);
+		void								updateRenderedFBOViewportSize(unsigned int width, unsigned int height);
 		void								setRenderTarget(RenderTarget* rt);
 
 		void								drawToRenderedFBO(GLuint64 dsaHandle);
@@ -149,7 +151,7 @@ namespace vel
 
 		void								setGLDebugMessage(const std::string& message);
 
-		glm::ivec2							getActiveViewportSize();
+		glm::ivec2							getActiveCameraViewportSize();
 
 		void								drawLines(unsigned int pointCount);
 
