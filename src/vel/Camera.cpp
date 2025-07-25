@@ -18,6 +18,7 @@ namespace vel
 		type(type),
 		gpu(nullptr),
 		resolution(glm::ivec2(1280, 720)),
+		resolutionFixed(false),
 		previousResolution(glm::ivec2(0, 0)),
 		nearPlane(0.1f),
 		farPlane(100.0f),
@@ -135,6 +136,16 @@ namespace vel
 		}
 
 		this->viewMatrix = glm::lookAt(this->position, this->lookAt, this->up);
+	}
+
+	void Camera::setFixedResolution(bool b)
+	{
+		this->resolutionFixed = b;
+	}
+
+	bool Camera::getFixedResolution()
+	{
+		return this->resolutionFixed;
 	}
 
 	void Camera::update()

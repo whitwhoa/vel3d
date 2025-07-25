@@ -272,7 +272,8 @@ namespace vel
 
 				for (auto& c : s->getCamerasInUse())
 				{
-					c->setResolution(ws.x, ws.y);
+					if(!c->getFixedResolution())
+						c->setResolution(ws.x, ws.y);
 				}
 			}
 		}		

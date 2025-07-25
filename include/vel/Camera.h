@@ -29,6 +29,7 @@ namespace vel
 		GPU*					gpu;
 		float                   fovScale;
 		glm::ivec2				resolution;
+		bool					resolutionFixed;
 		glm::ivec2				previousResolution;
 		float                   nearPlane;
 		float                   farPlane;
@@ -65,6 +66,8 @@ namespace vel
 		void					setFovOrScale(float fos);
 
 		void					setResolution(int width, int height);
+		void					setFixedResolution(bool b); // if resolution fixed, then it's not updated when window size is altered dynamically by user
+		bool					getFixedResolution();
 
 
 		void					setFinalRenderCam(bool b); // whether or not this camera is used to draw to screen buffer
