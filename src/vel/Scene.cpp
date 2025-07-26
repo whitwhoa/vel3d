@@ -756,6 +756,9 @@ namespace vel
 		gpu->setDefaultFrameBuffer();
 		gpu->drawToScreen(this->screenTint);
 
+		// If you don't set glviewport back to the render resolution (vs leaving it at the window resolution), mouse
+		// movement becomes jacked up
+		gpu->setViewportSize(this->resolution.x, this->resolution.y);
 
 
 		// moving collision debug draw event as final thing as it draws directly to the screen buffer, and I don't want to have to 

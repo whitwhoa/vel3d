@@ -165,5 +165,7 @@ namespace vel
 
 		void								setRenderedFBO();
 
+		void								setViewportSize(unsigned int width, unsigned int height);
+
 	};
 }

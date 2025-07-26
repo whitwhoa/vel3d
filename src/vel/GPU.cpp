@@ -30,7 +30,7 @@ namespace vel
 		zeroFillerVec(glm::vec4(0.0f)),
 		oneFillerVec(1.0f),
 		activeClearColorValues(glm::vec4(0.0f)),
-		activeRenderedFBOViewportSize(glm::ivec2(1280,720)),
+		activeRenderedFBOViewportSize(glm::ivec2(1280, 720)),
 		activeCameraViewportSize(glm::ivec2(1280, 720)),
 		activeFramebuffer(-1),
 
@@ -262,19 +262,29 @@ namespace vel
 	{
 		if (width != this->activeCameraViewportSize.x || height != this->activeCameraViewportSize.y)
 		{
+			//std::cout << "Altering camera viewport size: " << this->activeCameraViewportSize.x << ", " << this->activeCameraViewportSize.y << std::endl;
 			this->activeCameraViewportSize = glm::ivec2(width, height);
 			glViewport(0, 0, width, height);
 		}
+	}
+
+	void GPU::setViewportSize(unsigned int width, unsigned int height)
+	{
+		glViewport(0, 0, width, height);
 	}
 
 	void GPU::updateRenderedFBOViewportSize(unsigned int width, unsigned int height)
 	{
 		if (width != this->activeRenderedFBOViewportSize.x || height != this->activeRenderedFBOViewportSize.y)
 		{
+			//std::cout << "Altering rendered fbo viewport size: " << this->activeRenderedFBOViewportSize.x << ", " << this->activeRenderedFBOViewportSize.y << std::endl;
 			this->activeRenderedFBOViewportSize = glm::ivec2(width, height);
 			this->updateRenderedViewportSize();
-			glViewport(0, 0, width, height);
+			//glViewport(0, 0, width, height);
 		}
+
+		//std::cout << "glviewport update FBO: " << width << ", " << height << std::endl;
+		glViewport(0, 0, width, height);
 	}
 
 	void GPU::updateRenderedViewportSize()
