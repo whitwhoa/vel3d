@@ -757,7 +757,7 @@ namespace vel
 		gpu->drawToScreen(this->screenTint);
 
 		// If you don't set glviewport back to the render resolution (vs leaving it at the window resolution), mouse
-		// movement becomes jacked up
+		// movement gets jacked up
 		gpu->setViewportSize(this->resolution.x, this->resolution.y);
 
 
