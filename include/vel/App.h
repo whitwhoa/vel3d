@@ -81,9 +81,9 @@ namespace vel
 
 		AssetManager&									getAssetManager();
 
-		void											removeScene(std::string name);
-		void											swapScene(std::string name);
-		bool											sceneExists(std::string name);
+		void											removeScene(const std::string& name);
+		void											swapScene(const std::string& name);
+		bool											sceneExists(const std::string& name);
 
 		Scene*											getActiveScene();
 

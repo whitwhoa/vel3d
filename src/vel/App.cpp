@@ -84,7 +84,7 @@ namespace vel
 		return this->window->getImguiFont(key);
 	}
 
-	void App::removeScene(std::string name)
+	void App::removeScene(const std::string& name)
 	{
 		LOG_TO_CLI_AND_FILE("Removing Scene: " + name);
 
@@ -100,7 +100,7 @@ namespace vel
 		this->scenes.erase(this->scenes.begin() + i);
 	}
 	
-	bool App::sceneExists(std::string name)
+	bool App::sceneExists(const std::string& name)
 	{
 		for (auto& s : this->scenes)
 			if (s->getName() == name)
@@ -109,7 +109,7 @@ namespace vel
 		return false;
 	}
 
-	void App::swapScene(std::string name)
+	void App::swapScene(const std::string& name)
 	{
 		LOG_TO_CLI_AND_FILE("Swapping to Scene: " + name);
 
@@ -326,8 +326,6 @@ namespace vel
 					if(this->audioDevice)
 						this->audioDevice->cleanUpManagedSFX();
 
-					this->update();
-
                     this->accumulator -= this->fixedLogicTime;
                 }
 
@@ -351,6 +349,8 @@ namespace vel
 				this->window->renderGui();
 
 				this->window->swapBuffers();
+
+				this->update();
             }
 
         }
