@@ -20,6 +20,7 @@
 #include "vel/HeadlessScene.h"
 #include "vel/LineActor.h"
 #include "vel/AudioDevice.h"
+#include "vel/FinalRenderTarget.h"
 
 #include "vel/Material.h"
 #include "vel/DiffuseMaterial.h"
@@ -43,6 +44,8 @@ namespace vel
 	private:
 		glm::ivec2							windowSize;
 		glm::ivec2							resolution;
+
+		std::unique_ptr<FinalRenderTarget>	sceneRenderTarget;
 
 		float								animationTime;
 		glm::vec4							screenTint;

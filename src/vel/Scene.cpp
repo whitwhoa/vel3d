@@ -20,6 +20,7 @@ using json = nlohmann::json;
 namespace vel
 {
 	Scene::Scene(const std::string& dataDir) :
+		sceneRenderTarget(nullptr),
 		inputState(nullptr),
 		audioDevice(nullptr),
 		audioGroupKey(-1),
@@ -27,7 +28,7 @@ namespace vel
 		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)),
 		HeadlessScene(dataDir)
 	{
-		
+		// TODO: initialize sceneRenderTarget
 	}
 	
 	Scene::~Scene()
@@ -673,20 +674,13 @@ namespace vel
 				this->cameraProjectionMatrix = c->getProjectionMatrix();
 				this->cameraViewMatrix = c->getViewMatrix();
 
-				// TODO: this TANKS performance when you have multiple cameras of different resolutions because it causes
-				// the entire FBO to be destroyed and rebuilt here, AND again later in the function. This should only ever
-				// be called if the user adjusts resolution, not to adjust viewport size for different size cameras. So if
-				// keeping the multi camera per scene functionality, we must find a way around this....
-				gpu->updateCameraViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different sizes
+				gpu->updateCameraViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different resolutions
 				
 				gpu->setRenderTarget(c->getRenderTarget());
 				
-				
 				gpu->setOpaqueRenderState();
 
-
 				bool foundFirstAlpha = false;
-
 
 				for (auto& pair : s->getActors())
 				{
@@ -728,14 +722,9 @@ namespace vel
 
 		// all stage camera's framebuffers are now updated, loop through each stage camera and check if it should display it's contents 
 
-		// now bind back to default framebuffer and draw a quad plane with the attached framebuffer texture
-		// enable blending of each renderable stage "layer"
-		//gpu->enableBlend2();
-
+		// now bind the scene's FinalRenderTarget. It's viewport size should always be the full size of the window, or screen in fullscreen mode
 		gpu->updateRenderedFBOViewportSize(this->getWindowSize().x, this->getWindowSize().y);
 		gpu->setRenderedFBO();
-
-		//gpu->setDefaultFrameBuffer();
 
 		for (auto& s : this->stages)
 		{
@@ -747,17 +736,14 @@ namespace vel
 					gpu->drawToRenderedFBO(c->getRenderTarget()->opaqueTexture.frames.at(0).dsaHandle);
 		}
 
-		// TODO: would it be possible to implement functionality where a scene would hold a copy of the gpu rendered FBO texture
-		// at this state, so that it can be referenced as a texture via other logic? For example if we want a menu scene, and 
-		// we want the background of the menu scene to be a blurred version of the last rendered frame of the scene that was
-		// just running, we could grab it from the scene and use it as a texture? Sounds like it shouldn't be too big of a deal.
-
 		// call post process to apply post process shader while drawing into the default framebuffer for display to screen
 		gpu->setDefaultFrameBuffer();
 		gpu->drawToScreen(this->screenTint);
 
-		// If you don't set glviewport back to the render resolution (vs leaving it at the window resolution), mouse
-		// movement gets jacked up
+		// If you don't set glviewport back to the scene's render resolution (vs leaving it at the window resolution), mouse
+		// movement gets jacked up (scene resolution is not the same as the resolution value in the sceneRenderTarget, resolution
+		// in that object is for tracking the last rendered resolution of that framebuffer which should always be the size of the
+		// window (or screen in fullsreen mode) so that all previously rendered camera textures encompass the entire window)
 		gpu->setViewportSize(this->resolution.x, this->resolution.y);
 
 
