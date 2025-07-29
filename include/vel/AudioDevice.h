@@ -98,8 +98,6 @@ namespace vel
 		/*
 			Loop through all managedSFX and remove those which have stopped. Do not run if audio paused, as all sounds will be stopped during the
 			pause (miniaudio apparently does not distinguish between playing but paused, vs concluded).
-
-			TODO: this will need to be called in the App update loop
 		*/
 		void cleanUpManagedSFX();
 
@@ -169,14 +167,30 @@ namespace vel
 		void unpauseBGM(const std::string& name);
 
 		/*
+			Get the current volume of the BGM sound group
+		*/
+		float getBGMVolume()
+		{
+			return ma_sound_group_get_volume(&this->bgmVolGroup);
+		}
+
+		/*
+			Get the current volume of the SFX sound group
+		*/
+		float getSFXVolume()
+		{
+			return ma_sound_group_get_volume(&this->sfxVolGroup);
+		}
+
+		/*
 			Update BGM volume
 		*/
-		void updateBGMVolume(float vol);
+		void setBGMVolume(float vol);
 
 		/*
 			Update SFX volume
 		*/
-		void updateSFXVolume(float vol);
+		void setSFXVolume(float vol);
 
 		/*
 			Remove all bgm, managed, and unmanaged sfx files for this group key (this would be the data generated from the

@@ -160,18 +160,15 @@ namespace vel
 		this->scenes.push_back(std::move(scene));
 
 		Scene* ptrScene = this->scenes.back().get();
-		
-		ptrScene->load();
 
 		if (makeActive)
 		{
 			this->activeScene = ptrScene;
 			if (this->activeScene->getAudioDeviceGroupKey() != -1)
 				this->audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
-
-			// fresh load of scene, no sounds would be paused at this point, so no sounds need to be unpaused
 		}
-			
+
+		ptrScene->load();
     }
 
     void App::close()

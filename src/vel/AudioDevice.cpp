@@ -221,6 +221,7 @@ namespace vel
 		ma_sound* clone = new ma_sound;
 		if (ma_sound_init_copy(&this->engine, this->sfxSounds.at(name), 0, &this->sfxVolGroup, clone) == MA_SUCCESS) 
 		{
+			ma_sound_set_spatialization_enabled(clone, MA_FALSE);
 			ma_sound_start(clone);
 			this->managedSFX.at(this->currentGroupKey).insert(clone);
 		}
@@ -236,6 +237,7 @@ namespace vel
 		ma_sound* clone = new ma_sound;
 		if (ma_sound_init_copy(&this->engine, this->sfxSounds.at(name), 0, &this->sfxVolGroup, clone) == MA_SUCCESS)
 		{
+			ma_sound_set_spatialization_enabled(clone, MA_FALSE);
 			ma_sound_set_looping(clone, MA_TRUE);
 			ma_sound_start(clone);
 
@@ -295,13 +297,18 @@ namespace vel
 		std::string path = this->bgmSounds[name];
 
 		ma_sound* bgm = new ma_sound;
-		if (ma_sound_init_from_file(&this->engine, path.c_str(), MA_SOUND_FLAG_STREAM | MA_SOUND_FLAG_LOOPING, &this->bgmVolGroup, NULL, bgm) != MA_SUCCESS)
+		if (ma_sound_init_from_file(&this->engine, path.c_str(), MA_SOUND_FLAG_STREAM | MA_SOUND_FLAG_LOOPING, &this->bgmVolGroup, NULL, bgm) == MA_SUCCESS)
+		{
+			ma_sound_set_spatialization_enabled(bgm, MA_FALSE);
+			ma_sound_start(bgm);
+			this->currentBGM.at(this->currentGroupKey)[name] = bgm;
+		}
+		else
 		{
 			delete bgm;
 			LOG_CRASH("Failed to load BGM track: " + path);
 		}
 
-		this->currentBGM.at(this->currentGroupKey)[name] = bgm;
 	}
 
 	void AudioDevice::pauseBGM(const std::string& name)
@@ -314,12 +321,12 @@ namespace vel
 		ma_sound_start(this->currentBGM.at(this->currentGroupKey)[name]);
 	}
 
-	void AudioDevice::updateBGMVolume(float vol)
+	void AudioDevice::setBGMVolume(float vol)
 	{
 		ma_sound_group_set_volume(&this->bgmVolGroup, vol);
 	}
 
-	void AudioDevice::updateSFXVolume(float vol)
+	void AudioDevice::setSFXVolume(float vol)
 	{
 		ma_sound_group_set_volume(&this->sfxVolGroup, vol);
 	}
