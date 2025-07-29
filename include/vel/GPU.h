@@ -53,8 +53,8 @@ namespace vel
 		glm::ivec2							activeCameraViewportSize;
 		int									activeFramebuffer;
 
-		std::unique_ptr<unsigned int>		renderedFBO;
-		std::unique_ptr<Texture>			renderedFBOTexture;
+		std::unique_ptr<unsigned int>		renderedFBO; // why are these pointers?
+		std::unique_ptr<Texture>			renderedFBOTexture; // ^^
 		bool								viewportSizeAltered;
 		void								createRenderedFBO(unsigned int width, unsigned int height);
 		void								clearRenderedFBO();
