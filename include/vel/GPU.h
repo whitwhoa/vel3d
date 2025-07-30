@@ -55,7 +55,7 @@ namespace vel
 
 
 		
-		void								removeFinalRenderTarget(FinalRenderTarget* frt);
+		
 
 		bool								useFXAA;
 
@@ -163,6 +163,7 @@ namespace vel
 		void								setViewportSize(unsigned int width, unsigned int height);
 
 		std::unique_ptr<FinalRenderTarget>	createFinalRenderTarget(const std::string& name, unsigned int width, unsigned int height);
+		void								freeFinalRenderTarget(FinalRenderTarget* frt);
 
 	};
 }

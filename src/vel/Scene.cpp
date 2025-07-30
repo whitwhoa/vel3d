@@ -19,7 +19,8 @@ using json = nlohmann::json;
 
 namespace vel
 {
-	Scene::Scene(const std::string& dataDir) :
+	Scene::Scene(const std::string& dataDir, GPU* gpu) :
+		gpu(gpu),
 		sceneRenderTarget(nullptr),
 		inputState(nullptr),
 		audioDevice(nullptr),
@@ -28,12 +29,26 @@ namespace vel
 		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)),
 		HeadlessScene(dataDir)
 	{
-		
+
 	}
 	
 	Scene::~Scene()
 	{
 		this->freeAssets();
+	}
+
+	void Scene::initRenderTarget()
+	{
+		this->sceneRenderTarget = this->gpu->createFinalRenderTarget(
+			"finalRenderTarget_" + this->name, 
+			this->getWindowSize().x, 
+			this->getWindowSize().y
+		);
+	}
+
+	FinalRenderTarget* Scene::getSceneRenderTarget()
+	{
+		return this->sceneRenderTarget.get();
 	}
 
 	void Scene::loadBGMSound(const std::string& path)
@@ -140,6 +155,7 @@ namespace vel
 		for (auto& s : this->soundsInUse)
 			this->audioDevice->removeSound(s);
 
+		this->gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
 	}
 
 	void Scene::setScreenTint(glm::vec4 c)
@@ -651,12 +667,8 @@ namespace vel
 			s->updatePreviousTransforms();
 	}
 
-	void Scene::draw(GPU* gpu, float frameTime, float alpha)
+	void Scene::draw(float frameTime, float alpha)
 	{
-		if (!this->sceneRenderTarget)
-			this->sceneRenderTarget = gpu->createFinalRenderTarget("finalRenderTarget_" + this->name, this->getWindowSize().x, this->getWindowSize().y);
-
-
 		// loop through all stages
 		int i = 0;
 		for (auto& s : this->stages)

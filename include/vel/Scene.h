@@ -5,6 +5,7 @@
 #include <string>
 #include <optional>
 
+#include "vel/GPU.h"
 #include "vel/InputState.h"
 #include "vel/Camera.h"
 #include "vel/Mesh.h"
@@ -42,6 +43,7 @@ namespace vel
 	class Scene : public HeadlessScene
 	{
 	private:
+		GPU*								gpu;
 		glm::ivec2							windowSize;
 		glm::ivec2							resolution;
 
@@ -114,7 +116,7 @@ namespace vel
 		Material*							getMaterial(const std::string& name);
 
 	public:
-		Scene(const std::string& dataDir);
+		Scene(const std::string& dataDir, GPU* gpu);
 		~Scene();
 		virtual void						load() = 0;
 		virtual void						fixedLoop(float deltaTime) = 0;
@@ -130,7 +132,7 @@ namespace vel
 		void								setInputState(const InputState* is);
 
 		void								updateAnimations(float frameTime);
-		void								draw(GPU* gpu, float frameTime, float alpha);
+		void								draw(float frameTime, float alpha);
 		void								updatePreviousTransforms();
 
 		void								clearAllRenderTargetBuffers(GPU* gpu);
@@ -146,6 +148,8 @@ namespace vel
 
 		int									getAudioDeviceGroupKey();
 		
+		void								initRenderTarget();
+		FinalRenderTarget*					getSceneRenderTarget();
 
 	};
 

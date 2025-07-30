@@ -156,6 +156,8 @@ namespace vel
 
 		if (this->audioDevice)
 			scene->setAudioDevice(this->audioDevice);
+
+		scene->initRenderTarget();
 		
 		this->scenes.push_back(std::move(scene));
 
@@ -341,7 +343,7 @@ namespace vel
 				// in one stage, if it's used in another stage things would be bad
 				this->activeScene->clearAllRenderTargetBuffers(this->gpu);
 
-                this->activeScene->draw(this->gpu, this->frameTime, renderLerpInterval);
+                this->activeScene->draw(this->frameTime, renderLerpInterval);
 
 				this->window->renderGui();
 

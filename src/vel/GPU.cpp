@@ -144,7 +144,7 @@ namespace vel
 		return frt;
 	}
 
-	void GPU::removeFinalRenderTarget(FinalRenderTarget* frt)
+	void GPU::freeFinalRenderTarget(FinalRenderTarget* frt)
 	{
 		glMakeTextureHandleNonResidentARB(frt->texture.frames.at(0).dsaHandle);
 		glDeleteTextures(1, &frt->texture.frames.at(0).id);
@@ -286,7 +286,7 @@ namespace vel
 
 			if (frt->resolution.x != 0 && frt->resolution.y != 0)
 			{
-				this->removeFinalRenderTarget(frt);
+				this->freeFinalRenderTarget(frt);
 				updatedFRT = this->createFinalRenderTarget(frt->texture.name, width, height);
 			}			
 		}
