@@ -30,14 +30,8 @@ namespace vel
 		zeroFillerVec(glm::vec4(0.0f)),
 		oneFillerVec(1.0f),
 		activeClearColorValues(glm::vec4(0.0f)),
-		activeRenderedFBOViewportSize(glm::ivec2(1280, 720)),
 		activeCameraViewportSize(glm::ivec2(1280, 720)),
 		activeFramebuffer(-1),
-
-		renderedFBO(nullptr),
-		renderedFBOTexture(nullptr),
-		viewportSizeAltered(false),
-
 		useFXAA(fxaa)
 	{
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // why?
@@ -48,8 +42,6 @@ namespace vel
 		this->initTextureUBO();
 		this->initLightMapTextureUBO();
 		this->initScreenSpaceMesh();
-
-		this->createRenderedFBO(this->activeRenderedFBOViewportSize.x, this->activeRenderedFBOViewportSize.y);
 	}
 
 	GPU::~GPU()
@@ -57,34 +49,35 @@ namespace vel
 		this->clearMesh(&this->screenSpaceMesh);
 	}
 
-	void GPU::createRenderedFBO(unsigned int width, unsigned int height)
+	std::unique_ptr<FinalRenderTarget> GPU::createFinalRenderTarget(const std::string& name, unsigned int width, unsigned int height)
 	{
 		TextureData td;
 		TextureData td2;
 
-		this->renderedFBOTexture = std::make_unique<Texture>();
-		this->renderedFBOTexture->name = "renderedFBOTexture";
-		this->renderedFBOTexture->frames.push_back(td);
-		this->renderedFBOTexture->frames.push_back(td2);
-		this->renderedFBOTexture->alphaChannel = true;
-		this->renderedFBOTexture->freeAfterGPULoad = false;
-		this->renderedFBOTexture->uvWrapping = 0;
+		std::unique_ptr<FinalRenderTarget> frt = std::make_unique<FinalRenderTarget>();
+		frt->texture.name = name;
+		frt->texture.frames.push_back(td);
+		frt->texture.frames.push_back(td2);
+		frt->texture.alphaChannel = true;
+		frt->texture.freeAfterGPULoad = false;
+		frt->texture.uvWrapping = 0;
+		frt->resolution = glm::ivec2(width, height);
 
 		unsigned int fboId = 0;
 		glGenFramebuffers(1, &fboId);
-		this->renderedFBO = std::make_unique<unsigned int>(fboId);
+		frt->fbo = fboId;
 
-		glGenTextures(1, &this->renderedFBOTexture->frames.at(0).id);
-		glGenTextures(1, &this->renderedFBOTexture->frames.at(1).id);
+		glGenTextures(1, &frt->texture.frames.at(0).id);
+		glGenTextures(1, &frt->texture.frames.at(1).id);
 
 		// color
-		glBindTexture(GL_TEXTURE_2D, this->renderedFBOTexture->frames.at(0).id);
+		glBindTexture(GL_TEXTURE_2D, frt->texture.frames.at(0).id);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		// depth
-		glBindTexture(GL_TEXTURE_2D, this->renderedFBOTexture->frames.at(1).id);
+		glBindTexture(GL_TEXTURE_2D, frt->texture.frames.at(1).id);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -92,9 +85,9 @@ namespace vel
 
 		glBindTexture(GL_TEXTURE_2D, 0); // be safe
 		
-		this->bindFrameBuffer(*this->renderedFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->renderedFBOTexture->frames.at(0).id, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->renderedFBOTexture->frames.at(1).id, 0);
+		this->bindFrameBuffer(frt->fbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frt->texture.frames.at(0).id, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, frt->texture.frames.at(1).id, 0);
 
 		GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
 		glDrawBuffers(1, drawBuffers);
@@ -145,8 +138,18 @@ namespace vel
 
 
 		// obtain texture's DSA handle, and set texture's DSA handle as resident so it can be accessed in shaders
-		this->renderedFBOTexture->frames.at(0).dsaHandle = glGetTextureHandleARB(this->renderedFBOTexture->frames.at(0).id);
-		glMakeTextureHandleResidentARB(this->renderedFBOTexture->frames.at(0).dsaHandle);
+		frt->texture.frames.at(0).dsaHandle = glGetTextureHandleARB(frt->texture.frames.at(0).id);
+		glMakeTextureHandleResidentARB(frt->texture.frames.at(0).dsaHandle);
+
+		return frt;
+	}
+
+	void GPU::removeFinalRenderTarget(FinalRenderTarget* frt)
+	{
+		glMakeTextureHandleNonResidentARB(frt->texture.frames.at(0).dsaHandle);
+		glDeleteTextures(1, &frt->texture.frames.at(0).id);
+		glDeleteTextures(1, &frt->texture.frames.at(1).id);
+		glDeleteFramebuffers(1, &frt->fbo);
 	}
 
 	void GPU::setOpaqueRenderState()
@@ -222,7 +225,7 @@ namespace vel
 		this->compositeShader = s;
 	}
 
-	void GPU::drawToRenderedFBO(GLuint64 dsaHandle)
+	void GPU::drawToFinalRenderTarget(GLuint64 dsaHandle)
 	{
 		this->useShader(this->screenShader);
 
@@ -235,15 +238,15 @@ namespace vel
 		this->drawGpuMesh();
 	}
 
-	void GPU::drawToScreen(glm::vec4 tint)
+	void GPU::drawToScreen(FinalRenderTarget* frt, glm::vec4 tint)
 	{
 		this->useShader(this->postShader);
 
-		this->updateTextureUBO(0, this->renderedFBOTexture->frames.at(0).dsaHandle);
+		this->updateTextureUBO(0, frt->texture.frames.at(0).dsaHandle);
 
 		this->setShaderVec4("tint", tint);
 		// don't have setShaderVec2 method right now, so use vec3 to get this done
-		this->setShaderVec3("resolution", glm::vec3(this->activeRenderedFBOViewportSize.x, this->activeRenderedFBOViewportSize.y, 0.0f));
+		this->setShaderVec3("resolution", glm::vec3(frt->resolution.x, frt->resolution.y, 0.0f));
 		this->setShaderBool("enableFXAA", this->useFXAA);
 
 		this->updateLightmapTextureUBO(this->defaultWhiteTextureHandle);
@@ -273,45 +276,31 @@ namespace vel
 		glViewport(0, 0, width, height);
 	}
 
-	void GPU::updateRenderedFBOViewportSize(unsigned int width, unsigned int height)
+	std::unique_ptr<FinalRenderTarget> GPU::updateFinalRenderTargetVPSize(FinalRenderTarget* frt, unsigned int width, unsigned int height)
 	{
-		if (width != this->activeRenderedFBOViewportSize.x || height != this->activeRenderedFBOViewportSize.y)
+		std::unique_ptr<FinalRenderTarget> updatedFRT = nullptr;
+
+		if (width != frt->resolution.x || height != frt->resolution.y)
 		{
-			//std::cout << "Altering rendered fbo viewport size: " << this->activeRenderedFBOViewportSize.x << ", " << this->activeRenderedFBOViewportSize.y << std::endl;
-			this->activeRenderedFBOViewportSize = glm::ivec2(width, height);
-			this->updateRenderedViewportSize();
-			//glViewport(0, 0, width, height);
+			frt->resolution = glm::ivec2(width, height);
+
+			if (frt->resolution.x != 0 && frt->resolution.y != 0)
+			{
+				this->removeFinalRenderTarget(frt);
+				updatedFRT = this->createFinalRenderTarget(frt->texture.name, width, height);
+			}			
 		}
 
-		//std::cout << "glviewport update FBO: " << width << ", " << height << std::endl;
 		glViewport(0, 0, width, height);
+
+		return updatedFRT;
 	}
 
-	void GPU::updateRenderedViewportSize()
-	{
-		if (this->activeRenderedFBOViewportSize.x == 0 || this->activeRenderedFBOViewportSize.y == 0)
-			return;
-
-		//std::cout << "Fully remove and rebuild renderdFBO \n";
-
-		this->clearRenderedFBO();
-		this->createRenderedFBO(this->activeRenderedFBOViewportSize.x, this->activeRenderedFBOViewportSize.y);
-	}
-
-	void GPU::clearRenderedFBO()
-	{
-		glMakeTextureHandleNonResidentARB(this->renderedFBOTexture->frames.at(0).dsaHandle);
-		glDeleteTextures(1, &this->renderedFBOTexture->frames.at(0).id);
-		glDeleteTextures(1, &this->renderedFBOTexture->frames.at(1).id);
-
-		glDeleteFramebuffers(1, this->renderedFBO.get());
-	}
-
-	void GPU::setRenderedFBO()
+	void GPU::setFinalRenderTarget(FinalRenderTarget* frt)
 	{
 		glDepthMask(GL_TRUE); // insure we're writing to depth buffer (without this, we had to have two stages 
 							// each with a camera for rendering to work right, so i must be disabling it somewhere.
-		this->bindFrameBuffer(*this->renderedFBO);
+		this->bindFrameBuffer(frt->fbo);
 	}
 
 	void GPU::setDefaultFrameBuffer()
@@ -1069,10 +1058,13 @@ namespace vel
 		glClearBufferfv(GL_COLOR, 1, &this->oneFillerVec[0]);
 	}
 
-	void GPU::clearRenderedFBO(float r, float g, float b, float a)
+	void GPU::clearFinalRenderTarget(FinalRenderTarget* frt, glm::vec4 color)
 	{
-		this->bindFrameBuffer(*this->renderedFBO);
-		this->clearBuffers(r, g, b, a);
+		if (!frt)
+			return;
+
+		this->bindFrameBuffer(frt->fbo);
+		this->clearBuffers(color.x, color.y, color.z, color.w);
 	}
 
 	void GPU::clearScreenBuffer(float r, float g, float b, float a)

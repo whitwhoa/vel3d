@@ -28,7 +28,7 @@ namespace vel
 		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)),
 		HeadlessScene(dataDir)
 	{
-		// TODO: initialize sceneRenderTarget
+		
 	}
 	
 	Scene::~Scene()
@@ -653,9 +653,9 @@ namespace vel
 
 	void Scene::draw(GPU* gpu, float frameTime, float alpha)
 	{
-		//std::cout << "Scene::draw()-------------------------------------\n";
+		if (!this->sceneRenderTarget)
+			this->sceneRenderTarget = gpu->createFinalRenderTarget("finalRenderTarget_" + this->name, this->getWindowSize().x, this->getWindowSize().y);
 
-		//gpu->enableBackfaceCulling(); // insure backface culling is occurring
 
 		// loop through all stages
 		int i = 0;
@@ -723,8 +723,16 @@ namespace vel
 		// all stage camera's framebuffers are now updated, loop through each stage camera and check if it should display it's contents 
 
 		// now bind the scene's FinalRenderTarget. It's viewport size should always be the full size of the window, or screen in fullscreen mode
-		gpu->updateRenderedFBOViewportSize(this->getWindowSize().x, this->getWindowSize().y);
-		gpu->setRenderedFBO();
+		std::unique_ptr<FinalRenderTarget> updatedFRT =  gpu->updateFinalRenderTargetVPSize(
+			this->sceneRenderTarget.get(), 
+			this->getWindowSize().x, 
+			this->getWindowSize().y
+		);
+
+		if (updatedFRT)
+			this->sceneRenderTarget = std::move(updatedFRT);
+
+		gpu->setFinalRenderTarget(this->sceneRenderTarget.get());
 
 		for (auto& s : this->stages)
 		{
@@ -733,12 +741,12 @@ namespace vel
 
 			for (auto c : s->getCameras())
 				if (c->isFinalRenderCam())
-					gpu->drawToRenderedFBO(c->getRenderTarget()->opaqueTexture.frames.at(0).dsaHandle);
+					gpu->drawToFinalRenderTarget(c->getRenderTarget()->opaqueTexture.frames.at(0).dsaHandle);
 		}
 
 		// call post process to apply post process shader while drawing into the default framebuffer for display to screen
 		gpu->setDefaultFrameBuffer();
-		gpu->drawToScreen(this->screenTint);
+		gpu->drawToScreen(this->sceneRenderTarget.get(), this->screenTint);
 
 		// If you don't set glviewport back to the scene's render resolution (vs leaving it at the window resolution), mouse
 		// movement gets jacked up (scene resolution is not the same as the resolution value in the sceneRenderTarget, resolution
@@ -774,7 +782,7 @@ namespace vel
 			}
 		}
 
-		gpu->clearRenderedFBO(0.0f, 0.0f, 0.0f, 0.0f);
+		gpu->clearFinalRenderTarget(this->sceneRenderTarget.get(), glm::vec4(0.0f));
 		gpu->clearScreenBuffer(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 

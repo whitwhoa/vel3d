@@ -17,6 +17,7 @@
 #include "vel/CollisionDebugDrawer.h"
 #include "vel/RenderTarget.h"
 #include "vel/FontBitmap.h"
+#include "vel/FinalRenderTarget.h"
 
 typedef uint64_t GLuint64;
 
@@ -49,15 +50,12 @@ namespace vel
 		glm::vec4							oneFillerVec;
 
 		glm::vec4							activeClearColorValues;
-		glm::ivec2							activeRenderedFBOViewportSize;
 		glm::ivec2							activeCameraViewportSize;
 		int									activeFramebuffer;
 
-		std::unique_ptr<unsigned int>		renderedFBO; // why are these pointers?
-		std::unique_ptr<Texture>			renderedFBOTexture; // ^^
-		bool								viewportSizeAltered;
-		void								createRenderedFBO(unsigned int width, unsigned int height);
-		void								clearRenderedFBO();
+
+		
+		void								removeFinalRenderTarget(FinalRenderTarget* frt);
 
 		bool								useFXAA;
 
@@ -125,10 +123,10 @@ namespace vel
 		void								updateLightmapTextureUBO(GLuint64 dsaHandle);
 
 		void								updateCameraViewportSize(unsigned int width, unsigned int height);
-		void								updateRenderedFBOViewportSize(unsigned int width, unsigned int height);
+		std::unique_ptr<FinalRenderTarget>	updateFinalRenderTargetVPSize(FinalRenderTarget* frt, unsigned int width, unsigned int height);
 		void								setRenderTarget(RenderTarget* rt);
 
-		void								drawToRenderedFBO(GLuint64 dsaHandle);
+		void								drawToFinalRenderTarget(GLuint64 dsaHandle);
 
 		void								setScreenShader(Shader* s);
 		void								setPostShader(Shader* s);
@@ -155,17 +153,16 @@ namespace vel
 
 		void								drawLines(unsigned int pointCount);
 
-
-		void								updateRenderedViewportSize();
-
 											// adjust x,y,z as r,g,b for any color, adjust w as strength of the overlay tint
-		void								drawToScreen(glm::vec4 tint = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f));
+		void								drawToScreen(FinalRenderTarget* frt, glm::vec4 tint = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f));
 
-		void								clearRenderedFBO(float r, float g, float b, float a);
+		void								clearFinalRenderTarget(FinalRenderTarget* frt, glm::vec4 color);
 
-		void								setRenderedFBO();
+		void								setFinalRenderTarget(FinalRenderTarget* frt);
 
 		void								setViewportSize(unsigned int width, unsigned int height);
+
+		std::unique_ptr<FinalRenderTarget>	createFinalRenderTarget(const std::string& name, unsigned int width, unsigned int height);
 
 	};
 }
