@@ -109,6 +109,15 @@ namespace vel
 		return false;
 	}
 
+	Scene* App::getScene(const std::string& name)
+	{
+		for (auto& s : this->scenes)
+			if (s->getName() == name)
+				return s.get();
+
+		return nullptr;
+	}
+
 	void App::swapScene(const std::string& name)
 	{
 		LOG_TO_CLI_AND_FILE("Swapping to Scene: " + name);
@@ -118,7 +127,7 @@ namespace vel
 			if (s->getName() == name)
 			{
 				// pause current scene audio if it holds a valid group key
-				if (this->activeScene->getAudioDeviceGroupKey() != -1)
+				if (this->activeScene && this->activeScene->getAudioDeviceGroupKey() != -1)
 					this->audioDevice->pauseCurrentGroup();
 
 				// update active scene
@@ -166,6 +175,7 @@ namespace vel
 		if (makeActive)
 		{
 			this->activeScene = ptrScene;
+
 			if (this->activeScene->getAudioDeviceGroupKey() != -1)
 				this->audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
 		}
