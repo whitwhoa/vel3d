@@ -783,6 +783,52 @@ namespace vel
 		glBindVertexArray(0);
 	}
 
+	void GPU::copyGPUTexture(unsigned int sourceId, unsigned int destinationId, unsigned int width, unsigned int height)
+	{
+		glCopyImageSubData(
+			sourceId, GL_TEXTURE_2D, 0, 0, 0, 0,
+			destinationId, GL_TEXTURE_2D, 0, 0, 0, 0,
+			width, height, 1
+		);
+	}
+
+	std::unique_ptr<Texture> GPU::generateEmptyTexture(const std::string& name, unsigned int frameCount, 
+		unsigned int width, unsigned int height, bool clamp)
+	{
+		std::unique_ptr<Texture> t = std::make_unique<Texture>();
+		t->name = name;
+		t->uvWrapping = (unsigned int)clamp;
+		t->alphaChannel = false;
+		t->freeAfterGPULoad = false;
+
+		for (unsigned int i = 0; i < frameCount; i++)
+		{
+			TextureData td;
+
+			glGenTextures(1, &td.id);
+			glBindTexture(GL_TEXTURE_2D, td.id);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_HALF_FLOAT, nullptr);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			if (clamp)
+			{
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			}
+			else
+			{
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			}
+			td.dsaHandle = glGetTextureHandleARB(td.id);
+			glMakeTextureHandleResidentARB(td.dsaHandle);
+
+			t->frames.push_back(td);
+		}
+
+		return t;
+	}
+
 	void GPU::loadTexture(Texture* t)
 	{
 		for (auto& td : t->frames)
