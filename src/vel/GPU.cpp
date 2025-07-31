@@ -240,6 +240,8 @@ namespace vel
 
 	void GPU::drawToScreen(FinalRenderTarget* frt, glm::vec4 tint)
 	{
+		this->disableBlend();
+
 		this->useShader(this->postShader);
 
 		this->updateTextureUBO(0, frt->texture.frames.at(0).dsaHandle);
@@ -254,6 +256,8 @@ namespace vel
 		this->useMesh(&this->screenSpaceMesh);
 
 		this->drawGpuMesh();
+
+		this->enableBlend();
 	}
 
 	void GPU::setRenderTarget(RenderTarget* rt)
@@ -674,7 +678,8 @@ namespace vel
 
 		// reveal texture
 		glBindTexture(GL_TEXTURE_2D, rt->revealTexture.frames.at(0).id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, rt->resolution.x, rt->resolution.y, 0, GL_RED, GL_FLOAT, NULL);
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, rt->resolution.x, rt->resolution.y, 0, GL_RED, GL_FLOAT, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, rt->resolution.x, rt->resolution.y, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -1011,19 +1016,6 @@ namespace vel
     void GPU::enableBlend()
 	{
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-
-	// https://apoorvaj.io/alpha-compositing-opengl-blending-and-premultiplied-alpha/#toc5
-	// with this method we can enable transparent framebuffers in glfw, clear the framebuffers
-	// that we render as textures with alpha component, render those, then use this blending 
-	// method when we draw them to the screenbuffer
-	void GPU::enableBlend2()
-	{
-		glEnable(GL_BLEND);
-		glBlendEquation(GL_FUNC_ADD);
-		//glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
     
     void GPU::disableBlend()

@@ -105,7 +105,6 @@ namespace vel
 
 		void								finish();
 		void								enableBlend();
-		void								enableBlend2();
         void                                disableBlend();
 
 		void								debugDrawCollisionWorld(CollisionDebugDrawer* cdd);

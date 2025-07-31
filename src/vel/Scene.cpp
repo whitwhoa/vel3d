@@ -794,8 +794,8 @@ namespace vel
 			}
 		}
 
-		gpu->clearFinalRenderTarget(this->sceneRenderTarget.get(), glm::vec4(0.0f));
-		gpu->clearScreenBuffer(0.0f, 0.0f, 0.0f, 0.0f);
+		gpu->clearFinalRenderTarget(this->sceneRenderTarget.get(), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+		gpu->clearScreenBuffer(0.0f, 1.0f, 0.0f, 1.0f);
 	}
 
 
