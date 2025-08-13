@@ -109,6 +109,9 @@ namespace vel
 		LineActor*							addContinuousLineActor(Stage* stage, const std::string& name, const std::vector<glm::vec2>& points, 
 												glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
+		Billboard*							addBillboard(Stage* stage, const std::string& name, vel::Material* material, vel::Camera* parentCamera,
+												int aspectRatioWidth = 1, int aspectRatioHeight = 1, glm::vec3 initialScale = glm::vec3(1.0f));
+
 		Shader*								getShader(const std::string& name);
 		Texture*							getTexture(const std::string& name);
 		FontBitmap*							getFontBitmap(const std::string& name);

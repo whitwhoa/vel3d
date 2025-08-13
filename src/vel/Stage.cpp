@@ -140,7 +140,6 @@ namespace vel
 		for (auto& pair : this->actors) 
 			for (auto& actor : pair.second) 
 				actor->updatePreviousTransform();
-
 	}
 
 	Actor* Stage::addActor(const Actor& actorIn)

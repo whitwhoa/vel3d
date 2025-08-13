@@ -13,6 +13,7 @@
 #include "vel/Camera.h"
 #include "vel/TextActor.h"
 #include "vel/LineActor.h"
+#include "vel/Billboard.h"
 
 namespace vel
 {
@@ -49,6 +50,7 @@ namespace vel
 																	// came back to it the last time)
 		std::vector<std::unique_ptr<TextActor>>			textActors;
 		std::vector<std::unique_ptr<LineActor>>			lineActors;
+		std::vector<std::unique_ptr<Billboard>>			billboards;
 
 		std::optional<std::pair<ActCompositeKey, unsigned int>>	getActorLocation(const std::string& name);
 		std::optional<std::pair<ActCompositeKey, unsigned int>>	getActorLocation(const Actor* a);
@@ -96,6 +98,8 @@ namespace vel
 		LineActor*										getLineActor(const std::string& name);
 		void											removeLineActor(LineActor*);
 		void											removeLineActor(const std::string& name);
+
+		
 
 		void											addCamera(Camera* c);
 		Camera*											getCamera(const std::string& name);

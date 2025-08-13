@@ -1,6 +1,6 @@
 #include <iostream>
 
-
+#include "vel/Log.h"
 #include "vel/Mesh.h"
 
 
@@ -125,6 +125,64 @@ namespace vel
 	{
 		this->vertices.reserve(this->vertices.size() + vs.size());
 		this->vertices.insert(this->vertices.end(), vs.begin(), vs.end());
+	}
+
+	void Mesh::initBillboardQuad(int aspectRatioWidth, int aspectRatioHeight)
+	{
+		if (aspectRatioWidth <= 0 || aspectRatioHeight <= 0)
+			Log::crash("Aspect ratio values must be positive.");
+
+		// Maintain size so that the largest dimension spans [-1, 1] in clip space
+		float aspect = static_cast<float>(aspectRatioWidth) / static_cast<float>(aspectRatioHeight);
+		float halfWidth;
+		float halfHeight;
+
+		if (aspect >= 1.0f)
+		{
+			// Wider than tall: full width = 2.0, height scaled
+			halfWidth = 1.0f;
+			halfHeight = 1.0f / aspect;
+		}
+		else 
+		{
+			// Taller than wide: full height = 2.0, width scaled
+			halfWidth = aspect;
+			halfHeight = 1.0f;
+		}
+
+		Vertex v0;
+		v0.position = glm::vec3(-halfWidth, halfHeight, 0.0f);
+		v0.normal = glm::vec3(0.0f, 0.0f, -1.0f);
+		v0.textureCoordinates = glm::vec2(0.0f, 1.0f);
+		v0.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+		v0.materialUBOIndex = 0;
+
+		Vertex v1;
+		v1.position = glm::vec3(-halfWidth, -halfHeight, 0.0f);
+		v1.normal = glm::vec3(0.0f, 0.0f, -1.0f);
+		v1.textureCoordinates = glm::vec2(0.0f, 0.0f);
+		v1.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+		v1.materialUBOIndex = 0;
+
+		Vertex v2;
+		v2.position = glm::vec3(halfWidth, -halfHeight, 0.0f);
+		v2.normal = glm::vec3(0.0f, 0.0f, -1.0f);
+		v2.textureCoordinates = glm::vec2(1.0f, 0.0f);
+		v2.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+		v2.materialUBOIndex = 0;
+
+		Vertex v3;
+		v3.position = glm::vec3(halfWidth, halfHeight, 0.0f);
+		v3.normal = glm::vec3(0.0f, 0.0f, -1.0f);
+		v3.textureCoordinates = glm::vec2(1.0f, 1.0f);
+		v3.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+		v3.materialUBOIndex = 0;
+
+		std::vector<Vertex> vs = { v0, v1, v2, v3 };
+		this->setVertices(vs);
+
+		std::vector<unsigned int> is = { 0, 1, 2, 0, 2, 3 };
+		this->setIndices(is);
 	}
 
 }

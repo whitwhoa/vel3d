@@ -655,6 +655,13 @@ namespace vel
 		return this->_addTextActor(stage, std::move(ta), fb, color);
 	}
 
+	Billboard* Scene::addBillboard(Stage* stage, const std::string& name, vel::Material* material, vel::Camera* parentCamera,
+		int aspectRatioWidth, int aspectRatioHeight, glm::vec3 initialScale)
+	{
+		// TODO: generate a mesh for the provided aspect ratio. We have added initBillboardQuad to Mesh, so this is done,
+		// we just need to follow the flow of _addTextActor to insure it is loaded into the gpu and tracked accordingly
+	}
+
 	void Scene::updateTextActors()
 	{
 		for (auto& s : this->stages)
