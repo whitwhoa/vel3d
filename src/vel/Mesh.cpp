@@ -169,8 +169,8 @@ namespace vel
 		std::vector<Vertex> vs = { v0, v1, v2, v3 };
 		this->setVertices(vs);
 
-		// CCW winding when viewed from -Z (front)
-		std::vector<unsigned int> is = { 0, 1, 2, 0, 2, 3 };
+		// Flip indices so -Z is front (CCW when viewed from -Z)
+		std::vector<unsigned int> is = { 0, 2, 1, 0, 3, 2 };
 		this->setIndices(is);
 	}
 
