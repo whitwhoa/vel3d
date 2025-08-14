@@ -458,8 +458,8 @@ namespace vel
 		);
 
 		LOG_CRASH_IF_FALSE(td.primaryImageData.data, "AssetManager::loadTexture(): Unable to load texture at path: " + path);
-		LOG_CRASH_IF_TRUE(td.primaryImageData.width != td.primaryImageData.height, "AssetManager::loadTexture(): Texture not square: " + path);
-		LOG_CRASH_IF_FALSE(isPowerOfTwo(td.primaryImageData.width), "AssetManager::loadTexture(): Texture not power of two: " + path);
+		//LOG_CRASH_IF_TRUE(td.primaryImageData.width != td.primaryImageData.height, "AssetManager::loadTexture(): Texture not square: " + path);
+		//LOG_CRASH_IF_FALSE(isPowerOfTwo(td.primaryImageData.width), "AssetManager::loadTexture(): Texture not power of two: " + path);
 
 		if (td.primaryImageData.nrComponents == 1)
 		{

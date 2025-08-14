@@ -141,28 +141,28 @@ namespace vel
 		Vertex v0;
 		v0.position = glm::vec3(-halfWidth, halfHeight, 0.0f);
 		v0.normal = n;
-		v0.textureCoordinates = glm::vec2(0.0f, 1.0f);
+		v0.textureCoordinates = glm::vec2(0.0f, 0.0f);
 		v0.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
 		v0.materialUBOIndex = 0;
 
 		Vertex v1;
 		v1.position = glm::vec3(-halfWidth, -halfHeight, 0.0f);
 		v1.normal = n;
-		v1.textureCoordinates = glm::vec2(0.0f, 0.0f);
+		v1.textureCoordinates = glm::vec2(0.0f, 1.0f);
 		v1.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
 		v1.materialUBOIndex = 0;
 
 		Vertex v2;
 		v2.position = glm::vec3(halfWidth, -halfHeight, 0.0f);
 		v2.normal = n;
-		v2.textureCoordinates = glm::vec2(1.0f, 0.0f);
+		v2.textureCoordinates = glm::vec2(1.0f, 1.0f);
 		v2.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
 		v2.materialUBOIndex = 0;
 
 		Vertex v3;
 		v3.position = glm::vec3(halfWidth, halfHeight, 0.0f);
 		v3.normal = n;
-		v3.textureCoordinates = glm::vec2(1.0f, 1.0f);
+		v3.textureCoordinates = glm::vec2(1.0f, 0.0f);
 		v3.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
 		v3.materialUBOIndex = 0;
 
