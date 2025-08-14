@@ -569,12 +569,9 @@ namespace vel
 		RGBALineMaterial* pMaterial = this->addRGBALineMaterial(name + "_material", hasAlpha);
 		for (size_t i = 0; i < colors.size(); i++)
 			pMaterial->setLineColor(i, colors[i]);
-		//pMaterial->setColor(color);
 
 		// create actor
-		Actor* pActor = stage->addActor(name);
-		pActor->setMesh(pMesh);
-		pActor->setMaterial(pMaterial);
+		Actor* pActor = stage->addActor(name, pMesh, pMaterial);
 
 		// add actor pointer to LineActor
 		la->actor = pActor;
@@ -594,9 +591,7 @@ namespace vel
 		RGBALineMaterial* pMaterial = this->addRGBALineMaterial(name + "_material", hasAlpha);
 		pMaterial->setLineColor(0, color);
 
-		Actor* pActor = stage->addActor(name);
-		pActor->setMesh(pMesh);
-		pActor->setMaterial(pMaterial);
+		Actor* pActor = stage->addActor(name, pMesh, pMaterial);
 
 		la->actor = pActor;
 
@@ -615,12 +610,7 @@ namespace vel
 		taMaterial->setColor(color);
 
 		// create actor
-		Actor* pTextActor = stage->addActor(name);
-
-		pTextActor->setDynamic(false);
-		pTextActor->setVisible(true);
-		pTextActor->setMesh(pTam);
-		pTextActor->setMaterial(taMaterial);
+		Actor* pTextActor = stage->addActor(name, pTam, taMaterial);
 
 		// add actor pointer to TextActor.actor
 		ta->actor = pTextActor;
@@ -655,11 +645,34 @@ namespace vel
 		return this->_addTextActor(stage, std::move(ta), fb, color);
 	}
 
-	Billboard* Scene::addBillboard(Stage* stage, const std::string& name, vel::Material* material, vel::Camera* parentCamera,
-		int aspectRatioWidth, int aspectRatioHeight, glm::vec3 initialScale)
+	Billboard* Scene::addBillboard(Stage* stage, const std::string& name, vel::Material* material, vel::Camera* parentCamera, 
+		float width, float height)
 	{
-		// TODO: generate a mesh for the provided aspect ratio. We have added initBillboardQuad to Mesh, so this is done,
-		// we just need to follow the flow of _addTextActor to insure it is loaded into the gpu and tracked accordingly
+		// generate mesh, send it to gpu, track it for managment by scene
+		std::unique_ptr<Mesh> tmpM = std::make_unique<Mesh>(name + "_mesh");
+		tmpM->initBillboardQuad(width, height);
+
+		Mesh* m = this->assetManager->addMesh(std::move(tmpM));
+
+		this->meshesInUse.push_back(m);
+
+		// create actor
+		Actor* a = stage->addActor(name, m, material);
+		a->setDynamic(true);
+
+		// create the billboard, add to stage, return pointer
+		return stage->addBillboard(std::make_unique<Billboard>(a, parentCamera));
+	}
+
+	Billboard* Scene::addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh)
+	{
+		this->assetManager->incrementMeshUsage(mesh);
+		this->meshesInUse.push_back(mesh);
+
+		Actor* a = stage->addActor(name, mesh, material);
+		a->setDynamic(true);
+
+		return stage->addBillboard(std::make_unique<Billboard>(a, parentCamera));
 	}
 
 	void Scene::updateTextActors()
@@ -672,6 +685,12 @@ namespace vel
 	{
 		for (auto& s : this->stages)
 			s->updatePreviousTransforms();
+	}
+
+	void Scene::updateBillboards()
+	{
+		for (auto& s : this->stages)
+			s->updateBillboards();
 	}
 
 	void Scene::draw(float frameTime, float alpha)

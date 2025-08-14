@@ -318,6 +318,20 @@ namespace vel
 		return this->meshes.back().first.get();
 	}
 
+	void AssetManager::incrementMeshUsage(const Mesh* pMesh)
+	{
+		for (auto& meshUsagePair : this->meshes)
+		{
+			if (meshUsagePair.first.get() == pMesh)
+			{
+				meshUsagePair.second++;
+				return;
+			}
+		}
+		
+		Log::crash(pMesh->getName() + " is not an existing mesh, and cannot be incremented");
+	}
+
 	// updates gpu state of provided Mesh*
 	void AssetManager::updateMesh(Mesh* m)
 	{

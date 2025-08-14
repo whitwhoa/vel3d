@@ -10,12 +10,14 @@ namespace vel
 	private:
 		vel::Actor*		billboardActor;
 		vel::Camera*	parentCamera;
-		bool			lockY;
+		bool			lockXZ;
 
 	public:
-		Billboard(vel::Actor* billboardActor, vel::Camera* parentCamera, bool lockY = false);
+		Billboard(vel::Actor* billboardActor, vel::Camera* parentCamera);
 
 		vel::Actor* getActor() const;
+		
+		void lockXZRotation(bool b = true);
 
 		/*
 			Billboarding orientation notes (OpenGL-style):

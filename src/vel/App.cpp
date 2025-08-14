@@ -340,12 +340,13 @@ namespace vel
 
 				this->activeScene->updateAnimations(this->frameTime);
 
+				this->activeScene->updateBillboards();
+
 				float renderLerpInterval = (this->accumulator / this->fixedLogicTime);
 
 				this->activeScene->immediateLoop(this->frameTime, renderLerpInterval);
 				
 				this->activeScene->updateTextActors();
-
 
 				// clear all previous render target buffers, this is done here as doing it right before or right after
 				// we draw, wouldn't work as far as I can tell at the moment as many stages can have many cameras and

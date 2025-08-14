@@ -7,15 +7,20 @@
 namespace vel 
 {
 
-	Billboard::Billboard(vel::Actor* billboardActor, vel::Camera* parentCamera, bool lockY) : 
+	Billboard::Billboard(vel::Actor* billboardActor, vel::Camera* parentCamera) : 
 		billboardActor(billboardActor), 
 		parentCamera(parentCamera), 
-		lockY(lockY) 
+		lockXZ(false) 
 	{}
 
 	vel::Actor* Billboard::getActor() const
 	{
 		return this->billboardActor;
+	}
+
+	void Billboard::lockXZRotation(bool b)
+	{
+		this->lockXZ = b;
 	}
 
 	void Billboard::update()
@@ -31,7 +36,7 @@ namespace vel
 		glm::vec3 dir = camPos - objPos;
 
 		// Lock rotation around X/Z if requested (i.e., yaw-only billboarding)
-		if (lockY) 
+		if (lockXZ) 
 			dir.y = 0.0f;
 
 		// Handle degenerate cases

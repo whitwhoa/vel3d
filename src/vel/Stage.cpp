@@ -137,9 +137,66 @@ namespace vel
 		// well...I guess if it ain't broke...
 		//
 		// !TODO: There has to be a better way to do this...
+		// 
+		// Why do we not just update this when we loop over the actors in the render loop? There
+		// must be some reason why I don't do that???
 		for (auto& pair : this->actors) 
 			for (auto& actor : pair.second) 
 				actor->updatePreviousTransform();
+	}
+
+	Billboard* Stage::addBillboard(std::unique_ptr<Billboard> b)
+	{
+		this->billboards.push_back(std::move(b));
+		return this->billboards.back().get();
+	}
+
+	int Stage::getBillboardIndex(const std::string& name)
+	{
+		for (int i = 0; i < this->billboards.size(); i++)
+			if (this->billboards.at(i)->getActor()->getName() == name)
+				return i;
+
+		return -1;
+	}
+
+	int Stage::getBillboardIndex(const Billboard* a)
+	{
+		for (int i = 0; i < this->billboards.size(); i++)
+			if (this->billboards.at(i).get() == a)
+				return i;
+
+		return -1;
+	}
+
+	void Stage::_removeBillboard(int billboardIndex)
+	{
+		Billboard* b = this->billboards.at(billboardIndex).get();
+
+		this->_removeActor(this->getActorLocation(b->getActor()));
+
+		this->billboards.erase(this->billboards.begin() + billboardIndex);
+	}
+
+	Billboard* Stage::getBillboard(const std::string& name)
+	{
+		return this->billboards.at(this->getBillboardIndex(name)).get();
+	}
+
+	void Stage::removeBillboard(Billboard* b)
+	{
+		this->_removeBillboard(this->getBillboardIndex(b));
+	}
+
+	void Stage::removeBillboard(const std::string& name)
+	{
+		this->_removeBillboard(this->getBillboardIndex(name));
+	}
+
+	void Stage::updateBillboards()
+	{
+		for (auto& b : this->billboards)
+			b->update();
 	}
 
 	Actor* Stage::addActor(const Actor& actorIn)

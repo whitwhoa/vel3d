@@ -82,6 +82,7 @@ namespace vel
 		Mesh*						getMesh(const std::string& name);
 		void						updateMesh(Mesh* m);
 		void						removeMesh(const Mesh* pMesh);
+		void						incrementMeshUsage(const Mesh* pMesh);
 
 		Armature*					getArmature(const std::string& name);
 		void						removeArmature(const Armature* pArm);

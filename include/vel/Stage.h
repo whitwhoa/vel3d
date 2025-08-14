@@ -66,6 +66,10 @@ namespace vel
 		int												getLineActorIndex(const LineActor*);
 		void											_removeLineActor(int lineActorIndex);
 
+		int												getBillboardIndex(const std::string& name);
+		int												getBillboardIndex(const Billboard* a);
+		void											_removeBillboard(int billboardIndex);
+
 
 	public:
 														Stage(const std::string& name, AssetManager* am);
@@ -94,12 +98,16 @@ namespace vel
 		void											removeTextActor(TextActor*);
 		void											removeTextActor(const std::string& name);
 
-		LineActor*										addLineActor(std::unique_ptr<LineActor> ta);
+		LineActor*										addLineActor(std::unique_ptr<LineActor> la);
 		LineActor*										getLineActor(const std::string& name);
-		void											removeLineActor(LineActor*);
+		void											removeLineActor(LineActor* la);
 		void											removeLineActor(const std::string& name);
 
-		
+		Billboard*										addBillboard(std::unique_ptr<Billboard> b);
+		Billboard*										getBillboard(const std::string& name);
+		void											removeBillboard(Billboard* b);
+		void											removeBillboard(const std::string& name);
+
 
 		void											addCamera(Camera* c);
 		Camera*											getCamera(const std::string& name);
@@ -113,7 +121,7 @@ namespace vel
 		bool											getClearDepthBuffer();
 		void											updatePreviousTransforms();
 
-		
+		void											updateBillboards();
 
 		
 		

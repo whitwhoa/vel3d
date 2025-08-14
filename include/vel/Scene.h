@@ -109,8 +109,13 @@ namespace vel
 		LineActor*							addContinuousLineActor(Stage* stage, const std::string& name, const std::vector<glm::vec2>& points, 
 												glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-		Billboard*							addBillboard(Stage* stage, const std::string& name, vel::Material* material, vel::Camera* parentCamera,
-												int aspectRatioWidth = 1, int aspectRatioHeight = 1, glm::vec3 initialScale = glm::vec3(1.0f));
+		Billboard*							addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera,
+												float width = 1.0f, float height = 1.0f);
+
+		// version of addBillboard that accepts a pointer to an existing mesh instead of creating one (so that for example
+		// if we have 100 enemies that all use the same size billboard, they can all use the same mesh, and we don't have to 
+		// make 100 extra calls into the graphics driver to swap vaos)
+		Billboard*							addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh);
 
 		Shader*								getShader(const std::string& name);
 		Texture*							getTexture(const std::string& name);
@@ -153,6 +158,8 @@ namespace vel
 		
 		void								initRenderTarget();
 		FinalRenderTarget*					getSceneRenderTarget();
+
+		void								updateBillboards();
 
 	};
 
