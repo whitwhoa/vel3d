@@ -187,6 +187,15 @@ namespace vel
 		return t;
 	}
 	
+	void Scene::addShaderInUse(Shader* s)
+	{
+		this->shadersInUse.push_back(s);
+	}
+
+	void Scene::addMaterialInUse(Material* m)
+	{
+		this->materialsInUse.push_back(m);
+	}
 
 	DiffuseMaterial* Scene::addDiffuseMaterial(const std::string& name, bool hasAlpha)
 	{

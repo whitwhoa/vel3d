@@ -22,10 +22,7 @@ namespace vel
 	void MaterialAnimator::update(float frameTime)
 	{
 		for (auto& ta : this->textureAnimators)
-		{
-			//std::cout << "here002\n";
 			ta.update(frameTime);
-		}
 	}
 
 	void MaterialAnimator::setTextureAnimatorPauseAfterCycles(unsigned int textureId, unsigned int cycles)

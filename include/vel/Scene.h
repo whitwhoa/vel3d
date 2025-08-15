@@ -78,6 +78,9 @@ namespace vel
 
 		Camera*								addCamera(const std::string& name, CameraType type);
 
+		void								addShaderInUse(Shader* s);
+		void								addMaterialInUse(Material* m);
+
 		DiffuseMaterial*					addDiffuseMaterial(const std::string& name, bool hasAlpha = false);
 		DiffuseLightmapMaterial*			addDiffuseLightmapMaterial(const std::string& name, bool hasAlpha = false);
 		DiffuseAnimatedMaterial*			addDiffuseAnimatedMaterial(const std::string& name, bool hasAlpha = false);
