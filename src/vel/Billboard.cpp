@@ -13,6 +13,11 @@ namespace vel
 		lockXZ(false) 
 	{}
 
+	vel::Camera* Billboard::getCamera() const
+	{
+		return this->parentCamera;
+	}
+
 	vel::Actor* Billboard::getActor() const
 	{
 		return this->billboardActor;

@@ -14,7 +14,7 @@ namespace vel
     Transform::Transform() :
         translation(glm::vec3(0.0f, 0.0f, 0.0f)),
         scale(glm::vec3(1.0f, 1.0f, 1.0f)),
-		rotation(glm::quat())
+		rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f))
     {}
 
     Transform::Transform(glm::vec3 t, glm::quat r, glm::vec3 s) :

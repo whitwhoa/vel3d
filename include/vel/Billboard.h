@@ -16,6 +16,7 @@ namespace vel
 		Billboard(vel::Actor* billboardActor, vel::Camera* parentCamera);
 
 		vel::Actor* getActor() const;
+		vel::Camera* getCamera() const;
 		
 		void lockXZRotation(bool b = true);
 
