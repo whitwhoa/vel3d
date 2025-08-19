@@ -65,6 +65,8 @@ namespace vel
 
 		void								freeAssets();
 		TextActor*							_addTextActor(Stage* stage, std::unique_ptr<TextActor> ta, FontBitmap* fb, glm::vec4 color);
+
+		void								setShaderOpts(int opts, std::vector<std::string>& defs, std::string& shaderName);
 		
 	protected:
 		const InputState*					inputState;
@@ -81,19 +83,19 @@ namespace vel
 		void								addShaderInUse(Shader* s);
 		void								addMaterialInUse(Material* m);
 
-		DiffuseMaterial*					addDiffuseMaterial(const std::string& name, bool hasAlpha = false);
-		DiffuseLightmapMaterial*			addDiffuseLightmapMaterial(const std::string& name, bool hasAlpha = false);
-		DiffuseAnimatedMaterial*			addDiffuseAnimatedMaterial(const std::string& name, bool hasAlpha = false);
-		DiffuseAnimatedLightmapMaterial*	addDiffuseAnimatedLightmapMaterial(const std::string& name, bool hasAlpha = false);
-		DiffuseSkinnedMaterial*				addDiffuseSkinnedMaterial(const std::string& name, bool hasAlpha = false);
-		TextMaterial*						addTextMaterial(const std::string& name, bool hasAlpha = false);
-		DiffuseAmbientCubeMaterial*			addDiffuseAmbientCubeMaterial(const std::string& name, bool hasAlpha = false);
-		DiffuseAmbientCubeSkinnedMaterial*	addDiffuseAmbientCubeSkinnedMaterial(const std::string& name, bool hasAlpha = false);
-		RGBAMaterial*						addRGBAMaterial(const std::string& name, bool hasAlpha = false);
-		RGBALineMaterial*					addRGBALineMaterial(const std::string& name, bool hasAlpha = false);
-		RGBALightmapMaterial*				addRGBALightmapMaterial(const std::string& name, bool hasAlpha = false);
-		DiffuseCausticMaterial*				addDiffuseCausticMaterial(const std::string& name, bool hasAlpha = false);
-		DiffuseCausticLightmapMaterial*		addDiffuseCausticLightmapMaterial(const std::string& name, bool hasAlpha = false);
+		DiffuseMaterial*					addDiffuseMaterial(const std::string& name, int opts = 0);
+		DiffuseLightmapMaterial*			addDiffuseLightmapMaterial(const std::string& name, int opts = 0);
+		DiffuseAnimatedMaterial*			addDiffuseAnimatedMaterial(const std::string& name, int opts = 0);
+		DiffuseAnimatedLightmapMaterial*	addDiffuseAnimatedLightmapMaterial(const std::string& name, int opts = 0);
+		DiffuseSkinnedMaterial*				addDiffuseSkinnedMaterial(const std::string& name, int opts = 0);
+		TextMaterial*						addTextMaterial(const std::string& name, int opts = 0);
+		DiffuseAmbientCubeMaterial*			addDiffuseAmbientCubeMaterial(const std::string& name, int opts = 0);
+		DiffuseAmbientCubeSkinnedMaterial*	addDiffuseAmbientCubeSkinnedMaterial(const std::string& name, int opts = 0);
+		RGBAMaterial*						addRGBAMaterial(const std::string& name, int opts = 0);
+		RGBALineMaterial*					addRGBALineMaterial(const std::string& name, int opts = 0);
+		RGBALightmapMaterial*				addRGBALightmapMaterial(const std::string& name, int opts = 0);
+		DiffuseCausticMaterial*				addDiffuseCausticMaterial(const std::string& name, int opts = 0);
+		DiffuseCausticLightmapMaterial*		addDiffuseCausticLightmapMaterial(const std::string& name, int opts = 0);
 
 
 		// old version, retaining signature so we don't break existing codebases

@@ -2,6 +2,8 @@
 
 // Public materials all in one includes file
 
+#include "vel/MaterialOptions.h"
+
 #include "vel/EmptyMaterial.h"
 #include "vel/DiffuseMaterial.h"
 #include "vel/DiffuseLightmapMaterial.h"
