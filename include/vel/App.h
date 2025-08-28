@@ -33,16 +33,16 @@ namespace vel
         std::chrono::high_resolution_clock::time_point	startTime;
         int												currentSimTick;
         bool											shouldClose;
-        float											fixedLogicTime;
-        float											currentTime;
-        float											newTime;
-        float											frameTime;
-        float											accumulator;
-        std::vector<float>								averageFrameTimeArray;
-        float											lastFrameTimeCalculation;
+        double											fixedLogicTime;
+        double											currentTime;
+        double											newTime;
+        double											frameTime;
+        double											accumulator;
+        std::vector<double>								averageFrameTimeArray;
+        double											lastFrameTimeCalculation;
 
-        float											averageFrameTime;
-        float											averageFrameRate;
+        double											averageFrameTime;
+        double											averageFrameRate;
 		bool											canDisplayAverageFrameTime;
 		bool											pauseBufferClearAndSwap;
 
@@ -60,13 +60,14 @@ namespace vel
         void                                            setAudioDevice(AudioDevice* ad);
 
         void											addScene(std::unique_ptr<Scene> scene, bool makeActive = false);
-        const float									    time() const;
+        const double									time() const;
         const InputState*								getInputState() const;
         void											execute();
         void											close();
 
-		float											getFrameTime();
-		float											getLogicTime();
+		double											getFrameTime();
+        double											getLogicTime();
+        double											getCurrentTime();
 
 
 		ImFont*											getImguiFont(std::string key) const;
@@ -88,7 +89,7 @@ namespace vel
 
 		Scene*											getActiveScene();
 
-        float											getCurrentTime();
+        
 
 		
 

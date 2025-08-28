@@ -189,10 +189,10 @@ namespace vel
         this->window->setToClose();        
     }
 
-    const float App::time() const
+    const double App::time() const
     {
-        std::chrono::duration<float> t = std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::high_resolution_clock::now() - this->startTime);
-        return t.count();
+		using clock = std::chrono::high_resolution_clock;
+		return std::chrono::duration<double>(clock::now() - this->startTime).count();
     }
 
     const InputState* App::getInputState() const
@@ -210,14 +210,19 @@ namespace vel
 		return *this->assetManager;
 	}
 
-	float App::getFrameTime()
+	double App::getFrameTime()
 	{
-		return (float)this->frameTime;
+		return this->frameTime;
 	}
 
-	float App::getLogicTime()
+	double App::getLogicTime()
 	{
-		return (float)this->fixedLogicTime;
+		return this->fixedLogicTime;
+	}
+
+	double App::getCurrentTime()
+	{
+		return this->currentTime;
 	}
 
 	void App::calculateAverageFrameTime()
@@ -228,18 +233,16 @@ namespace vel
 		{
 			this->lastFrameTimeCalculation = this->time();
 
-			float average = 0.0;
-
+			double average = 0.0;
 			for (auto& v : this->averageFrameTimeArray)
 				average += v;
 
-			average = average / this->averageFrameTimeArray.size();
+			average /= static_cast<double>(this->averageFrameTimeArray.size());
 
 			this->averageFrameTime = average;
-			this->averageFrameRate = 1000 / (average * 1000);
+			this->averageFrameRate = 1.0 / average;
 
 			this->averageFrameTimeArray.clear();
-
 			this->canDisplayAverageFrameTime = true;
 		}
 
@@ -260,11 +263,6 @@ namespace vel
 	void App::setPauseBufferClearAndSwap(bool in)
 	{
 		this->pauseBufferClearAndSwap = in;
-	}
-
-	float App::getCurrentTime()
-	{
-		return this->currentTime;
 	}
 
 	void App::checkWindowSize()
@@ -290,7 +288,7 @@ namespace vel
 
     void App::execute()
     {
-        this->fixedLogicTime = 1 / this->config.LOGIC_TICK;
+        this->fixedLogicTime = 1.0 / this->config.LOGIC_TICK;
         this->currentTime = this->time();
 
         while (true)
@@ -306,7 +304,7 @@ namespace vel
 
 			this->checkWindowSize();
 
-            if (this->frameTime >= (1 / this->config.MAX_RENDER_FPS)) // cap max fps
+            if (this->frameTime >= (1.0 / this->config.MAX_RENDER_FPS)) // cap max fps
             {
 				this->calculateAverageFrameTime();
 				this->displayAverageFrameTime();
@@ -326,11 +324,13 @@ namespace vel
                 {
 					this->currentSimTick++;
 
-					this->activeScene->stepPhysics(this->fixedLogicTime);
+					const float flt = static_cast<float>(this->fixedLogicTime);
+
+					this->activeScene->stepPhysics(flt);
 					this->activeScene->updatePreviousTransforms();
-					this->activeScene->fixedLoop(this->fixedLogicTime);
-					this->activeScene->updateFixedAnimations(this->fixedLogicTime);
-					this->activeScene->postPhysics(this->fixedLogicTime);
+					this->activeScene->fixedLoop(flt);
+					this->activeScene->updateFixedAnimations(flt);
+					this->activeScene->postPhysics(flt);
 
 					if(this->audioDevice)
 						this->audioDevice->cleanUpManagedSFX();
@@ -338,14 +338,12 @@ namespace vel
                     this->accumulator -= this->fixedLogicTime;
                 }
 
-				this->activeScene->updateAnimations(this->frameTime);
+				const float ft = static_cast<float>(this->frameTime);
+				const float renderLerp = static_cast<float>(this->accumulator / this->fixedLogicTime);
 
+				this->activeScene->updateAnimations(ft);
 				this->activeScene->updateBillboards();
-
-				float renderLerpInterval = (this->accumulator / this->fixedLogicTime);
-
-				this->activeScene->immediateLoop(this->frameTime, renderLerpInterval);
-				
+				this->activeScene->immediateLoop(ft, renderLerp);
 				this->activeScene->updateTextActors();
 
 				// clear all previous render target buffers, this is done here as doing it right before or right after
@@ -353,13 +351,9 @@ namespace vel
 				// many cameras can have many stages, meaning that if we clear render buffers after drawing to camera's render target
 				// in one stage, if it's used in another stage things would be bad
 				this->activeScene->clearAllRenderTargetBuffers(this->gpu);
-
-                this->activeScene->draw(this->frameTime, renderLerpInterval);
-
+				this->activeScene->draw(ft, renderLerp);
 				this->window->renderGui();
-
 				this->window->swapBuffers();
-
 				this->update();
             }
 

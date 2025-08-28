@@ -25,7 +25,7 @@ namespace vel
 											Config(const std::string& dataDir = "data");
         // Application defined
 		std::string							DATA_DIR;
-		float								LOGIC_TICK = 60.0f;
+		double								LOGIC_TICK = 60.0;
 		bool								CURSOR_HIDDEN = false;
 		bool								USE_IMGUI = false;
         bool                                OPENGL_DEBUG_CONTEXT = false;
@@ -44,8 +44,8 @@ namespace vel
 		int									RESOLUTION_X;
 		int									RESOLUTION_Y;
 
-		float								MAX_RENDER_FPS;
-		float								MOUSE_SENSITIVITY;
+		double								MAX_RENDER_FPS;
+		double								MOUSE_SENSITIVITY;
 		bool								VSYNC;
 
 		bool								LOCK_RES_TO_WIN;
