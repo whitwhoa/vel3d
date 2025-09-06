@@ -2,9 +2,13 @@
 
 #include <vector>
 #include <string>
+#include <optional>
 
 namespace vel
 {
+	class Mesh;
+	class Armature;
+
 	class MeshLoaderInterface
 	{
 	public:
@@ -12,7 +16,7 @@ namespace vel
 		virtual ~MeshLoaderInterface(){}
 
 		// Tell calling class what meshes and armature exist within the file at the provided path
-		virtual std::pair<std::vector<std::string>, std::string> 
+		virtual std::optional<std::pair<std::vector<std::string>, std::string>>
 			preload(const std::string& filePath) = 0;
 		
 		// Calling class provides list of "loadables" which can be the exact data returned from preload,

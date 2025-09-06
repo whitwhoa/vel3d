@@ -8,7 +8,7 @@
 #include "nvapi/NvApiDriverSettings.h"
 #include <string>
 
-#include "vel/Log.h"
+#include "vel/logger.hpp"
 
 namespace vel
 {
@@ -16,20 +16,13 @@ namespace vel
     {
         if (status != NVAPI_OK)
         {
-#ifdef DEBUG_LOG
-    // full list of codes in nvapi_lite_common.h line 249
-    std::string msg = std::string("Status Code:") + std::to_string((int)status);
-    Log::toCli(msg);
-    Log::toFile(msg);
-    
-    NvAPI_ShortString szDesc = { 0 };
-	NvAPI_GetErrorMessage(status, szDesc);
-	//printf("NVAPI Error: %s\n", szDesc);
-    
-    msg = std::string(szDesc);
-    Log::toCli(msg);
-    Log::toFile(msg);
-#endif
+            // full list of codes in nvapi_lite_common.h line 249
+            std::string msg = std::string("Status Code: ") + std::to_string((int)status) + "\n";
+            NvAPI_ShortString szDesc = { 0 };
+            NvAPI_GetErrorMessage(status, szDesc);
+            msg = msg + std::string("NVAPI Error: ") + std::string(szDesc);
+
+            VEL3D_LOG_WARN("nvapi.hpp nvapiStatusOk(): {}", msg);
 
             return false;
         }
@@ -71,24 +64,12 @@ namespace vel
         // for debugging use ^ in prod
         if (!nvapiStatusOk(NvAPI_Initialize()))
         {
-#ifdef DEBUG_LOG
-    std::string msg = "Unable to initialize Nvidia api";
-    Log::toCli(msg);
-    Log::toFile(msg);
-#endif
-
+            VEL3D_LOG_WARN("Unable to initialize Nvidia api");
             return;
         }
-#ifdef DEBUG_LOG
-else
-{
-    std::string msg = "Nvidia api initialized successfully";
-    Log::toCli(msg);
-    Log::toFile(msg);
-}
-#endif
         
-            
+        VEL3D_LOG_INFO("Nvidia api initialized successfully");
+
         // initialize session
         NvDRSSessionHandle hSession;
         if (!nvapiStatusOk(NvAPI_DRS_CreateSession(&hSession)))
@@ -180,11 +161,7 @@ else
             return;
         }
 
-#ifdef DEBUG_LOG
-		std::string msg = "Nvidia application profile updated successfully";
-		Log::toCli(msg);
-		Log::toFile(msg);
-#endif
+        VEL3D_LOG_INFO("Nvidia application profile updated successfully");
 
         NvAPI_DRS_DestroySession(hSession);
 

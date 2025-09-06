@@ -14,7 +14,8 @@
 #include "vel/GPU.h"
 #include "vel/Vertex.h"
 #include "vel/functions.h"
-#include "vel/Log.h"
+#include "vel/logger.hpp"
+
 
 namespace vel
 {
@@ -92,45 +93,45 @@ namespace vel
 		GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
 		glDrawBuffers(1, drawBuffers);
 
-
 		// verify success
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE)
 		{
-			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete! Status code: " << status << std::endl;
-
+			
+			std::string statusString = "";
 			switch (status)
 			{
 			case GL_FRAMEBUFFER_UNDEFINED:
-				std::cout << "GL_FRAMEBUFFER_UNDEFINED" << std::endl;
+				statusString = "GL_FRAMEBUFFER_UNDEFINED";
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT" << std::endl;
+				statusString = "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT" << std::endl;
+				statusString = "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
-				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER" << std::endl;
+				statusString = "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
-				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER" << std::endl;
+				statusString = "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER";
 				break;
 			case GL_FRAMEBUFFER_UNSUPPORTED:
-				std::cout << "GL_FRAMEBUFFER_UNSUPPORTED" << std::endl;
+				statusString = "GL_FRAMEBUFFER_UNSUPPORTED";
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE" << std::endl;
+				statusString = "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE";
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
-				std::cout << "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS" << std::endl;
+				statusString = "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS";
 				break;
 			default:
-				std::cout << "Unknown error" << std::endl;
+				statusString = "Unknown error";
 			}
 
-			std::cin.get();
-			exit(EXIT_FAILURE);
+			VEL3D_LOG_DEBUG("GPU::createFinalRenderTarget: Framebuffer is not complete! Status code: {}", statusString);
+
+			return nullptr;
 		}
 
 		// be safe
@@ -470,11 +471,11 @@ namespace vel
 		glDeleteFramebuffers(1, &rt->alphaFBO);
 	}
 
-	void GPU::loadShader(Shader* s)
+	bool GPU::loadShader(Shader* s)
 	{
 		int success;
 		char infoLog[512];
-
+		std::string infoLogStr = "";
 
 		/////////////////////////////////////////////////////////
 		// Vertex Shader
@@ -487,11 +488,13 @@ namespace vel
 
 		// if compile errors, log and exit
 		glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-		if (!success) {
+		if (!success) 
+		{
 			glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << "\n";
-			std::cin.get();
-			exit(EXIT_FAILURE);
+			infoLogStr = infoLog;
+
+			VEL3D_LOG_DEBUG("GPU::loadShader: VERTEX::COMPILATION_FAILED: {}", infoLogStr);
+			return false;
 		};
 
 
@@ -508,11 +511,13 @@ namespace vel
 
 			// if compile errors, log and exit
 			glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
-			if (!success) {
+			if (!success) 
+			{
 				glGetShaderInfoLog(geometry, 512, NULL, infoLog);
-				std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << "\n";
-				std::cin.get();
-				exit(EXIT_FAILURE);
+				infoLogStr = infoLog;
+
+				VEL3D_LOG_DEBUG("GPU::loadShader: GEOMETRY::COMPILATION_FAILED: {}", infoLogStr);
+				return false;
 			};
 		}
 
@@ -531,9 +536,10 @@ namespace vel
 		if (!success)
 		{
 			glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-			std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << "\n";
-			std::cin.get();
-			exit(EXIT_FAILURE);
+			infoLogStr = infoLog;
+
+			VEL3D_LOG_DEBUG("GPU::loadShader: FRAGMENT::COMPILATION_FAILED: {}", infoLogStr);
+			return false;
 		};
 
 
@@ -555,9 +561,10 @@ namespace vel
 		if (!success)
 		{
 			glGetProgramInfoLog(id, 512, NULL, infoLog);
-			std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << "\n";
-			std::cin.get();
-			exit(EXIT_FAILURE);
+			infoLogStr = infoLog;
+
+			VEL3D_LOG_DEBUG("GPU::loadShader: PROGRAM::LINKING_FAILED: {}", infoLog);
+			return false;
 		}
 
 		// delete the shaders as they're linked into our program now and no longer necessary
@@ -566,6 +573,8 @@ namespace vel
 		glDeleteShader(fragment);
 
 		s->id = id;
+
+		return true;
 	}
 
 	RenderTarget GPU::createRenderTarget(const std::string& name, unsigned int width, unsigned int height)
@@ -626,10 +635,10 @@ namespace vel
 		return rt;
 	}
 
-	void GPU::updateRenderTarget(RenderTarget* rt)
+	bool GPU::updateRenderTarget(RenderTarget* rt)
 	{
 		if (rt->resolution.x == 0 || rt->resolution.y == 0)
-			return;
+			return false;
 
 		//
 		// Configure opaqueFBO
@@ -658,9 +667,8 @@ namespace vel
 		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
-			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete! 234sdgf" << std::endl;
-			std::cin.get();
-			exit(EXIT_FAILURE);
+			VEL3D_LOG_DEBUG("GPU::updateRenderTarget: Framebuffer is not complete: 001");
+			return false;
 		}
 
 		this->bindFrameBuffer(0);
@@ -698,12 +706,13 @@ namespace vel
 		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
-			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete! gh66uhm" << std::endl;
-			std::cin.get();
-			exit(EXIT_FAILURE);
+			VEL3D_LOG_DEBUG("GPU::updateRenderTarget: Framebuffer is not complete: 002");
+			return false;
 		}
 
 		this->bindFrameBuffer(0);
+
+		return true;
 	}
 
 	void GPU::loadMesh(Mesh* m)

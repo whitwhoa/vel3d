@@ -3,10 +3,10 @@
 #include "glm/gtx/matrix_decompose.hpp"
 
 
-
+#include "vel/logger.hpp"
 #include "vel/App.h"
 #include "vel/Camera.h"
-#include "vel/Log.h"
+
 
 
 using json = nlohmann::json;
@@ -160,7 +160,7 @@ namespace vel
 		// if current viewport size does not equal the previous tick's viewport size, we have to rebuild the render target
 		if (currentResolution != this->previousResolution)
 		{
-			LOG_TO_CLI_AND_FILE("viewport size altered\n");
+			VEL3D_LOG_DEBUG("Camera::update: viewport size altered");
 
 			RenderTarget rt = this->gpu->createRenderTarget((this->getName() + "_RT"), currentResolution.x, currentResolution.y);
 			this->gpu->clearRenderTarget(&this->renderTarget.value());

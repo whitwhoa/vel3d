@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "vel/Log.h"
+#include "vel/logger.hpp"
 #include "vel/Mesh.h"
 
 
@@ -127,10 +127,13 @@ namespace vel
 		this->vertices.insert(this->vertices.end(), vs.begin(), vs.end());
 	}
 
-	void Mesh::initBillboardQuad(float width, float height)
+	bool Mesh::initBillboardQuad(float width, float height)
 	{
 		if (!(width > 0.0f && height > 0.0f))
-			Log::crash("Billboard width and height must be positive.");
+		{
+			VEL3D_LOG_DEBUG("Mesh::initBillboardQuad: Billboard width and height must be positive.");
+			return false;
+		}
 
 		const float halfWidth = width * 0.5f;
 		const float halfHeight = height * 0.5f;
@@ -172,6 +175,8 @@ namespace vel
 		// Flip indices so -Z is front (CCW when viewed from -Z)
 		std::vector<unsigned int> is = { 0, 2, 1, 0, 3, 2 };
 		this->setIndices(is);
+
+		return true;
 	}
 
 }

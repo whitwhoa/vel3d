@@ -1,5 +1,6 @@
 #include <thread> 
 #include <chrono>
+#include <sstream>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -15,8 +16,8 @@
 
 #include "vel/AssetManager.h"
 #include "vel/AssimpMeshLoader.h"
-#include "vel/Log.h"
 #include "vel/functions.h"
+#include "vel/logger.hpp"
 
 using namespace std::chrono_literals;
 
@@ -53,16 +54,25 @@ namespace vel
 		return -1;
 	}
 
-	std::string AssetManager::loadShaderFile(const std::string& shaderPath)
+	std::optional<std::string> AssetManager::loadShaderFile(const std::string& shaderPath)
 	{
-		std::ifstream shaderFile;
+		std::ifstream shaderFile(shaderPath);
+
+		if (!shaderFile.is_open()) 
+		{
+			VEL3D_LOG_DEBUG("AssetManager::loadShaderFile(): could not open shader file: {}", shaderPath);
+			return std::nullopt;
+		}
+
 		std::stringstream shaderStream;
-
-		shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-		shaderFile.open(shaderPath);
 		shaderStream << shaderFile.rdbuf();
 		shaderFile.close();
+
+		if (shaderStream.str().empty()) 
+		{
+			VEL3D_LOG_DEBUG("AssetManager::loadShaderFile(): Shader file is empty: {}", shaderPath);
+			return std::nullopt;
+		}
 
 		return shaderStream.str();
 	}
@@ -98,84 +108,84 @@ namespace vel
 		return remainingShaderCode.str();
 	}
 
-	Shader* AssetManager::loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, const std::string& fragFile, std::vector<std::string> defs)
+	Shader* AssetManager::loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, 
+		const std::string& fragFile, std::vector<std::string> defs)
 	{
 		int shaderIndex = this->getShaderIndex(name);
 
 		if (shaderIndex > -1)
 		{
-			LOG_TO_CLI_AND_FILE("Existing Shader, bypass reload: " + name);
+			VEL3D_LOG_DEBUG("Existing Shader, bypass reload: {}", name);
 			
 			this->shaders.at(shaderIndex).second++;
 
 			return this->shaders.at(shaderIndex).first.get();
-		}	
+		}
 
-		LOG_TO_CLI_AND_FILE("Loading new Shader: " + name);
+		VEL3D_LOG_DEBUG("Loading new Shader: {}", name);
 
 
-		// retrieve the vertex/fragment source code from filePath
-		std::string vertexCode;
-		std::string geomCode;
-		std::string fragmentCode;
+		// Process vertex shader script
+		std::optional<std::string> vcOpt = this->loadShaderFile(this->dataDir + "/shaders/" + vertFile);
+		if (!vcOpt)
+			return nullptr;
 
-		try
+		std::string vertexCode = vcOpt.value();
+		std::string topVertexLines = this->getTopShaderLines(vertexCode, 10);
+		std::string bottomVertexLines = this->getBottomShaderLines(vertexCode, 10);
+		std::stringstream preprocessedVertexCode;
+		preprocessedVertexCode << topVertexLines;
+			
+		for (const auto& def : defs) // preload defs into scripts
+			preprocessedVertexCode << "#define " << def << "\n";
+
+		preprocessedVertexCode << bottomVertexLines;
+
+		vertexCode = preprocessedVertexCode.str();
+
+
+		// Process Geometry shader script
+		std::string geomCode = "";
+		if (geomFile != "")
 		{
-			// Process vertex shader script
-			vertexCode = this->loadShaderFile(this->dataDir + "/shaders/" + vertFile);
-			std::string topVertexLines = this->getTopShaderLines(vertexCode, 10);
-			std::string bottomVertexLines = this->getBottomShaderLines(vertexCode, 10);
-			std::stringstream preprocessedVertexCode;
-			preprocessedVertexCode << topVertexLines;
-			
-			for (const auto& def : defs) // preload defs into scripts
-				preprocessedVertexCode << "#define " << def << "\n";
+			std::optional<std::string> gcOpt = this->loadShaderFile(this->dataDir + "/shaders/" + geomFile);
+			if (!gcOpt)
+				return nullptr;
 
-			preprocessedVertexCode << bottomVertexLines;
-
-			vertexCode = preprocessedVertexCode.str();
-
-
-			// Process Geometry shader script
-			if (geomFile != "")
-			{
-				geomCode = this->loadShaderFile(this->dataDir + "/shaders/" + geomFile);
-				std::string topGeomLines = this->getTopShaderLines(geomCode, 10);
-				std::string bottomGeomLines = this->getBottomShaderLines(geomCode, 10);
-				std::stringstream preprocessedGeomCode;
-				preprocessedGeomCode << topGeomLines;
-
-				for (const auto& def : defs) // preload defs into scripts
-					preprocessedGeomCode << "#define " << def << "\n";
-
-				preprocessedGeomCode << bottomGeomLines;
-
-				geomCode = preprocessedGeomCode.str();
-			}
-			
-
-			// Process fragment shader script
-			fragmentCode = this->loadShaderFile(this->dataDir + "/shaders/" + fragFile);
-			std::string topFragmentLines = this->getTopShaderLines(fragmentCode, 10);
-			std::string bottomFragmentLines = this->getBottomShaderLines(fragmentCode, 10);
-			std::stringstream preprocessedFragmentCode;
-			preprocessedFragmentCode << topFragmentLines;
+			geomCode = gcOpt.value();
+			std::string topGeomLines = this->getTopShaderLines(geomCode, 10);
+			std::string bottomGeomLines = this->getBottomShaderLines(geomCode, 10);
+			std::stringstream preprocessedGeomCode;
+			preprocessedGeomCode << topGeomLines;
 
 			for (const auto& def : defs) // preload defs into scripts
-				preprocessedFragmentCode << "#define " << def << "\n";
+				preprocessedGeomCode << "#define " << def << "\n";
 
-			preprocessedFragmentCode << bottomFragmentLines;			
-			fragmentCode = preprocessedFragmentCode.str();
+			preprocessedGeomCode << bottomGeomLines;
 
+			geomCode = preprocessedGeomCode.str();
 		}
-		catch (std::ifstream::failure e)
-		{
-			std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ\n";
-			std::cin.get();
-			exit(EXIT_FAILURE);
-		}
+			
+
+		// Process fragment shader script
+		std::optional<std::string> fcOpt = this->loadShaderFile(this->dataDir + "/shaders/" + fragFile);
+		if (!fcOpt)
+			return nullptr;
+
+		std::string fragmentCode = fcOpt.value();
+		std::string topFragmentLines = this->getTopShaderLines(fragmentCode, 10);
+		std::string bottomFragmentLines = this->getBottomShaderLines(fragmentCode, 10);
+		std::stringstream preprocessedFragmentCode;
+		preprocessedFragmentCode << topFragmentLines;
+
+		for (const auto& def : defs) // preload defs into scripts
+			preprocessedFragmentCode << "#define " << def << "\n";
+
+		preprocessedFragmentCode << bottomFragmentLines;			
+		fragmentCode = preprocessedFragmentCode.str();
+
 		
-
+		// Build the shader
 		std::unique_ptr<Shader> s = std::make_unique<Shader>();
 		s->name = name;
 		s->vertCode = vertexCode;
@@ -195,7 +205,11 @@ namespace vel
 	{
 		int shaderIndex = this->getShaderIndex(name);
 
-		LOG_CRASH_IF_TRUE(shaderIndex == -1, "AssetManager::getShader(): Attempting to get shader that does not exist: " + name);
+		if (shaderIndex == -1)
+		{
+			VEL3D_LOG_DEBUG("AssetManager::getShader(): Attempting to get shader that does not exist: {}", name);
+			return nullptr;
+		}
 
 		return this->shaders.at(shaderIndex).first.get();
 	}
@@ -204,14 +218,15 @@ namespace vel
 	{
 		int shaderIndex = this->getShaderIndex(pShader);
 
-		LOG_CRASH_IF_TRUE(shaderIndex == -1, "AssetManager::removeShader(): Attempting to remove shader that does not exist: " + pShader->name);
+		if (shaderIndex == -1)
+			return;
 
 		auto& s = this->shaders.at(shaderIndex);
 		s.second--;
 
 		if (s.second == 0)
 		{
-			LOG_TO_CLI_AND_FILE("Full remove Shader: " + pShader->name);
+			VEL3D_LOG_DEBUG("Full remove Shader: {}", pShader->name);
 			
 			this->gpu->clearShader(s.first.get());
 
@@ -220,7 +235,7 @@ namespace vel
 			return;
 		}
 
-		LOG_TO_CLI_AND_FILE("Decrement Shader usageCount, retain: " + pShader->name);		
+		VEL3D_LOG_DEBUG("Decrement Shader usageCount, retain: {}", pShader->name);
 	}
 
 
@@ -247,9 +262,16 @@ namespace vel
 
 	// returns a tuple of a vector of mesh names that were loaded along with the name of an armature
 	// if the loaded file happened to contain an armature as well
-	std::pair<std::vector<Mesh*>, Armature*> AssetManager::loadMesh(const std::string& path)
+	std::optional<std::pair<std::vector<Mesh*>, Armature*>> AssetManager::loadMesh(const std::string& path)
 	{
-		auto preLoadData = this->meshLoader->preload(path);
+		std::optional<std::pair<std::vector<std::string>, std::string>> plOpt = this->meshLoader->preload(path);
+		if (!plOpt)
+		{
+			VEL3D_LOG_DEBUG("AssetManager::loadMesh: failed to preload required data for loading of mesh");
+			return std::nullopt;
+		}
+
+		auto preLoadData = plOpt.value();
 
 		std::pair<std::vector<Mesh*>, Armature*> out({}, nullptr);
 
@@ -328,8 +350,8 @@ namespace vel
 				return;
 			}
 		}
-		
-		Log::crash(pMesh->getName() + " is not an existing mesh, and cannot be incremented");
+
+		VEL3D_LOG_DEBUG("{} is not an existing mesh, and cannot be incremented", pMesh->getName());
 	}
 
 	// updates gpu state of provided Mesh*
@@ -343,7 +365,11 @@ namespace vel
 	{
 		int meshIndex = this->getMeshIndex(name);
 
-		LOG_CRASH_IF_TRUE(meshIndex == -1, "AssetManager::getMesh(): Attempting to get mesh that does not exist: " + name);
+		if (meshIndex == -1)
+		{
+			VEL3D_LOG_DEBUG("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
+			return nullptr;
+		}
 
 		return this->meshes.at(meshIndex).first.get();
 	}
@@ -352,14 +378,15 @@ namespace vel
 	{
 		int meshIndex = this->getMeshIndex(pMesh);
 
-		LOG_CRASH_IF_TRUE(meshIndex == -1, "AssetManager::removeMesh(): Attempting to remove mesh that does not exist: " + pMesh->getName());
+		if (meshIndex == -1)
+			return;
 
 		auto& m = this->meshes.at(meshIndex);
 		m.second--;
 
 		if(m.second == 0)
 		{
-			LOG_TO_CLI_AND_FILE("Full remove Mesh: " + pMesh->getName());
+			VEL3D_LOG_DEBUG("Full remove Mesh: {}", pMesh->getName());
 
 			if (this->gpu != nullptr)
 				this->gpu->clearMesh(m.first.get());
@@ -369,7 +396,7 @@ namespace vel
 			return;
 		}
 
-		LOG_TO_CLI_AND_FILE("Decrement Mesh usageCount, retain: " + pMesh->getName());		
+		VEL3D_LOG_DEBUG("Decrement Mesh usageCount, retain: {}", pMesh->getName());
 	}
 
 
@@ -398,7 +425,11 @@ namespace vel
 	{
 		int armIndex = this->getArmatureIndex(name);
 
-		LOG_CRASH_IF_TRUE(armIndex == -1, "AssetManager::getArmature(): Attempting to get armature that does not exist: " + name);
+		if (armIndex == -1)
+		{
+			VEL3D_LOG_DEBUG("AssetManager::getArmature(): Attempting to get armature that does not exis: {}", name);
+			return nullptr;
+		}
 
 		return this->armatures.at(armIndex).first.get();
 	}
@@ -407,21 +438,22 @@ namespace vel
 	{
 		int armIndex = this->getArmatureIndex(pArm);
 
-		LOG_CRASH_IF_TRUE(armIndex == -1, "AssetManager::removeArmature(): Attempting to remove armature that does not exist: " + pArm->getName());
+		if (armIndex == -1)
+			return;
 
 		auto& a = this->armatures.at(armIndex);
 		a.second--;
 
 		if (a.second == 0)
 		{
-			LOG_TO_CLI_AND_FILE("Full remove Armature: " + pArm->getName());
+			VEL3D_LOG_DEBUG("Full remove Armature: {}", pArm->getName());
 
 			this->armatures.erase(this->armatures.begin() + armIndex);
 
 			return;
 		}
 
-		LOG_TO_CLI_AND_FILE("Decrement Armature usageCount, retain: " + pArm->getName());
+		VEL3D_LOG_DEBUG("Decrement Armature usageCount, retain: {}", pArm->getName());
 	}
 
 
@@ -446,7 +478,7 @@ namespace vel
 		return -1;
 	}
 
-	TextureData AssetManager::generateTextureData(const std::string& path)
+	std::optional<TextureData> AssetManager::generateTextureData(const std::string& path)
 	{
 		TextureData td;
 		td.primaryImageData.data = stbi_load(
@@ -457,9 +489,8 @@ namespace vel
 			0
 		);
 
-		LOG_CRASH_IF_FALSE(td.primaryImageData.data, "AssetManager::loadTexture(): Unable to load texture at path: " + path);
-		//LOG_CRASH_IF_TRUE(td.primaryImageData.width != td.primaryImageData.height, "AssetManager::loadTexture(): Texture not square: " + path);
-		//LOG_CRASH_IF_FALSE(isPowerOfTwo(td.primaryImageData.width), "AssetManager::loadTexture(): Texture not power of two: " + path);
+		if (!td.primaryImageData.data)
+			return std::nullopt;
 
 		if (td.primaryImageData.nrComponents == 1)
 		{
@@ -489,14 +520,14 @@ namespace vel
 
 		if(textureIndex > -1)
 		{
-			LOG_TO_CLI_AND_FILE("Existing Texture, bypass reload: " + name);
+			VEL3D_LOG_DEBUG("Existing Texture, bypass reload: {}", name);
 
 			this->textures.at(textureIndex).second++;
 
 			return this->textures.at(textureIndex).first.get();
 		}
 
-		LOG_TO_CLI_AND_FILE("Load new Texture: " + name);
+		VEL3D_LOG_DEBUG("Load new Texture: {}", name);
 
 		std::unique_ptr<Texture> texture = std::make_unique<Texture>();
 		texture->name = name;
@@ -509,16 +540,33 @@ namespace vel
 			std::map<int, std::string> orderedFiles;
 
 			for (const auto& entry : std::filesystem::directory_iterator(path))
-			{
 				orderedFiles[std::stoi(vel::explode_string(entry.path().filename().string(), '.')[0])] = entry.path().string();
-			}
 
-			for(auto& of : orderedFiles)
-				texture->frames.push_back(this->generateTextureData(of.second));
+			for (auto& of : orderedFiles)
+			{
+				std::optional<TextureData> td = this->generateTextureData(of.second);
+
+				if (!td)
+				{
+					VEL3D_LOG_DEBUG("AssetManager::loadTexture(): failed to load all files in directory: {}", path);
+					return nullptr;
+				}
+
+				texture->frames.push_back(td.value());
+			}
+				
 		}
 		else
 		{
-			texture->frames.push_back(this->generateTextureData(path));
+			std::optional<TextureData> td = this->generateTextureData(path);
+
+			if (!td)
+			{
+				VEL3D_LOG_DEBUG("AssetManager::loadTexture(): Unable to load texture at path: {}", path);
+				return nullptr;
+			}
+
+			texture->frames.push_back(td.value());
 		}
 			
 
@@ -544,7 +592,11 @@ namespace vel
 	{
 		int textureIndex = this->getTextureIndex(name);
 
-		LOG_CRASH_IF_TRUE(textureIndex == -1, "AssetManager::getTexture(): Attempting to get texture that does not exist: " + name);
+		if (textureIndex == -1)
+		{
+			VEL3D_LOG_DEBUG("AssetManager::getTexture(): Attempting to get texture that does not exist: {}", name);
+			return nullptr;
+		}
 
 		return this->textures.at(textureIndex).first.get();
 	}
@@ -553,14 +605,15 @@ namespace vel
 	{
 		int textureIndex = this->getTextureIndex(pTexture);
 
-		LOG_CRASH_IF_TRUE(textureIndex == -1, "AssetManager::removeTexture(): Attempting to remove texture that does not exist: " + pTexture->name);
+		if (textureIndex == -1)
+			return;
 
 		auto& t = this->textures.at(textureIndex);
 		t.second--;
 		
 		if (t.second == 0)
 		{
-			LOG_TO_CLI_AND_FILE("Full remove Texture: " + pTexture->name);
+			VEL3D_LOG_DEBUG("Full remove Texture: {}", pTexture->name);
 
 			this->gpu->clearTexture(t.first.get());
 
@@ -574,7 +627,7 @@ namespace vel
 			return;
 		}
 
-		LOG_TO_CLI_AND_FILE("Decrement Texture usageCount, retain: " + pTexture->name);
+		VEL3D_LOG_DEBUG("Decrement Texture usageCount, retain: {}", pTexture->name);
 	}
 
 
@@ -606,14 +659,14 @@ namespace vel
 
 		if (materialIndex > -1)
 		{
-			LOG_TO_CLI_AND_FILE("Existing Material, bypass reload: " + m->getName());
+			VEL3D_LOG_DEBUG("Existing Material, bypass reload: {}", m->getName());
 
 			this->materials.at(materialIndex).second++;
 
 			return this->materials.at(materialIndex).first.get();
 		}
 
-		LOG_TO_CLI_AND_FILE("Loading new Material: " + m->getName());		
+		VEL3D_LOG_DEBUG("Loading new Material: {}", m->getName());
 
 		this->materials.push_back(std::pair<std::unique_ptr<Material>, int>(std::move(m), 1));
 
@@ -624,7 +677,11 @@ namespace vel
 	{
 		int materialIndex = this->getMaterialIndex(name);
 
-		LOG_CRASH_IF_TRUE(materialIndex == -1, "AssetManager::getMaterial(): Attempting to get material that does not exist: " + name);
+		if (materialIndex == -1)
+		{
+			VEL3D_LOG_DEBUG("AssetManager::getMaterial(): Attempting to get material that does not exist: {}", name);
+			return nullptr;
+		}
 
 		return this->materials.at(materialIndex).first.get();
 	}
@@ -633,21 +690,22 @@ namespace vel
 	{
 		int materialIndex = this->getMaterialIndex(pMaterial);
 
-		LOG_CRASH_IF_TRUE(materialIndex == -1, "AssetManager::removeMaterial(): Attempting to remove material that does not exist: " + pMaterial->getName());
+		if (materialIndex == -1)
+			return;
 
 		auto& m = this->materials.at(materialIndex);
 		m.second--;
 
 		if (m.second == 0)
 		{
-			LOG_TO_CLI_AND_FILE("Full remove Material: " + pMaterial->getName());
+			VEL3D_LOG_DEBUG("Full remove Material: {}", pMaterial->getName());
 
 			this->materials.erase(this->materials.begin() + materialIndex);
 
 			return;
 		}
 
-		LOG_TO_CLI_AND_FILE("Decrement Material usageCount, retain: " + pMaterial->getName());
+		VEL3D_LOG_DEBUG("Decrement Material usageCount, retain: {}", pMaterial->getName());
 	}
 
 
@@ -678,14 +736,14 @@ namespace vel
 
 		if (cameraIndex > -1)
 		{
-			LOG_TO_CLI_AND_FILE("Existing Camera, bypass reload: " + c->getName());
+			VEL3D_LOG_DEBUG("Existing Camera, bypass reload: {}", c->getName());
 
 			this->cameras.at(cameraIndex).second++;
 
 			return this->cameras.at(cameraIndex).first.get();
 		}
 
-		LOG_TO_CLI_AND_FILE("Loading new Camera: " + c->getName());
+		VEL3D_LOG_DEBUG("Loading new Camera: {}", c->getName());
 
 		this->cameras.push_back(std::pair<std::unique_ptr<Camera>, int>(std::move(c), 1));
 
@@ -705,7 +763,11 @@ namespace vel
 	{
 		int cameraIndex = this->getCameraIndex(name);
 
-		LOG_CRASH_IF_TRUE(cameraIndex == -1, "AssetManager::getCamera(): Attempting to get camera that does not exist: " + name);
+		if (cameraIndex == -1)
+		{
+			VEL3D_LOG_DEBUG("AssetManager::getCamera(): Attempting to get camera that does not exist: {}", name);
+			return nullptr;
+		}
 
 		return this->cameras.at(cameraIndex).first.get();
 	}
@@ -714,14 +776,15 @@ namespace vel
 	{
 		int cameraIndex = this->getCameraIndex(pCamera);
 
-		LOG_CRASH_IF_TRUE(cameraIndex == -1, "AssetManager::removeCamera(): Attempting to remove camera that does not exist: " + pCamera->getName());
+		if (cameraIndex == -1)
+			return;
 
 		auto& c = this->cameras.at(cameraIndex);
 		c.second--;
 
 		if (c.second == 0)
 		{
-			LOG_TO_CLI_AND_FILE("Full remove Camera: " + pCamera->getName());
+			VEL3D_LOG_DEBUG("Full remove Camera: {}", pCamera->getName());
 
 			this->gpu->clearRenderTarget(c.first.get()->getRenderTarget());
 
@@ -730,7 +793,7 @@ namespace vel
 			return;
 		}
 
-		LOG_TO_CLI_AND_FILE("Decrement Camera usageCount, retain: " + pCamera->getName());
+		VEL3D_LOG_DEBUG("Decrement Camera usageCount, retain: {}", pCamera->getName());
 	}
 
 
@@ -761,20 +824,21 @@ namespace vel
 
 		if (fbIndex > -1)
 		{
-			LOG_TO_CLI_AND_FILE("Existing FontBitmap, bypass reload: " + fontName);
+			VEL3D_LOG_DEBUG("Existing FontBitmap, bypass reload: {}", fontName);
 
 			this->fontBitmaps.at(fbIndex).second++;
 
 			return this->fontBitmaps.at(fbIndex).first.get();
 		}
 
-		LOG_TO_CLI_AND_FILE("Load new FontBitmap: " + fontName);
+		VEL3D_LOG_DEBUG("Load new FontBitmap: {}", fontName);
 
-
-		// Read in bytes from file on disc
 		std::ifstream file(fontPath, std::ios::binary | std::ios::ate);
 		if (!file.is_open())
-			Log::crash("Failed to open file: " + fontPath);
+		{
+			VEL3D_LOG_DEBUG("AssetManager::loadFontBitmap(): Failed to open file: {}", fontPath);
+			return nullptr;
+		}
 
 		const auto size = file.tellg();
 		file.seekg(0, std::ios::beg);
@@ -796,11 +860,23 @@ namespace vel
 
 		stbtt_pack_context context;
 		bool fontInitialized = stbtt_PackBegin(&context, fb->data.get(), fb->textureWidth, fb->textureHeight, 0, 1, nullptr);
-		LOG_CRASH_IF_FALSE(fontInitialized, "Failed to initialize font");
+
+		if (!fontInitialized)
+		{
+			VEL3D_LOG_DEBUG("AssetManager::loadFontBitmap(): Failed to initialize font");
+			return nullptr;
+		}
+
 
 		stbtt_PackSetOversampling(&context, fb->oversampleX, fb->oversampleY);
 		bool fontPacked = stbtt_PackFontRange(&context, fontData.data(), 0, fb->fontSize, fb->firstChar, fb->charCount, (stbtt_packedchar*)fb->charInfo.get());
-		LOG_CRASH_IF_FALSE(fontPacked, "Failed to pack font");
+
+		if (!fontPacked)
+		{
+			VEL3D_LOG_DEBUG("AssetManager::loadFontBitmap(): Failed to pack font");
+			return nullptr;
+		}
+
 
 		stbtt_PackEnd(&context);
 
@@ -818,7 +894,11 @@ namespace vel
 	{
 		int fbIndex = this->getFontBitmapIndex(name);
 
-		LOG_CRASH_IF_TRUE(fbIndex == -1, "AssetManager::getFontBitmap(): Attempting to get font bitmap that does not exist: " + name);
+		if (fbIndex == -1)
+		{
+			VEL3D_LOG_DEBUG("AssetManager::loadFontBitmap(): Attempting to get font bitmap that does not exist: {}", name);
+			return nullptr;
+		}
 
 		return this->fontBitmaps.at(fbIndex).first.get();
 	}
@@ -827,14 +907,15 @@ namespace vel
 	{
 		int fbIndex = this->getFontBitmapIndex(pFontBitmap);
 
-		LOG_CRASH_IF_TRUE(fbIndex == -1, "AssetManager::removeFontBitmap(): Attempting to remove font bitmap that does not exist: " + pFontBitmap->fontName);
+		if (fbIndex == -1)
+			return;
 
 		auto& fb = this->fontBitmaps.at(fbIndex);
 		fb.second--;
 
 		if (fb.second == 0)
 		{
-			LOG_TO_CLI_AND_FILE("Full remove FontBitmap: " + pFontBitmap->fontName);
+			VEL3D_LOG_DEBUG("Full remove FontBitmap: {}", pFontBitmap->fontName);
 
 			this->gpu->clearTexture(&fb.first->texture);
 			
@@ -843,7 +924,7 @@ namespace vel
 			return;
 		}
 
-		LOG_TO_CLI_AND_FILE("Decrement FontBitmap usageCount, retain: " + fb.first->fontName);
+		VEL3D_LOG_DEBUG("Decrement FontBitmap usageCount, retain: {}", fb.first->fontName);
 	}
 
 	FontGlyphInfo AssetManager::getFontGlyphInfo(uint32_t character, float offsetX, float offsetY, FontBitmap* fb)
@@ -856,7 +937,6 @@ namespace vel
 		const auto xmax = quad.x1;
 		const auto ymin = -quad.y1;
 		const auto ymax = -quad.y0;
-
 
 		FontGlyphInfo info{};
 		info.offsetX = offsetX;

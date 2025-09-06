@@ -1,8 +1,7 @@
 #include <iostream>
 
+#include "vel/logger.hpp"
 #include "vel/functions.h"
-#include "vel/Log.h"
-
 #include "vel/AssimpMeshLoader.h"
 
 namespace vel
@@ -36,7 +35,7 @@ namespace vel
 		this->currentGlobalInverseMatrix = glm::mat4();
 	}
 
-	std::pair<std::vector<std::string>, std::string> AssimpMeshLoader::preload(const std::string& filePath)
+	std::optional<std::pair<std::vector<std::string>, std::string>> AssimpMeshLoader::preload(const std::string& filePath)
 	{
 		this->currentAssetFile = filePath;
 		std::pair<std::vector<std::string>, std::string> output;
@@ -45,10 +44,8 @@ namespace vel
 
 		if (!this->impScene || !this->impScene->mRootNode)
 		{
-			std::string errorMessage = this->aiImporter.GetErrorString();
-			std::cout << "ERROR::ASSIMP::" << errorMessage << "\n";
-			std::cin.get();
-			exit(EXIT_FAILURE);
+			VEL3D_LOG_DEBUG("AssimpMeshLoader::preload(): {}", this->aiImporter.GetErrorString());
+			return std::nullopt;
 		}
 
 		this->preProcessNode(this->impScene->mRootNode);
@@ -125,9 +122,7 @@ namespace vel
 
 			if (nodeParentName == "RootNode")
 			{
-#ifdef DEBUG_LOG
-				Log::toCliAndFile("Loading new Armature: " + nodeName);
-#endif	
+				VEL3D_LOG_DEBUG("Loading new Armature: {}", nodeName);
 				this->armature = std::make_unique<Armature>(boneName);
 			}
 
@@ -312,12 +307,9 @@ namespace vel
 	void AssimpMeshLoader::processNode(aiNode* node)
 	{
 		std::string nodeName = node->mName.C_Str();
-		//std::cout << "processNode:" << nodeName << std::endl;
-
 
 		if (nodeName == "RootNode")
 			this->currentGlobalInverseMatrix = glm::inverse(this->aiMatrix4x4ToGlm(node->mTransformation));
-
 
 		// If this is not the RootNode and this node has not already been processed
 		if (nodeName != "RootNode" && !this->nodeHasBeenProcessed(node))
@@ -332,11 +324,17 @@ namespace vel
 				// boneNames (done so that these indexes can be used at runtime instead
 				// of loops and string comparisons)
 				for (auto& b : this->armature->getBones())
-					b.parent = this->armature->getBoneIndex(b.parentName);
+				{
+					std::optional<size_t> biOpt = this->armature->getBoneIndex(b.parentName);
+					if (!biOpt)
+						return;
+
+					b.parent = biOpt.value();
+				}
 			}
 			else
 			{
-				// use node name for mesh name
+				// use node name for mesh name...
 
 				bool shouldLoadMesh = false;
 				for (auto& mn : this->meshesToLoad)
@@ -351,11 +349,10 @@ namespace vel
 				if (!shouldLoadMesh)
 					return;
 
+				// ...otherwise loop through all meshes for this node, creating a Mesh for each one
 
-				// otherwise loop through all meshes for this node, creating a Mesh for each one
-#ifdef DEBUG_LOG
-				Log::toCliAndFile("Loading new Mesh: " + nodeName);
-#endif
+				VEL3D_LOG_DEBUG("Loading new Mesh: {}", nodeName);
+
 
 				// create one single mesh from all of the aiMeshes
 

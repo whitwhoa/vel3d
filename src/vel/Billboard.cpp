@@ -72,7 +72,7 @@ namespace vel
 		R[1] = up;       // Y
 		R[2] = forward;  // Z (remember this corresponds to local -Z facing camera)
 
-		// Convert to quaternion and apply to the actor’s transform
+		// Convert to quaternion and apply to the actor's transform
 		const glm::quat q = glm::quat_cast(R);
 		billboardActor->getTransform().setRotation(q);
 	}

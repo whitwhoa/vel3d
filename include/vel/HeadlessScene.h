@@ -25,7 +25,7 @@ namespace vel
 
 		int										getCollisionWorldIndex(const std::string& name);
 
-		void									loadMesh(const std::string& path);
+		bool									loadMesh(const std::string& path);
 		Mesh*									getMesh(const std::string& name);
 
 		Armature*								getArmature(const std::string& name);

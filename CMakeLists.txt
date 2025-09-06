@@ -4,7 +4,7 @@ file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/vel/*.cpp")
 
 add_library(VEL3D_LIBRARY STATIC ${headers} ${sources})
-add_dependencies(VEL3D_LIBRARY ${libGLFW} GLAD_LIBRARY ${libGLM} ${libAssimp} ${libBullet} ${libJson} ${libStbHeaders} IMGUI_LIBRARY)
+add_dependencies(VEL3D_LIBRARY ${libGLFW} GLAD_LIBRARY ${libGLM} ${libAssimp} ${libBullet} ${libJson} ${libStbHeaders} IMGUI_LIBRARY MINIAUDIO_LIBRARY SPDLOG_LIBRARY)
 set(VEL3D_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set_target_properties(VEL3D_LIBRARY PROPERTIES 
@@ -27,6 +27,7 @@ target_include_directories(VEL3D_LIBRARY PUBLIC
 	${STBHEADERS_INCLUDE_DIR}
 	${IMGUI_INCLUDE_DIR}
 	${MINIAUDIO_INCLUDE_DIR}
+	${SPDLOG_INCLUDE_DIR}
 )
 
 if(USE_NVIDIA_API)
@@ -46,6 +47,7 @@ target_link_libraries(VEL3D_LIBRARY PUBLIC
 	LINEAR_MATH_LIBRARY
 	IMGUI_LIBRARY
 	MINIAUDIO_LIBRARY
+	SPDLOG_LIBRARY
 )
 
 if(USE_NVIDIA_API)

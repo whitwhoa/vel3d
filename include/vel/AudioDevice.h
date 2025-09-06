@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <string>
+#include <optional>
 
 #include "miniaudio/miniaudio.h"
 #include "glm/glm.hpp"
@@ -82,6 +83,8 @@ namespace vel
 		AudioDevice();
 		~AudioDevice();
 
+		bool init();
+
 		unsigned int generateGroupKey();
 		void setCurrentGroupKey(unsigned int key);
 
@@ -93,7 +96,7 @@ namespace vel
 		/*
 			Loads an SFX track into sfxSounds, meaning a track that is preloaded and is a member of sfxVolGroup
 		*/
-		std::string loadSFX(const std::string& path);
+		std::optional<std::string> loadSFX(const std::string& path);
 
 		/*
 			Loop through all managedSFX and remove those which have stopped. Do not run if audio paused, as all sounds will be stopped during the

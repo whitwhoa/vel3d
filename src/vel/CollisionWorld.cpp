@@ -2,6 +2,7 @@
 #include "BulletCollision/CollisionDispatch/btInternalEdgeUtility.h"
 #include "glm/glm.hpp"
 
+#include "vel/logger.hpp"
 #include "vel/App.h"
 #include "vel/LightmapMaterialMixin.h"
 #include "vel/CollisionWorld.h"
@@ -348,10 +349,12 @@ namespace vel
 		return ccr;
 	}
 
-	void CollisionWorld::getTriangleVertices(const btStridingMeshInterface* meshInterface, int triangleIndex, btVector3& v0, btVector3& v1, btVector3& v2, int& index0, int& index1, int& index2) {
+	bool CollisionWorld::getTriangleVertices(const btStridingMeshInterface* meshInterface, int triangleIndex, btVector3& v0, btVector3& v1, btVector3& v2, int& index0, int& index1, int& index2) 
+	{
 		int numTrianglesTotal = 0;
 
-		for (int i = 0; i < meshInterface->getNumSubParts(); ++i) {
+		for (int i = 0; i < meshInterface->getNumSubParts(); ++i) 
+		{
 			const unsigned char* vertexBase;
 			int numVerts;
 			PHY_ScalarType vertexType;
@@ -369,14 +372,16 @@ namespace vel
 			numTrianglesTotal += numFaces;
 		}
 
-		if (triangleIndex < 0 || triangleIndex >= numTrianglesTotal) {
-			std::cerr << "Invalid triangle index." << std::endl;
-			return;
+		if (triangleIndex < 0 || triangleIndex >= numTrianglesTotal) 
+		{
+			VEL3D_LOG_DEBUG("CollisionWorld::getTriangleVertices: Invalid triangle index");
+			return false;
 		}
 
 		int currentTriangle = 0;
 
-		for (int part = 0; part < meshInterface->getNumSubParts(); ++part) {
+		for (int part = 0; part < meshInterface->getNumSubParts(); ++part) 
+		{
 			const unsigned char* vertexBase;
 			int numVerts;
 			PHY_ScalarType vertexType;
@@ -391,8 +396,10 @@ namespace vel
 				&indexBase, indexStride, numFaces, indexType, part
 			);
 
-			for (int face = 0; face < numFaces; ++face) {
-				if (currentTriangle == triangleIndex) {
+			for (int face = 0; face < numFaces; ++face) 
+			{
+				if (currentTriangle == triangleIndex) 
+				{
 					int* triangleIndices = reinterpret_cast<int*>(const_cast<unsigned char*>(indexBase) + face * indexStride);
 
 					index0 = triangleIndices[0];
@@ -415,10 +422,11 @@ namespace vel
 
 			meshInterface->unLockReadOnlyVertexBase(part);
 
-			if (currentTriangle > triangleIndex) {
+			if (currentTriangle > triangleIndex) 
 				break;
-			}
 		}
+
+		return true;
 	}
 
 }

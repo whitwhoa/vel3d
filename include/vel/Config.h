@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <optional>
 
 
 namespace vel
@@ -17,8 +18,7 @@ namespace vel
     class Config
     {
     private:
-        std::map<std::string, std::string>	loadFromFile(std::string path);
-        std::map<std::string, std::string>	userConfigParams;        
+        std::optional<std::map<std::string, std::string>> loadFromFile(const std::string& path);
 
 
     public:

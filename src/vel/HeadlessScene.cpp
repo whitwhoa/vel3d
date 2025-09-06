@@ -1,6 +1,6 @@
 
 #include "vel/HeadlessScene.h"
-#include "vel/Log.h"
+#include "vel/logger.hpp"
 
 namespace vel
 {
@@ -42,15 +42,24 @@ namespace vel
 				cw->getDynamicsWorld()->stepSimulation(delta, 0);
 	}
 
-	void HeadlessScene::loadMesh(const std::string& path)
+	bool HeadlessScene::loadMesh(const std::string& path)
 	{
-		auto tts = this->assetManager->loadMesh(path);
+		auto mdpOpt = this->assetManager->loadMesh(path);
+		if (!mdpOpt)
+		{
+			VEL3D_LOG_DEBUG("HeadlessScene::loadMesh: call to assetManager->loadMesh resulted in nullopt");
+			return false;
+		}
 
-		for (auto& t : tts.first)
+		auto meshDataPair = mdpOpt.value();
+
+		for (auto& t : meshDataPair.first)
 			this->meshesInUse.push_back(t);
 
-		if (tts.second)
-			this->armaturesInUse.push_back(tts.second);
+		if (meshDataPair.second)
+			this->armaturesInUse.push_back(meshDataPair.second);
+
+		return true;
 	}
 
 	Mesh* HeadlessScene::getMesh(const std::string& name)
@@ -80,7 +89,7 @@ namespace vel
 			if (this->stages.at(i)->getName() == name)
 				return this->stages.at(i).get();
 
-		LOG_CRASH("Attempting to retrive stage that does not exist: " + name);
+		VEL3D_LOG_DEBUG("HeadlessScene::getStage: Attempting to retrive stage that does not exist: {}" + name);
 
 		return nullptr;
 	}

@@ -57,7 +57,7 @@ namespace vel
 		AssimpMeshLoader();
 		~AssimpMeshLoader() {};
 
-		std::pair<std::vector<std::string>, std::string> 
+		std::optional<std::pair<std::vector<std::string>, std::string>>
 			preload(const std::string& filePath);
 
 		std::pair<std::vector<std::unique_ptr<Mesh>>, std::unique_ptr<Armature>> 

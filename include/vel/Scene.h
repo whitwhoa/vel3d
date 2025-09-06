@@ -76,7 +76,7 @@ namespace vel
 		FontBitmap*							loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath);
 
 		void								loadBGMSound(const std::string& path);
-		void								loadSFXSound(const std::string& path);
+		bool								loadSFXSound(const std::string& path);
 
 		Camera*								addCamera(const std::string& name, CameraType type);
 

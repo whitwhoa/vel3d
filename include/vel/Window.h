@@ -46,9 +46,11 @@ namespace vel
 
     public:
 							Window(Window&&) = default;
-							Window(Config c);
+							Window();
 							~Window();
-        void				setTitle(std::string title);
+        bool                init(const Config& c);
+
+        void				setTitle(const std::string& title);
         bool				shouldClose();
         void				setToClose();
         void				update();
@@ -59,7 +61,7 @@ namespace vel
         //void				vsync();
 
 
-		ImFont* 			getImguiFont(std::string key) const;
+		ImFont* 			getImguiFont(const std::string& key) const;
 		void				hideMouseCursor();
 		void				showMouseCursor();
 		bool				getImguiFrameOpen();

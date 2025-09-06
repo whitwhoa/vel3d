@@ -12,7 +12,7 @@
 #include "nlohmann/json.hpp"
 #include "vel/CollisionObjectTemplate.h"
 #include "vel/functions.h"
-#include "vel/Log.h"
+#include "vel/logger.hpp"
 
 
 using json = nlohmann::json;
@@ -56,9 +56,14 @@ namespace vel
 		this->soundsInUse.push_back(this->audioDevice->loadBGM(path));
 	}
 
-	void Scene::loadSFXSound(const std::string& path)
+	bool Scene::loadSFXSound(const std::string& path)
 	{
-		this->soundsInUse.push_back(this->audioDevice->loadSFX(path));
+		std::optional<std::string> sfxOpt = this->audioDevice->loadSFX(path);
+		if (!sfxOpt)
+			return false;
+
+		this->soundsInUse.push_back(sfxOpt.value());
+		return true;
 	}
 
 	void Scene::setAudioDevice(AudioDevice* ad)
@@ -126,7 +131,7 @@ namespace vel
 
 	void Scene::freeAssets()
 	{
-		LOG_TO_CLI_AND_FILE("Freeing assets for scene: " + this->name);
+		VEL3D_LOG_DEBUG("Freeing assets for scene: {}", this->name);
 
 		for(auto& pArm : this->armaturesInUse)
 			this->assetManager->removeArmature(pArm);

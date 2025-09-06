@@ -169,13 +169,16 @@ namespace vel
 		glm::vec3 t = glm::normalize(to);
 
 		// Check if the vectors are almost parallel
-		if (glm::length(glm::cross(f, t)) < 1e-6) {
+		if (glm::length(glm::cross(f, t)) < 1e-6) 
+		{
 			// If they are almost parallel, the rotation is zero or 180 degrees
-			if (glm::dot(f, t) > 0.99999f) {
+			if (glm::dot(f, t) > 0.99999f) 
+			{
 				// Zero rotation
 				return glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 			}
-			else {
+			else 
+			{
 				// 180 degree rotation around an orthogonal axis
 				glm::vec3 orthogonal = glm::abs(f.x) > glm::abs(f.z) ? glm::vec3(-f.y, f.x, 0.0f) : glm::vec3(0.0f, -f.z, f.y);
 				orthogonal = glm::normalize(orthogonal);

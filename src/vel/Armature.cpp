@@ -1,15 +1,15 @@
 #include <iostream>
 #include <algorithm>
 
+
 #define GLM_FORCE_ALIGNED_GENTYPES
 #include "glm/gtx/compatibility.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/matrix_decompose.hpp"
 #include "glm/gtx/string_cast.hpp"
 
-#include "vel/Log.h"
+#include "vel/logger.hpp"
 #include "vel/Armature.h"
-
 
 
 namespace vel
@@ -223,7 +223,7 @@ namespace vel
 
 
 
-	void Armature::playAnimation(std::string animationName, bool repeat, int blendTime)
+	void Armature::playAnimation(const std::string& animationName, bool repeat, int blendTime)
 	{
 		ActiveAnimation a;
 		a.animation = this->getAnimation(animationName);
@@ -301,7 +301,7 @@ namespace vel
 		return this->bones;
 	}
 
-	ArmatureBone* Armature::getBone(std::string boneName)
+	ArmatureBone* Armature::getBone(const std::string& boneName)
 	{
 		for (auto& b : this->bones)
 			if (b.name == boneName)
@@ -315,7 +315,7 @@ namespace vel
 		return this->bones.at(index);
 	}
 
-	std::shared_ptr<Animation> Armature::getAnimation(std::string animationName)
+	std::shared_ptr<Animation> Armature::getAnimation(const std::string& animationName)
 	{
 		for (auto& p : this->animations)
 		{
@@ -323,22 +323,18 @@ namespace vel
 				return p;
 		}
             
-#ifdef DEBUG_LOG
-    Log::crash("Armature::getAnimation(): Attempting to get animation pointer of non-existing animation name: " + animationName);
-#endif
-    
+		VEL3D_LOG_DEBUG("Armature::getAnimation(): Attempting to get animation pointer of non-existing animation name: {}", animationName);
+		return nullptr;
     }
 
-	size_t Armature::getBoneIndex(std::string boneName)
+	std::optional<size_t> Armature::getBoneIndex(const std::string& boneName)
 	{
 		for (size_t i = 0; i < this->bones.size(); i++)
 			if (this->bones.at(i).name == boneName)
 				return i;
         
-#ifdef DEBUG_LOG
-    Log::crash("Armature::getBoneIndex(): Attempting to get index of non-existing bone name: " + boneName);
-#endif
-        
+		VEL3D_LOG_DEBUG("Armature::getBoneIndex(): Attempting to get index of non-existing bone name: {}", boneName);
+		return std::nullopt;
 	}
 
 }

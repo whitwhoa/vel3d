@@ -10,12 +10,12 @@
 
 #include "vel/Window.h"
 #include "vel/nvapi.hpp"
+#include "vel/logger.hpp"
 
 // stutter caused when not in fullscreen mode: https://stackoverflow.com/a/21663076/1609485
 // https://www.reddit.com/r/opengl/comments/8754el/stuttering_with_learnopengl_tutorials/dwbp7ta?utm_source=share&utm_medium=web2x
 // could be because of multiple monitors all running different refresh rates
 
-//TODO: Need to refactor this to use Log.h
 
 namespace vel
 {
@@ -24,153 +24,170 @@ namespace vel
 		unsigned int id,
 		GLenum severity,
 		GLsizei length,
-		const char *message,
-		const void *userParam)
+		const char* message,
+		const void* userParam)
 	{
 		// ignore non-significant error/warning codes
-		if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
+		if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
+			return;
 
-		std::cout << "---------------" << std::endl;
-		std::cout << "Debug message (" << id << "): " << message << std::endl;
-
+		// Convert enums to strings
+		const char* sourceStr = "";
 		switch (source)
 		{
-		case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
-		case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
-		case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
-		case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
-		case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
-		case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
-		} std::cout << std::endl;
+			case GL_DEBUG_SOURCE_API:             sourceStr = "API"; break;
+			case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   sourceStr = "Window System"; break;
+			case GL_DEBUG_SOURCE_SHADER_COMPILER: sourceStr = "Shader Compiler"; break;
+			case GL_DEBUG_SOURCE_THIRD_PARTY:     sourceStr = "Third Party"; break;
+			case GL_DEBUG_SOURCE_APPLICATION:     sourceStr = "Application"; break;
+			case GL_DEBUG_SOURCE_OTHER:           sourceStr = "Other"; break;
+			default:                              sourceStr = "Unknown"; break;
+		}
 
+		const char* typeStr = "";
 		switch (type)
 		{
-		case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
-		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
-		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break;
-		case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
-		case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
-		case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
-		case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
-		case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
-		case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
-		} std::cout << std::endl;
+			case GL_DEBUG_TYPE_ERROR:               typeStr = "Error"; break;
+			case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: typeStr = "Deprecated Behaviour"; break;
+			case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  typeStr = "Undefined Behaviour"; break;
+			case GL_DEBUG_TYPE_PORTABILITY:         typeStr = "Portability"; break;
+			case GL_DEBUG_TYPE_PERFORMANCE:         typeStr = "Performance"; break;
+			case GL_DEBUG_TYPE_MARKER:              typeStr = "Marker"; break;
+			case GL_DEBUG_TYPE_PUSH_GROUP:          typeStr = "Push Group"; break;
+			case GL_DEBUG_TYPE_POP_GROUP:           typeStr = "Pop Group"; break;
+			case GL_DEBUG_TYPE_OTHER:               typeStr = "Other"; break;
+			default:                                typeStr = "Unknown"; break;
+		}
 
+		const char* severityStr = "";
 		switch (severity)
 		{
-		case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
-		case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
-		case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
-		case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
-		} std::cout << std::endl;
-		std::cout << std::endl;
+			case GL_DEBUG_SEVERITY_HIGH:         severityStr = "high"; break;
+			case GL_DEBUG_SEVERITY_MEDIUM:       severityStr = "medium"; break;
+			case GL_DEBUG_SEVERITY_LOW:          severityStr = "low"; break;
+			case GL_DEBUG_SEVERITY_NOTIFICATION: severityStr = "notification"; break;
+			default:                             severityStr = "unknown"; break;
+		}
+
+		VEL3D_LOG_DEBUG(
+			"---------------\n"
+			"Debug message ({}): {}\n"
+			"Source: {}\n"
+			"Type: {}\n"
+			"Severity: {}",
+			id, message, sourceStr, typeStr, severityStr
+		);
 	}
 
 
-    Window::Window(Config c) :
-		windowMode(c.WINDOW_MODE),
-        windowSize(glm::ivec2(c.WINDOW_WIDTH, c.WINDOW_HEIGHT)),
-		lockResToWin(c.LOCK_RES_TO_WIN),
-		resolution(c.LOCK_RES_TO_WIN ? glm::ivec2(c.WINDOW_WIDTH, c.WINDOW_HEIGHT) : glm::ivec2(c.RESOLUTION_X, c.RESOLUTION_Y)),
+    Window::Window() :
+		windowMode(true),
+        windowSize(glm::ivec2(1280,720)),
+		lockResToWin(true),
+		resolution(glm::ivec2(1280, 720)),
 		windowSizeChanged(false),
-		cursorHidden(c.CURSOR_HIDDEN),
-		useImGui(c.USE_IMGUI),
-		vsync(c.VSYNC),
+		cursorHidden(true),
+		useImGui(false),
+		vsync(false),
+		glfwWindow(nullptr),
 		scrollX(0.0f),
 		scrollY(0.0f),
 		imguiFrameOpen(false)
     {
+
+    }
+
+    Window::~Window() 
+    {
+        glfwDestroyWindow(this->glfwWindow);
+        glfwTerminate();
+    }
+
+	bool Window::init(const Config& c)
+	{
+		this->windowMode = c.WINDOW_MODE;
+		this->windowSize = glm::ivec2(c.WINDOW_WIDTH, c.WINDOW_HEIGHT);
+		this->lockResToWin = c.LOCK_RES_TO_WIN;
+		this->resolution = c.LOCK_RES_TO_WIN ? glm::ivec2(c.WINDOW_WIDTH, c.WINDOW_HEIGHT) : glm::ivec2(c.RESOLUTION_X, c.RESOLUTION_Y);
+		this->cursorHidden = c.CURSOR_HIDDEN;
+		this->useImGui = c.USE_IMGUI;
+		this->vsync = c.VSYNC;
+
 		this->inputState.mouseSensitivity = c.MOUSE_SENSITIVITY;
 
-		// should we include nvidia api so we can set application profile?
+
 #ifdef WINDOWS_BUILD
 		initNvidiaApplicationProfile(c.APP_EXE_NAME, c.APP_NAME);
 #endif
 
-
-        // Initialize GLFW. This is the library that creates our cross platform (kinda since
-        // apple decided to ditch opengl support for metal only) window object
-        glfwInit();
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		// Initialize GLFW
+		glfwInit();
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		//glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); //for borderless windowed
 		//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		//glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
-        
+
 		if (c.OPENGL_DEBUG_CONTEXT)
-		{
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
-		}        
-        
 
-        glfwSetErrorCallback([](int error, const char* description) {
-            std::cout << description << "\n";
-            std::cin.get();
-        });
+		glfwSetErrorCallback([](int error, const char* description) {
+			VEL3D_LOG_DEBUG("Window::init::glfwSetErrorCallback: {}", description);
+		});
 
-        if (this->windowMode) 
+		if (this->windowMode)
 		{
-            this->glfwWindow = glfwCreateWindow(this->windowSize.x, this->windowSize.y, c.APP_NAME.c_str(), NULL, NULL);
-        }
-        else 
+			this->glfwWindow = glfwCreateWindow(this->windowSize.x, this->windowSize.y, c.APP_NAME.c_str(), NULL, NULL);
+		}
+		else
 		{
 			GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 			const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
 			this->windowSize = glm::ivec2(mode->width, mode->height);
 
-            this->glfwWindow = glfwCreateWindow(mode->width, mode->height, c.APP_NAME.c_str(), monitor, NULL);
-        }
+			this->glfwWindow = glfwCreateWindow(mode->width, mode->height, c.APP_NAME.c_str(), monitor, NULL);
+		}
 
-        if (this->glfwWindow == NULL) 
-        {
-            glfwTerminate();
-            std::cout << "Failed to create GLFW window\n";
-            std::cin.get();
-            exit(EXIT_FAILURE);
-        }
-        else 
-        {
+		if (this->glfwWindow == NULL)
+		{
+			VEL3D_LOG_DEBUG("Window::init: Failed to create GLFW window");
 
-            glfwMakeContextCurrent(this->glfwWindow);
+			glfwTerminate();
 
-			
+			return false;
+		}
+		else
+		{
+			glfwMakeContextCurrent(this->glfwWindow);
 
-			if(this->vsync)
+			if (this->vsync)
 				glfwSwapInterval(1); // 0 = no vsync 1 = vsync
 			else
 				glfwSwapInterval(0);
 
-			
-
-            // Initialize glad. Glad is a .c file which is included in our project.
-            // GLAD manages function pointers for OpenGL so we want to initialize GLAD before we call any OpenGL function
-            //if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) 
+			// Initialize glad
+			// GLAD manages function pointers for OpenGL so we want to initialize GLAD before we call any OpenGL functions
 			if (!gladLoadGL(glfwGetProcAddress))
-            {
-                std::cout << "Failed to initialize GLAD\n";
-                std::cin.get();
-                exit(EXIT_FAILURE);
-            }
-            else 
-            {
-                // Associate this object with the window
-                glfwSetWindowUserPointer(this->glfwWindow, this);
+			{
+				VEL3D_LOG_DEBUG("Window::init: Failed to initialize GLAD");
+				return false;
+			}
+			else
+			{
+				// Associate this object with the window
+				glfwSetWindowUserPointer(this->glfwWindow, this);
 
-                // Set callback functions used by glfw (for when polling is unavailable or it makes better sense
-                // to use a callback)
-                this->setCallbacks();
+				// Set callback functions used by glfw (for when polling is unavailable or it makes better sense to use a callback)
+				this->setCallbacks();
 
-				//glfwSetInputMode(this->glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-
-                // Set window input mode
+				// Set window input mode
 				if (this->cursorHidden)
 				{
 					glfwSetInputMode(this->glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 					glfwSetInputMode(this->glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 				}
-
 
 				if (c.OPENGL_DEBUG_CONTEXT)
 				{
@@ -181,21 +198,17 @@ namespace vel
 						glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 						glDebugMessageCallback(glDebugOutput, nullptr);
 						glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-						std::cout << "OpenGL debug context should be loaded" << std::endl;
+
+						VEL3D_LOG_DEBUG("OpenGL debug context should be loaded");
 					}
 					else
 					{
-						std::cout << "OpenGL debug context unable to load" << std::endl;
-						std::cin.get();
+						VEL3D_LOG_DEBUG("OpenGL debug context unable to load");
 					}
 				}
 
-
-                // Set default viewport size
-                glViewport(0, 0, this->windowSize.x, this->windowSize.y);
-
-
-				//glfwFocusWindow(this->glfwWindow);
+				// Set default viewport size
+				glViewport(0, 0, this->windowSize.x, this->windowSize.y);
 
 				if (this->useImGui)
 				{
@@ -211,36 +224,21 @@ namespace vel
 
 					// create fonts
 					for (auto& f : c.imguiFonts)
-					{
 						this->imguiFonts[f.key] = io.Fonts->AddFontFromFileTTF(f.path.c_str(), f.pixels);
-						//std::cout << this->imguiFonts[f.key] << std::endl;
-					}
-						
 
 					// Setup Dear ImGui style
 					ImGui::StyleColorsDark();
 					//ImGui::StyleColorsClassic();
-
-					
 
 					// Setup Platform/Renderer bindings
 					ImGui_ImplGlfw_InitForOpenGL(this->glfwWindow, true);
 					ImGui_ImplOpenGL3_Init("#version 450 core");
 				}
 
-            }
-
-        }
-
-
-    }
-    Window::~Window() 
-    {
-        glfwDestroyWindow(this->glfwWindow);
-
-        // Terminate GLFW application process
-        glfwTerminate();
-    }
+				return true;
+			}
+		}
+	}
 
 	glm::ivec2 Window::getResolution()
 	{
@@ -264,12 +262,12 @@ namespace vel
 		//glfwSetInputMode(this->glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	}
 
-	ImFont* Window::getImguiFont(std::string key) const
+	ImFont* Window::getImguiFont(const std::string& key) const
 	{
 		return this->imguiFonts.at(key);
 	}
 
-    void Window::setTitle(std::string title)
+    void Window::setTitle(const std::string& title)
     {
         glfwSetWindowTitle(this->glfwWindow, title.c_str());
     }
@@ -431,10 +429,8 @@ namespace vel
 		// Focus
 		glfwSetWindowFocusCallback(this->glfwWindow, [](GLFWwindow* window, int focused) {
 		
-			if (focused)
-				std::cout << "window focused\n";
-			else
-				std::cout << "window NOT focused\n";
+			VEL3D_LOG_DEBUG_IF(focused, "Window Focused!");
+			VEL3D_LOG_DEBUG_IF(!focused, "Window NOT Focused!");
 		
 		});
 
@@ -534,8 +530,6 @@ namespace vel
 
         glfwGetCursorPos(this->glfwWindow, &mXPos, &mYPos);
 
-		//std::cout << "setMouse: " << mXPos << "\n";
-
 		this->inputState.mouseXPos = (float)mXPos;
 		this->inputState.mouseYPos = (float)mYPos;
     }
@@ -544,8 +538,6 @@ namespace vel
     {
         this->inputState.scrollX = (float)this->scrollX;
         this->inputState.scrollY = (float)this->scrollY;
-        //this->scrollX = 0;
-        //this->scrollY = 0;
     }
 
     void Window::setToClose() 
@@ -557,5 +549,6 @@ namespace vel
     {
         return &this->inputState;
     }
+
 
 }

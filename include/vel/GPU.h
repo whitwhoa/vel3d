@@ -76,14 +76,14 @@ namespace vel
 		void								resetActives();
 
 
-		void								loadShader(Shader* s);
+		bool								loadShader(Shader* s);
 		void								loadMesh(Mesh* m);
 		void								updateMesh(Mesh* m);
 		void								loadTexture(Texture* t);
 		void								loadFontBitmapTexture(FontBitmap* fb);
 
 		RenderTarget						createRenderTarget(const std::string& name, unsigned int width, unsigned int height);
-		void								updateRenderTarget(RenderTarget* rt);
+		bool								updateRenderTarget(RenderTarget* rt);
 		void								clearRenderTarget(RenderTarget* rt);
 
 		void								setActiveMaterial(Material* m);

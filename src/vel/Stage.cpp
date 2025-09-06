@@ -58,7 +58,11 @@ namespace vel
 			for (auto& meshBone : act->getMesh()->getBones())
 			{
 				// associate the index of the armature bone with the index of the mesh bone used for transformation
-				activeBones.push_back(std::pair<size_t, unsigned int>(act->getArmature()->getBoneIndex(meshBone.name), index));
+				auto biOpt = act->getArmature()->getBoneIndex(meshBone.name);
+				if (!biOpt)
+					continue;
+
+				activeBones.push_back(std::pair<size_t, unsigned int>(biOpt.value(), index));
 				index++;
 			}
 

@@ -54,7 +54,7 @@ namespace vel
 
 		void								appendVertices(const std::vector<Vertex>& vs);
 
-		void								initBillboardQuad(float width, float height);
+		bool								initBillboardQuad(float width, float height);
 
 	};
     

@@ -13,7 +13,6 @@
 #include "BulletCollision/NarrowPhaseCollision/btGjkPairDetector.h"
 #include "BulletCollision/NarrowPhaseCollision/btPointCollector.h"
 
-#include "sac.h"
 #include "vel/Actor.h"
 #include "vel/RaycastResult.h"
 #include "vel/CollisionDebugDrawer.h"
@@ -76,7 +75,7 @@ namespace vel
 		void									setCamera(Camera* c);
 		Camera*									getCamera();
 
-		static void								getTriangleVertices(const btStridingMeshInterface* meshInterface, int triangleIndex, btVector3& v0, btVector3& v1, btVector3& v2, int& index0, int& index1, int& index2);
+		static bool								getTriangleVertices(const btStridingMeshInterface* meshInterface, int triangleIndex, btVector3& v0, btVector3& v1, btVector3& v2, int& index0, int& index1, int& index2);
 
 		const std::string&						getName();
 

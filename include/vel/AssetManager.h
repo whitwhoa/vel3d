@@ -2,8 +2,8 @@
 
 #include <string>
 #include <unordered_map>
+#include <optional>
 
-#include "sac.h"
 
 #include "vel/Shader.h"
 #include "vel/Mesh.h"
@@ -53,7 +53,7 @@ namespace vel
 
 		int													getTextureIndex(const std::string& name);
 		int													getTextureIndex(const Texture* t);
-		TextureData											generateTextureData(const std::string& path);
+		std::optional<TextureData>							generateTextureData(const std::string& path);
 
 		int													getMaterialIndex(const std::string& name);
 		int													getMaterialIndex(const Material* m);
@@ -70,14 +70,14 @@ namespace vel
 		AssetManager(const std::string& dataDir, std::unique_ptr<MeshLoaderInterface> ml, GPU* gpu);
 		~AssetManager();
 
-		std::string					loadShaderFile(const std::string& shaderPath);
+		std::optional<std::string>	loadShaderFile(const std::string& shaderPath);
 		std::string					getTopShaderLines(const std::string& shaderCode, int numLinesToGet);
 		std::string					getBottomShaderLines(const std::string& shaderCode, int numLinesToSkip);
 		Shader*						loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, const std::string& fragFile, std::vector<std::string> defs = {});
 		Shader*						getShader(const std::string& name);
 		void						removeShader(const Shader* pShader);
 
-		std::pair<std::vector<Mesh*>, Armature*> loadMesh(const std::string& path);
+		std::optional<std::pair<std::vector<Mesh*>, Armature*>> loadMesh(const std::string& path);
 		Mesh*						addMesh(std::unique_ptr<Mesh> m);
 		Mesh*						getMesh(const std::string& name);
 		void						updateMesh(Mesh* m);

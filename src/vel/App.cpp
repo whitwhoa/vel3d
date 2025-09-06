@@ -3,13 +3,11 @@
 #include <thread> 
 #include <chrono>
 
-
 #include "btBulletCollisionCommon.h"
 #include "btBulletDynamicsCommon.h"
 
-
+#include "vel/logger.hpp"
 #include "vel/App.h"
-#include "vel/Log.h"
 
 using namespace std::chrono_literals;
 
@@ -86,7 +84,7 @@ namespace vel
 
 	void App::removeScene(const std::string& name)
 	{
-		LOG_TO_CLI_AND_FILE("Removing Scene: " + name);
+		VEL3D_LOG_DEBUG("App::removeScene: Removing Scene: {}", name);
 
 		size_t i = 0;
 		for (auto& s : this->scenes)
@@ -120,7 +118,7 @@ namespace vel
 
 	void App::swapScene(const std::string& name)
 	{
-		LOG_TO_CLI_AND_FILE("Swapping to Scene: " + name);
+		VEL3D_LOG_DEBUG("App::swapScene: Swapping to Scene: {}", name);
 
 		for (auto& s : this->scenes)
 		{
@@ -152,10 +150,8 @@ namespace vel
 		std::string className = typeid(*scene).name();// name is "class Test" when we need just "Test", so trim off "class "
 		className.erase(0, 6);
 		scene->setName(className);
-		//scene->swapWhenLoaded = swapWhenLoaded;
 
-		LOG_TO_CLI_AND_FILE("Adding Scene: " + className);
-
+		VEL3D_LOG_DEBUG("App::addScene: Adding Scene: {}", className);
 
 		// inject window size and resolution into scene
 		scene->setWindowSize(this->window->getWindowSize().x, this->window->getWindowSize().y);

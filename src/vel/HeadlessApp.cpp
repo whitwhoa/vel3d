@@ -1,6 +1,6 @@
 
 #include "vel/HeadlessApp.h"
-#include "vel/Log.h"
+#include "vel/logger.hpp"
 
 namespace vel
 {
@@ -20,7 +20,7 @@ namespace vel
 		className.erase(0, 6);
 		scene->setName(className);
 
-		LOG_TO_CLI_AND_FILE("Adding HeadlessScene: " + className);
+		VEL3D_LOG_DEBUG("HeadlessApp::addScene: Adding HeadlessScene: {}", className);
 
 		scene->setAssetManager(this->assetManager);
 

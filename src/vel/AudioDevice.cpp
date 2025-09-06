@@ -1,6 +1,6 @@
 #include <filesystem>
 
-#include "vel/Log.h"
+#include "vel/logger.hpp"
 #include "vel/AudioDevice.h"
 
 
@@ -12,13 +12,23 @@ namespace vel
 		currentGroupKey(0),
 		paused(false)
 	{
-		if (ma_engine_init(NULL, &this->engine) != MA_SUCCESS) 
-			LOG_CRASH("Failed to initialize audio engine.");
+		
+	}
+
+	bool AudioDevice::init()
+	{
+		if (ma_engine_init(NULL, &this->engine) != MA_SUCCESS)
+		{
+			VEL3D_LOG_DEBUG("AudioDevice::init: Failed to initialize audio engine.");
+			return false;
+		}
 
 		ma_sound_group_init(&this->engine, 0, NULL, &this->sfxVolGroup);
 		ma_sound_group_init(&this->engine, 0, NULL, &this->bgmVolGroup);
 
 		ma_engine_listener_set_world_up(&this->engine, 0, 0.0f, 1.0f, 0.0f);
+
+		return true;
 	}
 
 	AudioDevice::~AudioDevice()
@@ -99,20 +109,20 @@ namespace vel
 		{
 			it->second += 1;
 
-			LOG_TO_CLI_AND_FILE("Existing BGM, bypass reload: " + name);
+			VEL3D_LOG_DEBUG("Existing BGM, bypass reload: {}", name);
 		}
 		else
 		{
 			this->bgmSounds[name] = path;
 			this->usages[name] = 1;
-
-			LOG_TO_CLI_AND_FILE("Loading new BGM: " + name);
+			
+			VEL3D_LOG_DEBUG("Loading new BGM: {}", name);
 		}
 
 		return name;
 	}
 
-	std::string AudioDevice::loadSFX(const std::string& path)
+	std::optional<std::string> AudioDevice::loadSFX(const std::string& path)
 	{
 		std::filesystem::path p(path);
 		std::string name = p.stem().string();
@@ -122,21 +132,23 @@ namespace vel
 		{
 			it->second += 1;
 
-			LOG_TO_CLI_AND_FILE("Existing SFX, bypass reload: " + name);
+			VEL3D_LOG_DEBUG("Existing SFX, bypass reload: {}", name);
 		}
 		else
 		{
 			ma_sound* sfx = new ma_sound;
 			if (ma_sound_init_from_file(&this->engine, path.c_str(), MA_SOUND_FLAG_DECODE, &this->sfxVolGroup, NULL, sfx) != MA_SUCCESS)
 			{
+				VEL3D_LOG_DEBUG("AudioDevice::loadSFX: Failed to load SFX: {}", path);
+
 				delete sfx;
-				LOG_CRASH("Failed to load SFX: " + path);
+				return std::nullopt;
 			}
 
 			this->sfxSounds[name] = sfx;
 			this->usages[name] = 1;
 
-			LOG_TO_CLI_AND_FILE("Loading new SFX: " + name);
+			VEL3D_LOG_DEBUG("Loading new SFX: {}", name);
 		}
 
 		return name;
@@ -228,7 +240,7 @@ namespace vel
 		else 
 		{
 			delete clone;
-			LOG_CRASH("Failed to play non-spatial one-shot sound.");
+			VEL3D_LOG_DEBUG("AudioDevice::play2DOneShotSFX: Failed to play non-spatial one-shot sound.");
 		}
 	}
 
@@ -247,7 +259,7 @@ namespace vel
 		else
 		{
 			delete clone;
-			LOG_CRASH("Failed to play non-spatial one-shot sound.");
+			VEL3D_LOG_DEBUG("AudioDevice::play2DLoopingSFX: Failed to play non-spatial looping sound.");
 		}
 	}
 
@@ -276,7 +288,7 @@ namespace vel
 		else 
 		{
 			delete clone;
-			LOG_CRASH("Failed to play positional sound.");
+			VEL3D_LOG_DEBUG("AudioDevice::play3DSFX: Failed to play positional sound.");
 		}
 	}
 
@@ -290,7 +302,7 @@ namespace vel
 		auto& bgmMap = this->currentBGM.at(this->currentGroupKey);
 		if (bgmMap.find(name) != bgmMap.end())
 		{
-			LOG_TO_CLI_AND_FILE("Skipping duplicate BGM init for: " + name);
+			VEL3D_LOG_DEBUG("Skipping duplicate BGM init for: {}", name);
 			return;
 		}
 
@@ -306,7 +318,7 @@ namespace vel
 		else
 		{
 			delete bgm;
-			LOG_CRASH("Failed to load BGM track: " + path);
+			VEL3D_LOG_DEBUG("AudioDevice::playBGM: Failed to load BGM track: " + path);
 		}
 
 	}
@@ -366,14 +378,15 @@ namespace vel
 		auto it = this->usages.find(name);
 		if (it == this->usages.end())
 		{
-			LOG_CRASH("Attempting to remove sound that does not exist: " + name);
+			VEL3D_LOG_DEBUG("Attempting to remove sound that does not exist: {}", name);
+			return;
 		}
 
 		this->usages[name]--;
 
 		if (this->usages[name] == 0)
 		{
-			LOG_TO_CLI_AND_FILE("Full remove sound template: " + name);
+			VEL3D_LOG_DEBUG("Full remove sound template: {}", name);
 
 			auto itBGM = this->bgmSounds.find(name);
 			if (itBGM != this->bgmSounds.end())
@@ -390,7 +403,7 @@ namespace vel
 			return;
 		}
 
-		LOG_TO_CLI_AND_FILE("Decrement sound template usage count, retain: " + name);
+		VEL3D_LOG_DEBUG("Decrement sound template usage count, retain: {}", name);
 	}
 
 }

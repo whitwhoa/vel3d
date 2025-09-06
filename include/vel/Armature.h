@@ -57,19 +57,19 @@ namespace vel
 		std::vector<ArmatureBone>&							getBones();
 		const std::vector<ArmatureBone>&					getBones() const;
 		ArmatureBone&										getBone(unsigned int index);
-		ArmatureBone*										getBone(std::string boneName);
+		ArmatureBone*										getBone(const std::string& boneName);
 		const std::string&									getName() const;
 		const std::vector<std::shared_ptr<Animation>>&		getAnimations() const;
-		size_t												getBoneIndex(std::string boneName);
+		std::optional<size_t>								getBoneIndex(const std::string& boneName);
 		void												updateAnimation(float runTime);
-		std::shared_ptr<Animation>							getAnimation(std::string animationName);
+		std::shared_ptr<Animation>							getAnimation(const std::string& animationName);
 		//const std::vector<std::shared_ptr<Animation>>&		getAnimations();
 
 		std::string											getCurrentAnimationName();
 		unsigned int										getCurrentAnimationCycle();
 		float												getCurrentAnimationKeyTime();
 
-		void												playAnimation(std::string animationName, bool repeat = true, int blendTime = 0);
+		void												playAnimation(const std::string& animationName, bool repeat = true, int blendTime = 0);
 
 		Transform&											getTransform();
 
