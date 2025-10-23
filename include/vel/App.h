@@ -51,8 +51,10 @@ namespace vel
 
         void                                            checkWindowSize();
 
-        virtual void                                    accumulate();
+        virtual bool                                    accumulate();
         virtual void                                    update();
+        virtual void                                    preLogicUpdate(Scene* s);
+        virtual void                                    postLogicUpdate(Scene* s);
     
 
     public:

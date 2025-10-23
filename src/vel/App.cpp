@@ -282,18 +282,30 @@ namespace vel
 		}		
 	}
 
-	void App::accumulate()
+	bool App::accumulate()
 	{
 		// prevent spiral of death
 		if (this->frameTime > 0.25)
 			this->frameTime = 0.25;
 
 		this->accumulator += this->frameTime;
+
+		return true;
 	}
 
 	std::chrono::high_resolution_clock::time_point& App::getStartTime()
 	{
 		return this->startTime;
+	}
+
+	void App::preLogicUpdate(Scene* s) 
+	{
+		// For extension: overriding allows derived app to access active scene
+	}
+
+	void App::postLogicUpdate(Scene* s)
+	{
+		// For extension: overriding allows derived app to access active scene
 	}
 
     void App::execute()
@@ -321,7 +333,8 @@ namespace vel
 				
                 this->currentTime = this->newTime;
 
-				this->accumulate();
+				if (!this->accumulate())
+					continue;
 
 				this->window->updateInputState();
 				this->window->update();
@@ -332,6 +345,10 @@ namespace vel
 
 					const float flt = static_cast<float>(this->fixedLogicTime);
 
+
+					this->preLogicUpdate(this->activeScene);
+
+
 					this->activeScene->stepPhysics(flt);
 					this->activeScene->updatePreviousTransforms();
 					this->activeScene->fixedLoop(flt);
@@ -340,6 +357,10 @@ namespace vel
 
 					if(this->audioDevice)
 						this->audioDevice->cleanUpManagedSFX();
+
+
+					this->postLogicUpdate(this->activeScene);
+
 
                     this->accumulator -= this->fixedLogicTime;
                 }
