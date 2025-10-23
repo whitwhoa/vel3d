@@ -185,7 +185,7 @@ namespace vel
         this->window->setToClose();        
     }
 
-    const double App::time() const
+    const double App::getRuntimeSec() const
     {
 		using clock = std::chrono::high_resolution_clock;
 		return std::chrono::duration<double>(clock::now() - this->startTime).count();
@@ -225,9 +225,9 @@ namespace vel
 	{
 		this->canDisplayAverageFrameTime = false;
 
-		if (this->time() - this->lastFrameTimeCalculation >= 1.0)
+		if (this->getRuntimeSec() - this->lastFrameTimeCalculation >= 1.0)
 		{
-			this->lastFrameTimeCalculation = this->time();
+			this->lastFrameTimeCalculation = this->getRuntimeSec();
 
 			double average = 0.0;
 			for (auto& v : this->averageFrameTimeArray)
@@ -282,10 +282,24 @@ namespace vel
 		}		
 	}
 
+	void App::accumulate()
+	{
+		// prevent spiral of death
+		if (this->frameTime > 0.25)
+			this->frameTime = 0.25;
+
+		this->accumulator += this->frameTime;
+	}
+
+	std::chrono::high_resolution_clock::time_point& App::getStartTime()
+	{
+		return this->startTime;
+	}
+
     void App::execute()
     {
         this->fixedLogicTime = 1.0 / this->config.LOGIC_TICK;
-        this->currentTime = this->time();
+        this->currentTime = this->getRuntimeSec();
 
         while (true)
         {
@@ -295,7 +309,7 @@ namespace vel
 			if (this->activeScene == nullptr)
 				continue;
 
-            this->newTime = this->time();
+            this->newTime = this->getRuntimeSec();
             this->frameTime = this->newTime - this->currentTime;
 
 			this->checkWindowSize();
@@ -307,11 +321,7 @@ namespace vel
 				
                 this->currentTime = this->newTime;
 
-                // prevent spiral of death
-                if (this->frameTime > 0.25)
-                    this->frameTime = 0.25;
-
-                this->accumulator += this->frameTime;
+				this->accumulate();
 
 				this->window->updateInputState();
 				this->window->update();

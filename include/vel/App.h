@@ -50,17 +50,18 @@ namespace vel
         void											calculateAverageFrameTime();
 
         void                                            checkWindowSize();
+
+        virtual void                                    accumulate();
+        virtual void                                    update();
     
 
     public:
         App(Config conf, Window* w, GPU* gpu, AssetManager* am);
 
-        virtual void                                    update(); // for extension
-
         void                                            setAudioDevice(AudioDevice* ad);
 
         void											addScene(std::unique_ptr<Scene> scene, bool makeActive = false);
-        const double									time() const;
+        const double									getRuntimeSec() const;
         const InputState*								getInputState() const;
         void											execute();
         void											close();
@@ -89,6 +90,7 @@ namespace vel
 
 		Scene*											getActiveScene();
 
+        std::chrono::high_resolution_clock::time_point& getStartTime();
         
 
 		
