@@ -43,14 +43,15 @@ namespace vel
         startTime(std::chrono::high_resolution_clock::now()),
 		currentSimTick(0),
 		shouldClose(false),
-		fixedLogicTime(0.0f),
-		currentTime(0.0f),
-		newTime(0.0f),
-		frameTime(0.0f),
+		fixedLogicTime(0.0),
+		currentTime(0.0),
+		newTime(0.0),
+		frameTime(0.0),
+		frameTimeClamp(0.25),
 		accumulator(0.0f),
-		lastFrameTimeCalculation(0.0f),
-		averageFrameTime(0.0f),
-		averageFrameRate(0.0f),
+		lastFrameTimeCalculation(0.0),
+		averageFrameTime(0.0),
+		averageFrameRate(0.0),
 		canDisplayAverageFrameTime(false),
 		pauseBufferClearAndSwap(false)
     {		
@@ -336,8 +337,8 @@ namespace vel
 	bool App::accumulate()
 	{
 		// prevent spiral of death
-		if (this->frameTime > 0.25)
-			this->frameTime = 0.25;
+		if (this->frameTime > this->frameTimeClamp)
+			this->frameTime = this->frameTimeClamp;
 
 		this->accumulator += this->frameTime;
 
@@ -435,7 +436,6 @@ namespace vel
 
 		// Hitch resistance
 		const int    maxStepsPerTick = 5;                 // cap catch-up
-		const double maxFrameClamp = 0.25;              // clamp giant stalls (seconds)
 		const double maxDebtClamp = this->fixedLogicTime * 4.0; // drop excessive debt
 
 		// Optional render cap (0 or negative = uncapped; VSYNC can still pace)
@@ -455,10 +455,6 @@ namespace vel
 			this->newTime = this->getRuntimeSec();
 			this->frameTime = this->newTime - this->currentTime;
 			this->currentTime = this->newTime;
-
-			// Accumulate, but clamp giant hitches
-			const double dt = std::max(0.0, std::min(this->frameTime, maxFrameClamp));
-			this->accumulator += dt;
 
 			if (!this->accumulate())
 				continue;
@@ -523,7 +519,7 @@ namespace vel
 
 				// If we fell behind badly, re-sync (avoid long busy-spins)
 				const double now = this->getRuntimeSec();
-				if (nextRenderTime < now - maxFrameClamp)
+				if (nextRenderTime < now - this->frameTimeClamp)
 					nextRenderTime = now;
 
 				// Busy-spin until the render deadline (no Sleep)

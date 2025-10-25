@@ -37,6 +37,7 @@ namespace vel
         double											currentTime;
         double											newTime;
         double											frameTime;
+        double                                          frameTimeClamp;
         double											accumulator;
         std::vector<double>								averageFrameTimeArray;
         double											lastFrameTimeCalculation;
