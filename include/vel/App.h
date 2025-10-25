@@ -59,6 +59,7 @@ namespace vel
 
     public:
         App(Config conf, Window* w, GPU* gpu, AssetManager* am);
+        ~App();
 
         void                                            setAudioDevice(AudioDevice* ad);
 
