@@ -443,6 +443,8 @@ namespace vel
 		const double targetRenderDt = capRender ? (1.0 / this->config.MAX_RENDER_FPS) : 0.0;
 		double       nextRenderTime = this->currentTime; // first frame can go now
 
+		//int rendersPerLogic = 0;
+
 		while (true)
 		{
 			if (this->shouldClose || this->window->shouldClose())
@@ -456,18 +458,27 @@ namespace vel
 			this->frameTime = this->newTime - this->currentTime;
 			this->currentTime = this->newTime;
 
+			//VEL3D_LOG_DEBUG("{}", this->frameTime);
+
 			if (!this->accumulate())
 				continue;
+
+			//VEL3D_LOG_DEBUG("{}", this->accumulator);
 
 			// Process window/input once per presented frame
 			this->checkWindowSize();
 			this->window->updateInputState();
 			this->window->update();
 
+			//rendersPerLogic++;
+
 			// --- Fixed-step simulation with bounded catch-up ---
 			int steps = 0;
 			while (this->accumulator >= this->fixedLogicTime && steps < maxStepsPerTick)
 			{
+				//VEL3D_LOG_DEBUG("{}", rendersPerLogic);
+				//rendersPerLogic = 0;
+
 				this->currentSimTick++;
 				const float flt = static_cast<float>(this->fixedLogicTime);
 
