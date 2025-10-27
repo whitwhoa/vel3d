@@ -39,6 +39,7 @@ namespace vel
 			return;
 
 		this->currentSimTick++;
+		this->activeScene->setTick(this->currentSimTick);
 
 		this->activeScene->stepPhysics(dt);
 		this->activeScene->fixedLoop(dt);

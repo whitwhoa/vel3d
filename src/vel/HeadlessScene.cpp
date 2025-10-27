@@ -5,6 +5,7 @@
 namespace vel
 {
 	HeadlessScene::HeadlessScene(const std::string& dataDir) :
+		tick(0),
 		dataDir(dataDir),
 		name(""),
 		assetManager(nullptr),
@@ -21,6 +22,16 @@ namespace vel
 	const std::string& HeadlessScene::getName()
 	{
 		return this->name;
+	}
+
+	void HeadlessScene::setTick(uint32_t t)
+	{
+		this->tick = t;
+	}
+
+	uint32_t HeadlessScene::getTick()
+	{
+		return this->tick;
 	}
 
 	void HeadlessScene::setAssetManager(AssetManager* am)

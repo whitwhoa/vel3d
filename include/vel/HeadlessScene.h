@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <cstdint>
 
 #include "vel/AssetManager.h"
 #include "vel/Stage.h"
@@ -13,6 +14,7 @@ namespace vel
 	class HeadlessScene
 	{
 	protected:
+		uint32_t								tick;
 		std::string								dataDir;
 		std::string								name = "";
 		AssetManager*							assetManager;
@@ -42,6 +44,9 @@ namespace vel
 
 		void									setName(const std::string& n);
 		const std::string&						getName();
+
+		void									setTick(uint32_t t);
+		uint32_t								getTick();
 
 		void									setAssetManager(AssetManager* am);
 

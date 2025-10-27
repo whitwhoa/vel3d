@@ -324,16 +324,6 @@ namespace vel
 		return this->startTime;
 	}
 
-	void App::preLogicUpdate(Scene* s) 
-	{
-		// For extension: overriding allows derived app to access active scene
-	}
-
-	void App::postLogicUpdate(Scene* s)
-	{
-		// For extension: overriding allows derived app to access active scene
-	}
-
 	bool App::accumulate()
 	{
 		// prevent spiral of death
@@ -480,9 +470,9 @@ namespace vel
 				//rendersPerLogic = 0;
 
 				this->currentSimTick++;
-				const float flt = static_cast<float>(this->fixedLogicTime);
+				this->activeScene->setTick(this->currentSimTick);
 
-				this->preLogicUpdate(this->activeScene);
+				const float flt = static_cast<float>(this->fixedLogicTime);
 
 				this->activeScene->stepPhysics(flt);
 				this->activeScene->updatePreviousTransforms();
@@ -492,8 +482,6 @@ namespace vel
 
 				if (this->audioDevice)
 					this->audioDevice->cleanUpManagedSFX();
-
-				this->postLogicUpdate(this->activeScene);
 
 				this->accumulator -= this->fixedLogicTime;
 				++steps;
