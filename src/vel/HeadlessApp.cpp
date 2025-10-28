@@ -33,6 +33,50 @@ namespace vel
 			this->activeScene = ptrScene;
 	}
 
+	void HeadlessApp::removeScene(const std::string& name)
+	{
+		VEL3D_LOG_DEBUG("HeadlessApp::removeScene: Removing Scene: {}", name);
+
+		size_t i = 0;
+		for (auto& s : this->scenes)
+		{
+			if (s->getName() == name)
+				break;
+
+			i++;
+		}
+
+		this->scenes.erase(this->scenes.begin() + i);
+	}
+
+	bool HeadlessApp::sceneExists(const std::string& name)
+	{
+		for (auto& s : this->scenes)
+			if (s->getName() == name)
+				return true;
+
+		return false;
+	}
+
+	HeadlessScene* HeadlessApp::getScene(const std::string& name)
+	{
+		for (auto& s : this->scenes)
+			if (s->getName() == name)
+				return s.get();
+
+		return nullptr;
+	}
+
+	void HeadlessApp::swapScene(const std::string& name)
+	{
+		VEL3D_LOG_DEBUG("HeadlessScene::swapScene: Swapping to Scene: {}", name);
+
+		for (auto& s : this->scenes)
+			if (s->getName() == name)
+				this->activeScene = s.get();
+	}
+
+
 	void HeadlessApp::stepSimulation(float dt)
 	{
 		if (this->activeScene == nullptr)

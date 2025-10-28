@@ -57,5 +57,7 @@ namespace vel
 		virtual void							fixedLoop(float deltaTime) = 0;
 		virtual void							postPhysics(float deltaTime) {};
 
+		virtual void							earlyUpdate(void* p) {};
+
 	};
 }

@@ -52,7 +52,6 @@ namespace vel
 
         void                                            checkWindowSize();
 
-        virtual bool                                    accumulate();
         virtual void                                    update();
     
 
@@ -65,7 +64,7 @@ namespace vel
         void											addScene(std::unique_ptr<Scene> scene, bool makeActive = false);
         const double									getRuntimeSec() const;
         const InputState*								getInputState() const;
-        void											execute();
+        virtual void									execute();
         void											close();
 
 		double											getFrameTime();

@@ -324,98 +324,6 @@ namespace vel
 		return this->startTime;
 	}
 
-	bool App::accumulate()
-	{
-		// prevent spiral of death
-		if (this->frameTime > this->frameTimeClamp)
-			this->frameTime = this->frameTimeClamp;
-
-		this->accumulator += this->frameTime;
-
-		return true;
-	}
-
-   // void App::execute()
-   // {
-   //     this->fixedLogicTime = 1.0 / this->config.LOGIC_TICK;
-   //     this->currentTime = this->getRuntimeSec();
-
-   //     while (true)
-   //     {
-			//if (this->shouldClose || this->window->shouldClose())
-			//	break;
-
-			//if (this->activeScene == nullptr)
-			//	continue;
-
-   //         this->newTime = this->getRuntimeSec();
-   //         this->frameTime = this->newTime - this->currentTime;
-
-			//this->checkWindowSize();
-
-   //         if (this->frameTime >= (1.0 / this->config.MAX_RENDER_FPS)) // cap max fps
-   //         {
-			//	//VEL3D_LOG_TRACE("frameTime:{}", this->frameTime);
-
-			//	//this->calculateAverageFrameTime();
-			//	//this->displayAverageFrameTime();
-			//	
-   //             this->currentTime = this->newTime;
-
-			//	if (!this->accumulate())
-			//		continue;
-
-			//	this->window->updateInputState();
-			//	this->window->update();
-			//	
-   //             while (this->accumulator >= this->fixedLogicTime)
-   //             {
-			//		this->currentSimTick++;
-
-			//		const float flt = static_cast<float>(this->fixedLogicTime);
-
-
-			//		this->preLogicUpdate(this->activeScene);
-
-
-			//		this->activeScene->stepPhysics(flt);
-			//		this->activeScene->updatePreviousTransforms();
-			//		this->activeScene->fixedLoop(flt);
-			//		this->activeScene->updateFixedAnimations(flt);
-			//		this->activeScene->postPhysics(flt);
-
-			//		if(this->audioDevice)
-			//			this->audioDevice->cleanUpManagedSFX();
-
-
-			//		this->postLogicUpdate(this->activeScene);
-
-
-   //                 this->accumulator -= this->fixedLogicTime;
-   //             }
-
-			//	const float ft = static_cast<float>(this->frameTime);
-			//	const float renderLerp = static_cast<float>(this->accumulator / this->fixedLogicTime);
-
-			//	this->activeScene->updateAnimations(ft);
-			//	this->activeScene->updateBillboards();
-			//	this->activeScene->immediateLoop(ft, renderLerp);
-			//	this->activeScene->updateTextActors();
-
-			//	// clear all previous render target buffers, this is done here as doing it right before or right after
-			//	// we draw, wouldn't work as far as I can tell at the moment as many stages can have many cameras and
-			//	// many cameras can have many stages, meaning that if we clear render buffers after drawing to camera's render target
-			//	// in one stage, if it's used in another stage things would be bad
-			//	this->activeScene->clearAllRenderTargetBuffers(this->gpu);
-			//	this->activeScene->draw(ft, renderLerp);
-			//	this->window->renderGui();
-			//	this->window->swapBuffers();
-			//	this->update();
-   //         }
-
-   //     }
-   // }
-
 	void App::execute()
 	{
 		this->fixedLogicTime = 1.0 / this->config.LOGIC_TICK;
@@ -443,26 +351,31 @@ namespace vel
 			if (this->activeScene == nullptr)
 				continue;
 
-			// --- Frame time bookkeeping (always) ---
+
+
 			this->newTime = this->getRuntimeSec();
 			this->frameTime = this->newTime - this->currentTime;
 			this->currentTime = this->newTime;
 
-			//VEL3D_LOG_DEBUG("{}", this->frameTime);
 
-			if (!this->accumulate())
-				continue;
 
-			//VEL3D_LOG_DEBUG("{}", this->accumulator);
 
-			// Process window/input once per presented frame
+			// spiral of death prevention for frameTime
+			if (this->frameTime > this->frameTimeClamp)
+				this->frameTime = this->frameTimeClamp;
+
+			this->accumulator += this->frameTime;
+
+
+
+
 			this->checkWindowSize();
 			this->window->updateInputState();
 			this->window->update();
 
 			//rendersPerLogic++;
 
-			// --- Fixed-step simulation with bounded catch-up ---
+			// Fixed step simulation with bounded catch-up
 			int steps = 0;
 			while (this->accumulator >= this->fixedLogicTime && steps < maxStepsPerTick)
 			{
@@ -487,7 +400,7 @@ namespace vel
 				++steps;
 			}
 
-			// Spiral-of-death failsafe
+			// spiral of death prevention for accumulator
 			if (this->accumulator > maxDebtClamp)
 				this->accumulator = 0.0;
 
@@ -507,7 +420,7 @@ namespace vel
 			this->window->swapBuffers();
 			this->update();
 
-			// --- Render pacing (no more if-gate) ---
+			// --- Render pacing ---
 			if (capRender)
 			{
 				// Set/advance the next render deadline
