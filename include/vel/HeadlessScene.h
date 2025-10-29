@@ -57,7 +57,17 @@ namespace vel
 		virtual void							fixedLoop(float deltaTime) = 0;
 		virtual void							postPhysics(float deltaTime) {};
 
-		virtual void							earlyUpdate(void* p) {};
+		// Intended for override in derived classes where it is a requirement that a derived App
+		// pass data from itself into a derived Scene. It was added when we were working on networking and needed
+		// a way to pass received snapshots from a "ClientApp" into a "ClientScene", and to on the server side to
+		// pass input commands from a "ServerApp" to a "ServerScene"
+		virtual void							passData(void* p) {};
+
+		// Intended for override in derived classes where it is a requirement that a derived App
+		// invoke a method at it's own fixed rate, independent of the existing loop structure. It was added when we
+		// were working on networking an needed a way to have the scene (which would be holding the game state)
+		// send snapshots at a fixed rate, which was determined by logic in the owning derived App
+		virtual void							appLoop() {};
 
 	};
 }
