@@ -9,7 +9,7 @@ namespace vel
 {
 	class HeadlessApp
 	{
-	private:
+	protected:
 		AssetManager*									assetManager;
 		std::vector<std::unique_ptr<HeadlessScene>>		scenes;
 		HeadlessScene*									activeScene;
