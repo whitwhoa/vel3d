@@ -52,7 +52,7 @@ namespace vel
 		void									addCollisionShape(std::string name, btCollisionShape* shape);
 		
 		btRigidBody*							addStaticCollisionBody(Actor* actor, int collisionFilterGroup, int collisionFilterMask);
-		btCollisionShape* 						collisionShapeFromActor(Actor* actor);
+		btCollisionShape*						collisionShapeFromActor(Actor* actor, bool applyTransform = true);
 
 		void									removeRigidBody(btRigidBody* rb);
 		void									removeGhostObject(btPairCachingGhostObject* go);

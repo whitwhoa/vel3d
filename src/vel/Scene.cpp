@@ -772,7 +772,7 @@ namespace vel
 
 		// moving collision debug draw event as final thing as it draws directly to the screen buffer, and I don't want to have to 
 		// think about updating it right now
-#ifdef DEBUG_LOG
+//#ifdef DEBUG_LOG
 		for (auto& cw : this->collisionWorlds)
 		{
 			if (cw->getIsActive() && cw->getDebugDrawer() != nullptr)
@@ -783,7 +783,7 @@ namespace vel
 				gpu->debugDrawCollisionWorld(cw->getDebugDrawer()); // draw all loaded vertices with a single call and clear
 			}
 		}
-#endif
+//#endif
 	}
 
 	void Scene::clearAllRenderTargetBuffers(GPU* gpu)

@@ -10,6 +10,7 @@
 #include "vel/RaycastCallback.h"
 #include "vel/ConvexCastCallback.h"
 #include "vel/CustomTriangleMesh.h"
+#include "vel/SimpleCollisionCallback.h"
 
 
 
@@ -217,7 +218,7 @@ namespace vel
 	//	return staticCollisionShape;
 	//}
 
-	btCollisionShape* CollisionWorld::collisionShapeFromActor(Actor* actor)
+	btCollisionShape* CollisionWorld::collisionShapeFromActor(Actor* actor, bool applyTransform)
 	{
 		if (actor->getMesh() == nullptr)
 			return nullptr;
@@ -234,7 +235,11 @@ namespace vel
 
 		for (auto& vert : mesh->getVertices())
 		{
-			tmpVerts.push_back(glm::vec3(transformMatrix * glm::vec4(vert.position, 1.0f)));
+			if (applyTransform)
+				tmpVerts.push_back(glm::vec3(transformMatrix * glm::vec4(vert.position, 1.0f)));
+			else
+				tmpVerts.push_back(vert.position);
+
 			tmpTextureCoords.push_back(vert.textureCoordinates);
 			tmpLightmapCoords.push_back(vert.lightmapCoordinates);
 		}
@@ -348,6 +353,8 @@ namespace vel
 		
 		return ccr;
 	}
+
+
 
 	bool CollisionWorld::getTriangleVertices(const btStridingMeshInterface* meshInterface, int triangleIndex, btVector3& v0, btVector3& v1, btVector3& v2, int& index0, int& index1, int& index2) 
 	{
