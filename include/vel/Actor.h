@@ -12,7 +12,6 @@
 #include "vel/ArmatureBone.h"
 #include "vel/Mesh.h"
 #include "vel/Transform.h"
-//#include "vel/Material.h"
 
 
 

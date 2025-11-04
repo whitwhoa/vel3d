@@ -8,7 +8,6 @@
 #include "glm/glm.hpp"
 
 #include "vel/Shader.h"
-#include "vel/Camera.h"
 #include "vel/Vertex.h"
 #include "vel/Texture.h"
 #include "vel/GpuMesh.h"

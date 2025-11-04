@@ -435,9 +435,9 @@ namespace vel
 					nextRenderTime = now;
 
 				// Busy-spin until the render deadline (no Sleep)
-				while (this->getRuntimeSec() < nextRenderTime) {
-					// pure spin; keep it tight for stable cadence
-					// (if you want lower CPU, add an occasional yield—but that adds jitter)
+				while (this->getRuntimeSec() < nextRenderTime) 
+				{
+					// pure spin
 				}
 			}
 		}

@@ -1,8 +1,11 @@
 #include <iostream>
 
+#include "glm/gtc/type_ptr.hpp"
+
 #include "vel/logger.hpp"
 #include "vel/functions.h"
 #include "vel/AssimpMeshLoader.h"
+
 
 namespace vel
 {
