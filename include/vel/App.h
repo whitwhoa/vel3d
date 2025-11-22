@@ -61,7 +61,7 @@ namespace vel
 
         void                                            setAudioDevice(AudioDevice* ad);
 
-        void											addScene(std::unique_ptr<Scene> scene, bool makeActive = false);
+        bool											addScene(std::unique_ptr<Scene> scene, bool makeActive = false);
         const double									getRuntimeSec() const;
         const InputState*								getInputState() const;
         virtual void									execute();

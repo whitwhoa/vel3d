@@ -131,7 +131,7 @@ namespace vel
 	public:
 		Scene(const std::string& dataDir, GPU* gpu);
 		~Scene();
-		virtual void						load() = 0;
+		virtual bool						load() = 0;
 		virtual void						fixedLoop(float deltaTime) = 0;
 		virtual void						immediateLoop(float frameTime, float renderLerpInterval) = 0;
 		virtual void						postPhysics(float deltaTime) {};

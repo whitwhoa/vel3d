@@ -53,7 +53,7 @@ namespace vel
 		void									updateFixedAnimations(float runTime);
 		void									stepPhysics(float delta);
 
-		virtual void							load() = 0;
+		virtual bool							load() = 0;
 		virtual void							fixedLoop(float deltaTime) = 0;
 		virtual void							postPhysics(float deltaTime) {};
 	};

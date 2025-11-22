@@ -178,7 +178,7 @@ namespace vel
 		}
 	}
 
-    void App::addScene(std::unique_ptr<Scene> scene, bool makeActive)
+    bool App::addScene(std::unique_ptr<Scene> scene, bool makeActive)
     {
 		// TODO: unsure if this is still required???
 		if(this->window != nullptr && this->window->getImguiFrameOpen())
@@ -213,7 +213,7 @@ namespace vel
 				this->audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
 		}
 
-		ptrScene->load();
+		return ptrScene->load();
     }
 
     void App::close()
