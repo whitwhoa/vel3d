@@ -34,8 +34,14 @@ namespace vel
 		bool				vsync;
         InputState			inputState;
         GLFWwindow*			glfwWindow;
-        float				scrollX = 0.0;
-        float				scrollY = 0.0;
+        float				scrollX;
+        float				scrollY;
+
+        double              mouseAccumDX;
+        double              mouseAccumDY;
+        double              lastMouseX;
+        double              lastMouseY;
+        bool                firstMouse;
 
 		std::map<std::string, ImFont*> imguiFonts;
 		bool				imguiFrameOpen;

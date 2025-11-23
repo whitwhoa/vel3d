@@ -357,7 +357,7 @@ namespace vel
 			this->frameTime = this->newTime - this->currentTime;
 			this->currentTime = this->newTime;
 
-
+			//this->displayAverageFrameTime();
 
 
 			// spiral of death prevention for frameTime
@@ -369,9 +369,9 @@ namespace vel
 
 
 
-			this->checkWindowSize();
-			this->window->updateInputState();
-			this->window->update();
+			//this->checkWindowSize();
+			//this->window->updateInputState();
+			//this->window->update();
 
 			//rendersPerLogic++;
 
@@ -411,6 +411,11 @@ namespace vel
 
 			this->activeScene->updateAnimations(ft);
 			this->activeScene->updateBillboards();
+
+			this->checkWindowSize();
+			//this->window->updateInputState();
+			this->window->update();
+
 			this->activeScene->immediateLoop(ft, renderLerp);
 			this->activeScene->updateTextActors();
 
@@ -418,28 +423,34 @@ namespace vel
 			this->activeScene->draw(ft, renderLerp);
 			this->window->renderGui();
 			this->window->swapBuffers();
+
+			this->window->updateInputState();
+
 			this->update();
 
-			// --- Render pacing ---
-			if (capRender)
-			{
-				// Set/advance the next render deadline
-				if (nextRenderTime <= 0.0)
-					nextRenderTime = this->currentTime + targetRenderDt;
-				else
-					nextRenderTime += targetRenderDt;
+			// TODO: commenting this out because it now causes huge render pauses for some reason.
+			// 
+			//// --- Render pacing ---
+			//if (capRender)
+			//{
+			//	// Set/advance the next render deadline
+			//	if (nextRenderTime <= 0.0)
+			//		nextRenderTime = this->currentTime + targetRenderDt;
+			//	else
+			//		nextRenderTime += targetRenderDt;
 
-				// If we fell behind badly, re-sync (avoid long busy-spins)
-				const double now = this->getRuntimeSec();
-				if (nextRenderTime < now - this->frameTimeClamp)
-					nextRenderTime = now;
+			//	// If we fell behind badly, re-sync (avoid long busy-spins)
+			//	const double now = this->getRuntimeSec();
+			//	if (nextRenderTime < now - this->frameTimeClamp)
+			//		nextRenderTime = now;
 
-				// Busy-spin until the render deadline (no Sleep)
-				while (this->getRuntimeSec() < nextRenderTime) 
-				{
-					// pure spin
-				}
-			}
+			//	// Busy-spin until the render deadline (no Sleep)
+			//	while (this->getRuntimeSec() < nextRenderTime) 
+			//	{
+			//		// pure spin
+			//	}
+			//}
+
 		}
 	}
 

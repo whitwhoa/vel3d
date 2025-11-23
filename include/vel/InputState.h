@@ -7,8 +7,8 @@ namespace vel
 		float   mouseSensitivity = 0.0f;
 		bool	mouseLeftButton = false;
 		bool	mouseRightButton = false;
-        float	mouseXPos = 0.0f;
-        float	mouseYPos = 0.0f;
+        float	mouseDX = 0.0f;
+        float	mouseDY = 0.0f;
         float	scrollX = 0.0f;
         float	scrollY = 0.0f;
 		bool	keySpace = false;

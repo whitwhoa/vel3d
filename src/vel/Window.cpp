@@ -92,6 +92,11 @@ namespace vel
 		glfwWindow(nullptr),
 		scrollX(0.0f),
 		scrollY(0.0f),
+		mouseAccumDX(0.0),
+		mouseAccumDY(0.0),
+		lastMouseX(0.0),
+		lastMouseY(0.0),
+		firstMouse(true),
 		imguiFrameOpen(false)
     {
 
@@ -274,6 +279,30 @@ namespace vel
 
     void Window::setCallbacks() 
     {
+		// Mouse Position
+		glfwSetCursorPosCallback(this->glfwWindow, [](GLFWwindow* window, double xpos, double ypos)
+		{
+			auto* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
+
+			if (w->firstMouse) 
+			{
+				w->lastMouseX = xpos;
+				w->lastMouseY = ypos;
+				w->firstMouse = false;
+				return;
+			}
+
+			double dx = xpos - w->lastMouseX;
+			double dy = ypos - w->lastMouseY;
+
+			w->lastMouseX = xpos;
+			w->lastMouseY = ypos;
+
+			// accumulate all motion since last frame
+			w->mouseAccumDX += dx;
+			w->mouseAccumDY += dy;
+		});
+
 		// Mouse Buttons
 		glfwSetMouseButtonCallback(this->glfwWindow, [](GLFWwindow* window, int button, int action, int mods) {
 
@@ -525,13 +554,20 @@ namespace vel
 
     void Window::setMouse() 
     {
-		double mXPos;
-		double mYPos;
+		//double mXPos;
+		//double mYPos;
 
-        glfwGetCursorPos(this->glfwWindow, &mXPos, &mYPos);
+  //      glfwGetCursorPos(this->glfwWindow, &mXPos, &mYPos);
 
-		this->inputState.mouseXPos = (float)mXPos;
-		this->inputState.mouseYPos = (float)mYPos;
+		//this->inputState.mouseXPos = (float)mXPos;
+		//this->inputState.mouseYPos = (float)mYPos;
+
+		// latch accumulated deltas for this frame
+		this->inputState.mouseDX = (float)this->mouseAccumDX;
+		this->inputState.mouseDY = (float)this->mouseAccumDY;
+		this->mouseAccumDX = 0.0;
+		this->mouseAccumDY = 0.0;
+
     }
 
     void Window::setScroll() 
