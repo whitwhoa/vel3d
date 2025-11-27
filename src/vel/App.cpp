@@ -324,6 +324,7 @@ namespace vel
 		return this->startTime;
 	}
 
+
 	void App::execute()
 	{
 		this->fixedLogicTime = 1.0 / this->config.LOGIC_TICK;
@@ -333,15 +334,13 @@ namespace vel
 		this->newTime = this->currentTime;
 
 		// Hitch resistance
-		const int    maxStepsPerTick = 5;                 // cap catch-up
+		const int maxStepsPerTick = 5;                       // cap catch-up
 		const double maxDebtClamp = this->fixedLogicTime * 4.0; // drop excessive debt
 
-		// Optional render cap (0 or negative = uncapped; VSYNC can still pace)
-		const bool   capRender = (this->config.MAX_RENDER_FPS > 0.0);
-		const double targetRenderDt = capRender ? (1.0 / this->config.MAX_RENDER_FPS) : 0.0;
-		double       nextRenderTime = this->currentTime; // first frame can go now
-
-		//int rendersPerLogic = 0;
+		// Frame cap state
+		const double renderCapHz = static_cast<double>(this->config.MAX_RENDER_FPS); // <= 0 = uncapped
+		const double targetFrameSec = (renderCapHz > 0.0) ? (1.0 / renderCapHz) : 0.0;
+		double capNextTimeSec = this->getRuntimeSec(); // Next time we are allowed to start a new frame
 
 		while (true)
 		{
@@ -351,37 +350,38 @@ namespace vel
 			if (this->activeScene == nullptr)
 				continue;
 
-
-
+			// --------------------------------------------------------------------
+			// 1) GPU queue depth control - do not let cpu issue new commands until
+			//    the gpu has processed all previously sent commands
+			// --------------------------------------------------------------------
+			this->gpu->clientWaitSync();
+			
+			// --------------------------------------------------------------------
+			// 2) Frame boundary timing
+			// --------------------------------------------------------------------
 			this->newTime = this->getRuntimeSec();
 			this->frameTime = this->newTime - this->currentTime;
 			this->currentTime = this->newTime;
 
-			//this->displayAverageFrameTime();
-
-
-			// spiral of death prevention for frameTime
+			// Spiral of death prevention for frameTime
 			if (this->frameTime > this->frameTimeClamp)
 				this->frameTime = this->frameTimeClamp;
 
 			this->accumulator += this->frameTime;
 
+			// --------------------------------------------------------------------
+			// 3) Input + OS events
+			// --------------------------------------------------------------------
+			this->checkWindowSize();
+			this->window->updateInputState();
+			this->window->update();
 
-
-
-			//this->checkWindowSize();
-			//this->window->updateInputState();
-			//this->window->update();
-
-			//rendersPerLogic++;
-
-			// Fixed step simulation with bounded catch-up
+			// --------------------------------------------------------------------
+			// 4) Fixed step simulation with bounded catch-up
+			// --------------------------------------------------------------------
 			int steps = 0;
 			while (this->accumulator >= this->fixedLogicTime && steps < maxStepsPerTick)
 			{
-				//VEL3D_LOG_DEBUG("{}", rendersPerLogic);
-				//rendersPerLogic = 0;
-
 				this->currentSimTick++;
 				this->activeScene->setTick(this->currentSimTick);
 
@@ -400,60 +400,81 @@ namespace vel
 				++steps;
 			}
 
-			// spiral of death prevention for accumulator
+			// Spiral of death prevention for accumulator
 			if (this->accumulator > maxDebtClamp)
 				this->accumulator = 0.0;
 
-			// --- Render with interpolation ---
-			const float ft = static_cast<float>(this->frameTime);
-			const double lerpRaw = this->accumulator / this->fixedLogicTime;
-			const float  renderLerp = static_cast<float>(std::clamp(lerpRaw, 0.0, 1.0));
+			// --------------------------------------------------------------------
+			// 5) Render prep + interpolation
+			// --------------------------------------------------------------------
+			float renderLerp = static_cast<float>(std::clamp((this->accumulator / this->fixedLogicTime), 0.0, 1.0));
 
+			float ft = static_cast<float>(this->frameTime);
 			this->activeScene->updateAnimations(ft);
 			this->activeScene->updateBillboards();
-
-			this->checkWindowSize();
-			//this->window->updateInputState();
-			this->window->update();
 
 			this->activeScene->immediateLoop(ft, renderLerp);
 			this->activeScene->updateTextActors();
 
+			// --------------------------------------------------------------------
+			// 6) Render submit
+			// --------------------------------------------------------------------
 			this->activeScene->clearAllRenderTargetBuffers(this->gpu);
 			this->activeScene->draw(ft, renderLerp);
 			this->window->renderGui();
+
+			// --------------------------------------------------------------------
+			// 7) Insert fence after all GPU commands for this frame are queued
+			// --------------------------------------------------------------------
+			this->gpu->fenceAndFlush();
+
+			// --------------------------------------------------------------------
+			// 8) Swap buffers
+			// --------------------------------------------------------------------
 			this->window->swapBuffers();
 
-			this->window->updateInputState();
-
+			// --------------------------------------------------------------------
+			// 9) User defined (optional, default does nothing)
+			// --------------------------------------------------------------------
 			this->update();
 
-			// TODO: commenting this out because it now causes huge render pauses for some reason.
-			// 
-			//// --- Render pacing ---
-			//if (capRender)
-			//{
-			//	// Set/advance the next render deadline
-			//	if (nextRenderTime <= 0.0)
-			//		nextRenderTime = this->currentTime + targetRenderDt;
-			//	else
-			//		nextRenderTime += targetRenderDt;
+			// --------------------------------------------------------------------
+			// 10) Frame cap (end-of-frame sleep)
+			// --------------------------------------------------------------------
+			if (targetFrameSec > 0.0)
+			{
+				// Schedule next target
+				capNextTimeSec += targetFrameSec;
 
-			//	// If we fell behind badly, re-sync (avoid long busy-spins)
-			//	const double now = this->getRuntimeSec();
-			//	if (nextRenderTime < now - this->frameTimeClamp)
-			//		nextRenderTime = now;
+				double nowSec = this->getRuntimeSec();
 
-			//	// Busy-spin until the render deadline (no Sleep)
-			//	while (this->getRuntimeSec() < nextRenderTime) 
-			//	{
-			//		// pure spin
-			//	}
-			//}
+				// If we fell behind badly (breakpoint, hitch), resync so we don't "chase"
+				if (nowSec > capNextTimeSec + (targetFrameSec * 2.0))
+					capNextTimeSec = nowSec + targetFrameSec;
 
+				double remainingSec = capNextTimeSec - nowSec;
+				if (remainingSec > 0.0)
+				{
+					// Coarse sleep most of it
+					if (remainingSec > 0.0015) // ~1.5 ms
+					{
+						auto coarseMs = static_cast<long long>((remainingSec - 0.001) * 1000.0);
+						if (coarseMs > 0)
+							std::this_thread::sleep_for(std::chrono::milliseconds(coarseMs));
+					}
+
+					// Spin the last ~1 ms for precision
+					while (this->getRuntimeSec() < capNextTimeSec)
+					{
+						// tight spin
+					}
+				}
+			}
 		}
 	}
 
 
 
-}
+
+
+} // end of namespace

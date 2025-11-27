@@ -6,8 +6,7 @@
 #include <optional>
 
 #include "glm/glm.hpp"
-//#include "glad/glad.h"
-
+#include "glad/gl.h"
 
 #include "vel/Shader.h"
 #include "vel/Camera.h"
@@ -19,7 +18,8 @@
 #include "vel/FontBitmap.h"
 #include "vel/FinalRenderTarget.h"
 
-typedef uint64_t GLuint64;
+//typedef uint64_t GLuint64;
+
 
 namespace vel
 {
@@ -53,11 +53,12 @@ namespace vel
 		glm::ivec2							activeCameraViewportSize;
 		int									activeFramebuffer;
 
-
-		
-		
-
 		bool								useFXAA;
+
+
+		GLsync								prevFrameFence;
+
+
 
 		void								bindFrameBuffer(unsigned int fbo);
 
@@ -166,6 +167,9 @@ namespace vel
 
 		std::unique_ptr<Texture>			generateEmptyTexture(const std::string& name, unsigned int frameCount, unsigned int width, unsigned int height, bool clamp = false);
 		void								copyGPUTexture(unsigned int sourceId, unsigned int destinationId, unsigned int width, unsigned int height);
+
+		void								fenceAndFlush();
+		void								clientWaitSync();
 
 	};
 }

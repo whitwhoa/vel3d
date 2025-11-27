@@ -33,9 +33,10 @@ namespace vel
 		activeClearColorValues(glm::vec4(0.0f)),
 		activeCameraViewportSize(glm::ivec2(1280, 720)),
 		activeFramebuffer(-1),
-		useFXAA(fxaa)
+		useFXAA(fxaa),
+		prevFrameFence(0)
 	{
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // why?
+		//glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // why?
 
         //this->enableDepthTest();
 		this->enableBackfaceCulling();
@@ -1137,6 +1138,22 @@ namespace vel
 	void GPU::finish()
 	{
 		glFinish();
+	}
+
+	void GPU::fenceAndFlush()
+	{
+		this->prevFrameFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+		glFlush(); // ensure fence + commands are in the GPU queue
+	}
+
+	void GPU::clientWaitSync()
+	{
+		if (this->prevFrameFence)
+		{
+			glClientWaitSync(this->prevFrameFence, GL_SYNC_FLUSH_COMMANDS_BIT, GL_TIMEOUT_IGNORED);
+			glDeleteSync(this->prevFrameFence);
+			this->prevFrameFence = 0;
+		}
 	}
 
 	void GPU::drawGpuMesh()
