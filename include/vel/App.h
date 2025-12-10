@@ -30,7 +30,7 @@ namespace vel
         std::vector<std::unique_ptr<Scene>>				scenes;
 		Scene*											activeScene;
 		
-        std::chrono::high_resolution_clock::time_point	startTime;
+        std::chrono::steady_clock::time_point	        startTime;
         int												currentSimTick;
         bool											shouldClose;
         double											fixedLogicTime;
@@ -44,7 +44,6 @@ namespace vel
 
         double											averageFrameTime;
         double											averageFrameRate;
-		bool											canDisplayAverageFrameTime;
 		bool											pauseBufferClearAndSwap;
 
         void											displayAverageFrameTime();
@@ -91,7 +90,7 @@ namespace vel
 
 		Scene*											getActiveScene();
 
-        std::chrono::high_resolution_clock::time_point& getStartTime();
+        std::chrono::steady_clock::time_point&          getStartTime();
         
 
 		

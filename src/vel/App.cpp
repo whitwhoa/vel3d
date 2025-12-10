@@ -52,7 +52,6 @@ namespace vel
 		lastFrameTimeCalculation(0.0),
 		averageFrameTime(0.0),
 		averageFrameRate(0.0),
-		canDisplayAverageFrameTime(false),
 		pauseBufferClearAndSwap(false)
     {		
 #ifdef _WIN32
@@ -222,11 +221,11 @@ namespace vel
         this->window->setToClose();        
     }
 
-    const double App::getRuntimeSec() const
-    {
-		using clock = std::chrono::high_resolution_clock;
-		return std::chrono::duration<double>(clock::now() - this->startTime).count();
-    }
+	const double App::getRuntimeSec() const
+	{
+		using namespace std::chrono;
+		return duration<double>(steady_clock::now() - this->startTime).count();
+	}
 
     const InputState* App::getInputState() const
     {
@@ -260,8 +259,6 @@ namespace vel
 
 	void App::calculateAverageFrameTime()
 	{
-		this->canDisplayAverageFrameTime = false;
-
 		if (this->getRuntimeSec() - this->lastFrameTimeCalculation >= 1.0)
 		{
 			this->lastFrameTimeCalculation = this->getRuntimeSec();
@@ -276,7 +273,6 @@ namespace vel
 			this->averageFrameRate = 1.0 / average;
 
 			this->averageFrameTimeArray.clear();
-			this->canDisplayAverageFrameTime = true;
 		}
 
 		this->averageFrameTimeArray.push_back(this->frameTime);
@@ -319,7 +315,7 @@ namespace vel
 		}		
 	}
 
-	std::chrono::high_resolution_clock::time_point& App::getStartTime()
+	std::chrono::steady_clock::time_point& App::getStartTime()
 	{
 		return this->startTime;
 	}
