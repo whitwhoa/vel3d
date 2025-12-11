@@ -20,6 +20,7 @@ using json = nlohmann::json;
 namespace vel
 {
 	Scene::Scene(const std::string& dataDir, GPU* gpu) :
+		HeadlessScene(dataDir),
 		gpu(gpu),
 		sceneRenderTarget(nullptr),
 		inputState(nullptr),
@@ -27,7 +28,8 @@ namespace vel
 		audioGroupKey(-1),
 		animationTime(0.0f),
 		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)),
-		HeadlessScene(dataDir)
+		frameTime(0.0),
+		frameRate(0.0)
 	{
 
 	}
@@ -35,6 +37,26 @@ namespace vel
 	Scene::~Scene()
 	{
 		this->freeAssets();
+	}
+
+	void Scene::setFrameTime(double ft)
+	{
+		this->frameTime = ft;
+	}
+
+	double Scene::getFrameTime() const
+	{
+		return this->frameTime;
+	}
+
+	void Scene::setFrameRate(double fr)
+	{
+		this->frameRate = fr;
+	}
+
+	double Scene::getFrameRate() const
+	{
+		return this->frameRate;
 	}
 
 	void Scene::initRenderTarget()

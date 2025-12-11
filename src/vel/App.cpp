@@ -43,11 +43,16 @@ namespace vel
         startTime(std::chrono::high_resolution_clock::now()),
 		currentSimTick(0),
 		shouldClose(false),
-		fixedLogicTime(0.0),
-		currentTime(0.0),
-		newTime(0.0),
+
+		fixedLogicTime(1.0 / this->config.LOGIC_TICK),
+
+		loopTime(0.0),
+		lastLoopTime(0.0),
+		loopTimeClamp(0.25),
+
 		frameTime(0.0),
-		frameTimeClamp(0.25),
+		lastFrameTime(0.0),
+
 		accumulator(0.0f),
 		lastFrameTimeCalculation(0.0),
 		averageFrameTime(0.0),
@@ -242,6 +247,11 @@ namespace vel
 		return *this->assetManager;
 	}
 
+	double App::getLoopTime()
+	{
+		return this->loopTime;
+	}
+
 	double App::getFrameTime()
 	{
 		return this->frameTime;
@@ -250,11 +260,6 @@ namespace vel
 	double App::getLogicTime()
 	{
 		return this->fixedLogicTime;
-	}
-
-	double App::getCurrentTime()
-	{
-		return this->currentTime;
 	}
 
 	void App::calculateAverageFrameTime()
@@ -277,12 +282,6 @@ namespace vel
 
 		this->averageFrameTimeArray.push_back(this->frameTime);
 	}
-
-    void App::displayAverageFrameTime()
-    {
-		std::string message = "CurrentTime: " + std::to_string(this->currentTime) + " | FPS: " + std::to_string(this->averageFrameRate);
-		this->window->setTitle(message);
-    }
 
 	bool App::getPauseBufferClearAndSwap()
 	{
@@ -323,12 +322,6 @@ namespace vel
 
 	void App::execute()
 	{
-		this->fixedLogicTime = 1.0 / this->config.LOGIC_TICK;
-
-		// Time anchors
-		this->currentTime = this->getRuntimeSec();
-		this->newTime = this->currentTime;
-
 		// Hitch resistance
 		const int maxStepsPerTick = 5;                       // cap catch-up
 		const double maxDebtClamp = this->fixedLogicTime * 4.0; // drop excessive debt
@@ -351,19 +344,19 @@ namespace vel
 			//    the gpu has processed all previously sent commands
 			// --------------------------------------------------------------------
 			this->gpu->clientWaitSync();
-			
-			// --------------------------------------------------------------------
-			// 2) Frame boundary timing
-			// --------------------------------------------------------------------
-			this->newTime = this->getRuntimeSec();
-			this->frameTime = this->newTime - this->currentTime;
-			this->currentTime = this->newTime;
 
-			// Spiral of death prevention for frameTime
-			if (this->frameTime > this->frameTimeClamp)
-				this->frameTime = this->frameTimeClamp;
+			// --------------------------------------------------------------------
+			// 2) Loop boundary timing
+			// --------------------------------------------------------------------
+			double now1 = this->getRuntimeSec();
+			this->loopTime = now1 - this->lastLoopTime;
+			this->lastLoopTime = now1;
 
-			this->accumulator += this->frameTime;
+			// Spiral of death prevention for loopTime
+			if (this->loopTime > this->loopTimeClamp)
+				this->loopTime = this->loopTimeClamp;
+
+			this->accumulator += this->loopTime;
 
 			// --------------------------------------------------------------------
 			// 3) Input + OS events
@@ -405,7 +398,7 @@ namespace vel
 			// --------------------------------------------------------------------
 			float renderLerp = static_cast<float>(std::clamp((this->accumulator / this->fixedLogicTime), 0.0, 1.0));
 
-			float ft = static_cast<float>(this->frameTime);
+			float ft = static_cast<float>(this->loopTime);
 			this->activeScene->updateAnimations(ft);
 			this->activeScene->updateBillboards();
 
@@ -429,8 +422,16 @@ namespace vel
 			// --------------------------------------------------------------------
 			this->window->swapBuffers();
 
+			double now2 = this->getRuntimeSec();
+			this->frameTime = now2 - this->lastFrameTime;
+			this->lastFrameTime = now2;
+			this->calculateAverageFrameTime();
+			this->activeScene->setFrameTime(this->frameTime);
+			this->activeScene->setFrameRate(this->averageFrameRate);
+
 			// --------------------------------------------------------------------
-			// 9) User defined (optional, default does nothing)
+			// 9) User defined (optional, default does nothing, would be used for
+			// swapping scenes for example)
 			// --------------------------------------------------------------------
 			this->update();
 
@@ -442,22 +443,22 @@ namespace vel
 				// Schedule next target
 				capNextTimeSec += targetFrameSec;
 
-				double nowSec = this->getRuntimeSec();
+				double now3 = this->getRuntimeSec();
 
 				// If we fell behind badly (breakpoint, hitch), resync so we don't "chase"
-				if (nowSec > capNextTimeSec + (targetFrameSec * 2.0))
-					capNextTimeSec = nowSec + targetFrameSec;
+				if (now3 > capNextTimeSec + (targetFrameSec * 2.0))
+					capNextTimeSec = now3 + targetFrameSec;
 
-				double remainingSec = capNextTimeSec - nowSec;
+				double remainingSec = capNextTimeSec - now3;
 				if (remainingSec > 0.0)
 				{
-					// Coarse sleep most of it
-					if (remainingSec > 0.0015) // ~1.5 ms
-					{
-						auto coarseMs = static_cast<long long>((remainingSec - 0.001) * 1000.0);
-						if (coarseMs > 0)
-							std::this_thread::sleep_for(std::chrono::milliseconds(coarseMs));
-					}
+					//// Coarse sleep most of it
+					//if (remainingSec > 0.002) // ~2 ms
+					//{
+					//	auto coarseMs = static_cast<long long>((remainingSec - 0.002) * 1000.0);
+					//	if (coarseMs > 0)
+					//		std::this_thread::sleep_for(std::chrono::milliseconds(coarseMs));
+					//}
 
 					// Spin the last ~1 ms for precision
 					while (this->getRuntimeSec() < capNextTimeSec)

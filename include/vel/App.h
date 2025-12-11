@@ -34,10 +34,14 @@ namespace vel
         int												currentSimTick;
         bool											shouldClose;
         double											fixedLogicTime;
-        double											currentTime;
-        double											newTime;
-        double											frameTime;
-        double                                          frameTimeClamp;
+
+        double											loopTime;
+        double											lastLoopTime;
+        double                                          loopTimeClamp;
+
+        double                                          frameTime;
+        double                                          lastFrameTime;
+
         double											accumulator;
         std::vector<double>								averageFrameTimeArray;
         double											lastFrameTimeCalculation;
@@ -46,7 +50,6 @@ namespace vel
         double											averageFrameRate;
 		bool											pauseBufferClearAndSwap;
 
-        void											displayAverageFrameTime();
         void											calculateAverageFrameTime();
 
         void                                            checkWindowSize();
@@ -66,9 +69,9 @@ namespace vel
         virtual void									execute();
         void											close();
 
+        double                                          getLoopTime();
 		double											getFrameTime();
         double											getLogicTime();
-        double											getCurrentTime();
 
 
 		ImFont*											getImguiFont(std::string key) const;

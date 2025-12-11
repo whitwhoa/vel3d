@@ -62,6 +62,9 @@ namespace vel
 		glm::vec3							cameraPosition;
 		glm::mat4							cameraProjectionMatrix;
 		glm::mat4							cameraViewMatrix;
+		
+		double								frameTime;
+		double								frameRate;
 
 		void								freeAssets();
 		TextActor*							_addTextActor(Stage* stage, std::unique_ptr<TextActor> ta, FontBitmap* fb, glm::vec4 color);
@@ -165,6 +168,11 @@ namespace vel
 		FinalRenderTarget*					getSceneRenderTarget();
 
 		void								updateBillboards();
+
+		void								setFrameTime(double ft);
+		double								getFrameTime() const;
+		void								setFrameRate(double fr);
+		double								getFrameRate() const;
 
 	};
 
