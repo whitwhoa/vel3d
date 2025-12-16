@@ -378,7 +378,14 @@ namespace vel
 
 				this->activeScene->stepPhysics(flt);
 				this->activeScene->updatePreviousTransforms();
+
+
+				//double t1 = this->getRuntimeSec();
 				this->activeScene->fixedLoop(flt);
+				//double t2 = this->getRuntimeSec();
+				//VEL3D_LOG_TRACE("{}", t2 - t1);
+
+
 				this->activeScene->updateFixedAnimations(flt);
 				this->activeScene->postPhysics(flt);
 

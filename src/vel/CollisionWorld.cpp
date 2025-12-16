@@ -180,44 +180,6 @@ namespace vel
 	}
 
 
-	//btCollisionShape* CollisionWorld::collisionShapeFromActor(Actor* actor)
-	//{
-	//	if (actor->getMesh() == nullptr)
-	//		return nullptr;
-
-	//	std::vector<glm::vec3> tmpVerts;
-	//	std::vector<size_t> tmpInds;
-
-	//	auto transformMatrix = actor->getWorldMatrix();
-	//	auto mesh = actor->getMesh();
-
-	//	size_t vertexOffset = tmpVerts.size();
-
-	//	for (auto& vert : mesh->getVertices())
-	//		tmpVerts.push_back(glm::vec3(transformMatrix * glm::vec4(vert.position, 1.0f)));
-
-	//	for (auto& ind : mesh->getIndices())
-	//		tmpInds.push_back(ind + vertexOffset);
-
-	//	btTriangleMesh* mergedTriangleMesh = new btTriangleMesh();
-	//	btVector3 p0, p1, p2;
-	//	for (int triCounter = 0; triCounter < tmpInds.size() / 3; triCounter++)
-	//	{
-	//		p0 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter]]);
-	//		p1 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 1]]);
-	//		p2 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 2]]);
-
-	//		mergedTriangleMesh->addTriangle(p0, p1, p2);
-	//	}
-
-	//	btBvhTriangleMeshShape* bvhShape = new btBvhTriangleMeshShape(mergedTriangleMesh, true);
-	//	bvhShape->setMargin(0);
-	//	btCollisionShape* staticCollisionShape = bvhShape;
-	//	this->collisionShapes[actor->getName() + "_shape"] = staticCollisionShape;
-	//	
-	//	return staticCollisionShape;
-	//}
-
 	btCollisionShape* CollisionWorld::collisionShapeFromActor(Actor* actor, bool applyTransform)
 	{
 		if (actor->getMesh() == nullptr)
@@ -225,8 +187,6 @@ namespace vel
 
 		std::vector<glm::vec3> tmpVerts;
 		std::vector<size_t> tmpInds;
-		std::vector<glm::vec2> tmpTextureCoords;
-		std::vector<glm::vec2> tmpLightmapCoords;
 
 		auto transformMatrix = actor->getWorldMatrix();
 		auto mesh = actor->getMesh();
@@ -239,49 +199,94 @@ namespace vel
 				tmpVerts.push_back(glm::vec3(transformMatrix * glm::vec4(vert.position, 1.0f)));
 			else
 				tmpVerts.push_back(vert.position);
-
-			tmpTextureCoords.push_back(vert.textureCoordinates);
-			tmpLightmapCoords.push_back(vert.lightmapCoordinates);
 		}
-		
+
 		for (auto& ind : mesh->getIndices())
 			tmpInds.push_back(ind + vertexOffset);
 
-		// TODO: could probably implement a more elaborate system in the future where we're not
-		// saving empty uvs and nullptrs to textures if the actor material does not have a lightmap
-		Texture* lightmapTexture = nullptr;
-		if (auto* lightMapMixin = dynamic_cast<LightmapMaterialMixin*>(actor->getMaterial()))
-			lightmapTexture = lightMapMixin->getLightmapTexture();
-			
-		CustomTriangleMesh* mergedTriangleMesh = new CustomTriangleMesh();
+		btTriangleMesh* mergedTriangleMesh = new btTriangleMesh();
 		btVector3 p0, p1, p2;
 		for (int triCounter = 0; triCounter < tmpInds.size() / 3; triCounter++)
 		{
 			p0 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter]]);
-			CustomTriangleMeshData p0CD;
-			p0CD.lightmapUVs = tmpLightmapCoords[tmpInds[3 * triCounter]];
-			p0CD.lightmapTexture = lightmapTexture;
-
 			p1 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 1]]);
-			CustomTriangleMeshData p1CD;
-			p1CD.lightmapUVs = tmpLightmapCoords[tmpInds[3 * triCounter + 1]];
-			p1CD.lightmapTexture = lightmapTexture;
-
 			p2 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 2]]);
-			CustomTriangleMeshData p2CD;
-			p2CD.lightmapUVs = tmpLightmapCoords[tmpInds[3 * triCounter + 2]];
-			p2CD.lightmapTexture = lightmapTexture;
 
-			mergedTriangleMesh->addTriangle(p0, p1, p2, p0CD, p1CD, p2CD);
+			mergedTriangleMesh->addTriangle(p0, p1, p2);
 		}
 
 		btBvhTriangleMeshShape* bvhShape = new btBvhTriangleMeshShape(mergedTriangleMesh, true);
 		bvhShape->setMargin(0);
 		btCollisionShape* staticCollisionShape = bvhShape;
 		this->collisionShapes[actor->getName() + "_shape"] = staticCollisionShape;
-
+		
 		return staticCollisionShape;
 	}
+
+	//btCollisionShape* CollisionWorld::collisionShapeFromActor(Actor* actor, bool applyTransform)
+	//{
+	//	if (actor->getMesh() == nullptr)
+	//		return nullptr;
+
+	//	std::vector<glm::vec3> tmpVerts;
+	//	std::vector<size_t> tmpInds;
+	//	std::vector<glm::vec2> tmpTextureCoords;
+	//	std::vector<glm::vec2> tmpLightmapCoords;
+
+	//	auto transformMatrix = actor->getWorldMatrix();
+	//	auto mesh = actor->getMesh();
+
+	//	size_t vertexOffset = tmpVerts.size();
+
+	//	for (auto& vert : mesh->getVertices())
+	//	{
+	//		if (applyTransform)
+	//			tmpVerts.push_back(glm::vec3(transformMatrix * glm::vec4(vert.position, 1.0f)));
+	//		else
+	//			tmpVerts.push_back(vert.position);
+
+	//		tmpTextureCoords.push_back(vert.textureCoordinates);
+	//		tmpLightmapCoords.push_back(vert.lightmapCoordinates);
+	//	}
+	//	
+	//	for (auto& ind : mesh->getIndices())
+	//		tmpInds.push_back(ind + vertexOffset);
+
+	//	// TODO: could probably implement a more elaborate system in the future where we're not
+	//	// saving empty uvs and nullptrs to textures if the actor material does not have a lightmap
+	//	Texture* lightmapTexture = nullptr;
+	//	if (auto* lightMapMixin = dynamic_cast<LightmapMaterialMixin*>(actor->getMaterial()))
+	//		lightmapTexture = lightMapMixin->getLightmapTexture();
+	//		
+	//	CustomTriangleMesh* mergedTriangleMesh = new CustomTriangleMesh();
+	//	btVector3 p0, p1, p2;
+	//	for (int triCounter = 0; triCounter < tmpInds.size() / 3; triCounter++)
+	//	{
+	//		p0 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter]]);
+	//		CustomTriangleMeshData p0CD;
+	//		p0CD.lightmapUVs = tmpLightmapCoords[tmpInds[3 * triCounter]];
+	//		p0CD.lightmapTexture = lightmapTexture;
+
+	//		p1 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 1]]);
+	//		CustomTriangleMeshData p1CD;
+	//		p1CD.lightmapUVs = tmpLightmapCoords[tmpInds[3 * triCounter + 1]];
+	//		p1CD.lightmapTexture = lightmapTexture;
+
+	//		p2 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 2]]);
+	//		CustomTriangleMeshData p2CD;
+	//		p2CD.lightmapUVs = tmpLightmapCoords[tmpInds[3 * triCounter + 2]];
+	//		p2CD.lightmapTexture = lightmapTexture;
+
+	//		mergedTriangleMesh->addTriangle(p0, p1, p2, p0CD, p1CD, p2CD);
+	//	}
+
+	//	btBvhTriangleMeshShape* bvhShape = new btBvhTriangleMeshShape(mergedTriangleMesh, true);
+	//	//bvhShape->setMargin(0);
+	//	btCollisionShape* staticCollisionShape = bvhShape;
+	//	this->collisionShapes[actor->getName() + "_shape"] = staticCollisionShape;
+
+	//	return staticCollisionShape;
+	//}
 
 	btRigidBody* CollisionWorld::addStaticCollisionBody(Actor* actor, int collisionFilterGroup, int collisionFilterMask)
 	{
