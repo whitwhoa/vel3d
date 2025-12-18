@@ -2,7 +2,7 @@
 #include <algorithm>
 
 
-#define GLM_FORCE_ALIGNED_GENTYPES
+//#define GLM_FORCE_ALIGNED_GENTYPES
 #include "glm/gtx/compatibility.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/matrix_decompose.hpp"

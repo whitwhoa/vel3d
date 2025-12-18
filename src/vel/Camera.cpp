@@ -1,5 +1,5 @@
 
-#define GLM_FORCE_ALIGNED_GENTYPES
+//#define GLM_FORCE_ALIGNED_GENTYPES
 #include "glm/gtx/matrix_decompose.hpp"
 
 

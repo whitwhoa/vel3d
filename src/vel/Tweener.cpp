@@ -1,6 +1,6 @@
 #include <iostream>
 
-#define GLM_FORCE_ALIGNED_GENTYPES
+//#define GLM_FORCE_ALIGNED_GENTYPES
 #include <glm/gtx/string_cast.hpp>
 #include "glm/gtx/compatibility.hpp"
 

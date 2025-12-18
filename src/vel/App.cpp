@@ -383,7 +383,7 @@ namespace vel
 				//double t1 = this->getRuntimeSec();
 				this->activeScene->fixedLoop(flt);
 				//double t2 = this->getRuntimeSec();
-				//VEL3D_LOG_TRACE("{}", t2 - t1);
+				//VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
 
 
 				this->activeScene->updateFixedAnimations(flt);

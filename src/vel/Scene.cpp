@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 
-#define GLM_FORCE_ALIGNED_GENTYPES
+//#define GLM_FORCE_ALIGNED_GENTYPES
 #include <glm/gtx/string_cast.hpp>
 #include "imgui/imgui.h"
 
