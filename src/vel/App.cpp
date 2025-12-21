@@ -40,7 +40,7 @@ namespace vel
 		audioDevice(nullptr),
 
 		activeScene(nullptr),
-        startTime(std::chrono::high_resolution_clock::now()),
+        startTime(std::chrono::steady_clock::now()),
 		currentSimTick(0),
 		shouldClose(false),
 
