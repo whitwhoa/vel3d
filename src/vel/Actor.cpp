@@ -150,10 +150,6 @@ namespace vel
 	glm::mat4 Actor::getWorldRenderMatrix(float alpha)
 	{
 		// actor is not dynamic (does not move) so interpolation is not required, simply return it's world matrix
-		// TODO: but what if at some point it is parented to a dynamic actor? Well, the easiest solution would just be
-		// to assume that only dynamic actors can ever be parented to other dynamic actors...which in a way makes sense
-		// as really any actor that is not dynamic would be objects such as non-interactive map geometry. Moving forward
-		// with this approach (at least for the time being)
 		if (!this->isDynamic() || !this->previousTransform)
 			return this->getWorldMatrix();
 

@@ -63,7 +63,6 @@ namespace vel
 		std::optional<size_t>								getBoneIndex(const std::string& boneName);
 		void												updateAnimation(float runTime);
 		std::shared_ptr<Animation>							getAnimation(const std::string& animationName);
-		//const std::vector<std::shared_ptr<Animation>>&		getAnimations();
 
 		std::string											getCurrentAnimationName();
 		unsigned int										getCurrentAnimationCycle();

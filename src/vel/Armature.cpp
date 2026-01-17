@@ -20,7 +20,8 @@ namespace vel
 		runTime(0.0),
 		previousRunTime(0.0),
 		transform(Transform())
-	{}
+	{
+	}
 
 	void Armature::setShouldInterpolate(bool val)
 	{
@@ -82,8 +83,6 @@ namespace vel
 		std::vector<TRS> activeAnimationsTRS;
 		for (auto& aa : this->activeAnimations)
 		{
-			//std::cout << aa.animation->name << "\n";
-			//std::cout << bone.name << "\n";
 			auto channel = &aa.animation->channels[bone.name];
 			auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
 			auto tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
@@ -96,6 +95,7 @@ namespace vel
 
 			activeAnimationsTRS.push_back(trs);
 		}
+
 
 		// if activeAnimations has a size greater than 1, then do interpolation
 		if (activeAnimationsTRS.size() > 1)
@@ -127,7 +127,6 @@ namespace vel
 			bone.matrix = glm::translate(bone.matrix, lerpTRS.translation);
 			bone.matrix = bone.matrix * glm::toMat4(lerpTRS.rotation);
 			bone.matrix = glm::scale(bone.matrix, lerpTRS.scale);
-
 		}
 		// otherwise, generate the bone matrix using the single animation
 		else
@@ -140,10 +139,6 @@ namespace vel
 
 		bone.matrix = parentMatrix * bone.matrix;
 		glm::decompose(bone.matrix, bone.scale, bone.rotation, bone.translation, bone.skew, bone.perspective);
-
-		// this used to be necessary, but apparently it changed somewhere along the lines between glm versions???
-		// took me a week to figure out this is what was causing a bug with skinned meshes
-		//bone.rotation = glm::conjugate(bone.rotation);
 	}
 
 	void Armature::updateAnimation(float runTime)
@@ -151,9 +146,6 @@ namespace vel
 		this->previousRunTime = this->runTime;
 		this->runTime = runTime;
 		auto stepTime = this->runTime - this->previousRunTime;
-
-		//if (this->activeAnimations.size() == 0)
-		//	return;
 
 		// get most recent active animation
 		auto& activeAnimation = this->activeAnimations.back();
@@ -178,16 +170,11 @@ namespace vel
 				activeAnimation = this->activeAnimations.back();
 			}
 
-			//std::cout << this->activeAnimations.size() << "\n";
-
 			activeAnimation.lastAnimationKeyTime = activeAnimation.animationKeyTime;
 			activeAnimation.animationKeyTime = (float)fmod(activeAnimation.animationTime * activeAnimation.animation->tps, activeAnimation.animation->duration);
 
-			//std::cout << activeAnimation.animationKeyTime << "\n";
-
 			if (activeAnimation.animationKeyTime < activeAnimation.lastAnimationKeyTime)
 				activeAnimation.currentAnimationCycle++;
-
 
 			if (activeAnimation.currentAnimationCycle == 1 && !activeAnimation.repeat)
 			{
@@ -207,7 +194,6 @@ namespace vel
 				{
 					if (i == 0)
 					{
-						//this->updateBone(0, glm::mat4(1.0f));
 						this->updateBone(0, this->transform.getMatrix());
 					}
 					else
@@ -235,7 +221,7 @@ namespace vel
 		a.currentAnimationCycle = 0;
 		a.blendPercentage = 0.0f;
 		a.repeat = repeat;
-		
+
 
 		this->activeAnimations.push_back(a);
 	}
@@ -260,11 +246,6 @@ namespace vel
 		else
 			return "";
 	}
-
-	//const std::vector<std::shared_ptr<Animation>>& Armature::getAnimations()
-	//{
-	//	return this->animations;
-	//}
 
 	const std::vector<std::shared_ptr<Animation>>& Armature::getAnimations() const
 	{
@@ -322,17 +303,17 @@ namespace vel
 			if (p->name == animationName)
 				return p;
 		}
-            
+
 		VEL3D_LOG_DEBUG("Armature::getAnimation(): Attempting to get animation pointer of non-existing animation name: {}", animationName);
 		return nullptr;
-    }
+	}
 
 	std::optional<size_t> Armature::getBoneIndex(const std::string& boneName)
 	{
 		for (size_t i = 0; i < this->bones.size(); i++)
 			if (this->bones.at(i).name == boneName)
 				return i;
-        
+
 		VEL3D_LOG_DEBUG("Armature::getBoneIndex(): Attempting to get index of non-existing bone name: {}", boneName);
 		return std::nullopt;
 	}
