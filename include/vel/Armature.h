@@ -39,7 +39,7 @@ namespace vel
 		float												runTime;
 		float												previousRunTime;
 
-		//void												updateBone(size_t index, glm::mat4 parentMatrix);
+
 		void												updateBone(size_t index);
 
 		glm::vec3											calcTranslation(const float& time, size_t currentKeyIndex, Channel* channel);
@@ -72,6 +72,8 @@ namespace vel
 		std::string											getCurrentAnimationName();
 		unsigned int										getCurrentAnimationCycle();
 		float												getCurrentAnimationKeyTime();
+
+		void												setRestPose(const std::string& animationName); // uses data from first frame of provided animation
 
 		void												playAnimation(const std::string& animationName, bool repeat = true, int blendTime = 0);
 

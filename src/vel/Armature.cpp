@@ -103,18 +103,58 @@ namespace vel
 		bone.previousRotation = bone.rotation;
 		bone.previousScale = bone.scale;
 
+		//VEL3D_LOG_TRACE("{}", bone.name);
+
+		//// DEBUG: quick dirty test
+		//if (bone.name == "Bip01_Spine1" || bone.name == "")
+		//{
+		//	TRS worldTRS;
+		//	worldTRS.translation = bone.translation;
+		//	worldTRS.rotation = bone.rotation;
+		//	worldTRS.scale = bone.scale;
+		//	bone.matrix = this->matrixFromTRS(worldTRS);
+
+		//	return;
+		//}
+		//// END
+
 		// get vector of key indexes where vector index is the index of the activeAnimation and value is the keyIndex
 		std::vector<TRS> activeAnimationsTRS;
 		activeAnimationsTRS.reserve(this->activeAnimations.size());
 
 		for (auto& aa : this->activeAnimations)
 		{
+			TRS trs;
+
+			// TODO: commented below out, because I'm going to commit this and don't want this check to be done until
+			// we can implement the real solution. We will pick back up here, implement this, then move onto a solution
+			// that allows us to remove all of the string hash lookups for: auto channel = &aa.animation->channels[bone.name];
+			//// DEBUG: quick dirty test
+			//if (bone.name == "Bip01_Spine1" || bone.name == "Bip01_R_Clavicle" || bone.name == "Bip01_L_Clavicle"
+			//	|| bone.name == "Bip01_Neck" || bone.name == "Bip01_Head" || bone.name == "Bip01_L_UpperArm"
+			//	|| bone.name == "Bip01_L_Forearm" || bone.name == "Bip01_L_ForeTwist" || bone.name == "Bip01_L_Hand" 
+			//	|| bone.name == "Bip01_L_Finger0" || bone.name == "Bip01_L_Finger01" || bone.name == "Bip01_L_Finger1" 
+			//	|| bone.name == "Bip01_L_Finger11" || bone.name == "Bip01_L_Finger2" || bone.name == "Bip01_L_Finger21" 
+			//	|| bone.name == "Bip01_R_UpperArm" || bone.name == "Bip01_R_Forearm" || bone.name == "Bip01_R_ForeTwist" 
+			//	|| bone.name == "Bip01_R_Hand" || bone.name == "Bip01_R_Finger0" || bone.name == "Bip01_R_Finger01" 
+			//	|| bone.name == "Bip01_R_Finger1" || bone.name == "Bip01_R_Finger11" || bone.name == "Bip01_R_Finger2" 
+			//	|| bone.name == "Bip01_R_Finger21" || bone.name == "weapon_Bone" || bone.name == "knife_Bone")
+			//{
+			//	trs.translation = bone.restLocalTranslation;
+			//	trs.rotation = bone.restLocalRotation;
+			//	trs.scale = bone.restLocalScale;
+
+			//	activeAnimationsTRS.push_back(trs);
+
+			//	continue;
+			//}
+			//// END
+
 			auto channel = &aa.animation->channels[bone.name];
 			auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
 			size_t tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
 			size_t currentKeyIndex = !(tmpKey == channel->positionKeyTimes.size()) ? (tmpKey - 1) : (tmpKey - 2);
 
-			TRS trs;
 			trs.translation = this->calcTranslation(aa.animationKeyTime, currentKeyIndex, channel);
 			trs.rotation = this->calcRotation(aa.animationKeyTime, currentKeyIndex, channel);
 			trs.scale = this->calcScale(aa.animationKeyTime, currentKeyIndex, channel);
@@ -197,9 +237,14 @@ namespace vel
 		{
 
 			if (activeAnimation.blendTime > 0.0)
+			{
 				activeAnimation.blendPercentage = (float)(activeAnimation.animationTime / (activeAnimation.blendTime / 1000.0));
+			}
 			else
+			{
 				activeAnimation.blendPercentage = 1.0f;
+			}
+				
 
 			// if blendPercentage is greater than or equal to 1.0f, then we have completed the blending phase and this animation
 			// can continue to play without interpolating between previous animations, therefore we clear all previous animations
@@ -232,18 +277,6 @@ namespace vel
 			}
 			else
 			{
-				//for (size_t i = 0; i < this->bones.size(); i++)
-				//{
-				//	if (i == 0)
-				//	{
-				//		this->updateBone(0, this->transform.getMatrix());
-				//	}
-				//	else
-				//	{
-				//		this->updateBone(i, this->bones[this->bones[i].parent].matrix);
-				//	}
-				//}
-
 				for (size_t i = 0; i < this->bones.size(); i++)
 				{
 					this->updateBone(i);
@@ -254,7 +287,17 @@ namespace vel
 		}
 	}
 
-
+	void Armature::setRestPose(const std::string& animationName)
+	{
+		std::shared_ptr<vel::Animation> a = this->getAnimation(animationName);
+		
+		for (auto& b : this->bones)
+		{
+			b.restLocalTranslation = a->channels[b.name].positionKeyValues.at(0);
+			b.restLocalRotation = a->channels[b.name].rotationKeyValues.at(0);
+			b.restLocalScale = a->channels[b.name].scalingKeyValues.at(0);
+		}
+	}
 
 	void Armature::playAnimation(const std::string& animationName, bool repeat, int blendTime)
 	{

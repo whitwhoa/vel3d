@@ -13,7 +13,7 @@ namespace vel
 		std::string				name;
 		float					duration;
 		float					tps;
-		std::unordered_map<std::string, Channel> channels;
+		std::unordered_map<std::string, Channel> channels; // each individual bone in the animation, by name
 	};
 	
 }
