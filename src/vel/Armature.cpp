@@ -68,24 +68,50 @@ namespace vel
 		return channel->scalingKeyValues[currentKeyIndex] + factor * (channel->scalingKeyValues[nextKeyIndex] - channel->scalingKeyValues[currentKeyIndex]);
 	}
 
-	void Armature::updateBone(size_t index, glm::mat4 parentMatrix)
+	vel::TRS Armature::composeWorldTRS(const vel::TRS& parentW, const vel::TRS& local)
+	{
+		vel::TRS out;
+
+		// Rotation: parent then local
+		out.rotation = parentW.rotation * local.rotation;
+
+		// Scale: component-wise (assumes no shear)
+		out.scale = parentW.scale * local.scale;
+
+		// Translation: Tp + Rp * (Sp * Tl)
+		out.translation = parentW.translation + (parentW.rotation * (parentW.scale * local.translation));
+
+		return out;
+	}
+
+	glm::mat4 Armature::matrixFromTRS(const vel::TRS& t)
+	{
+		glm::mat4 m(1.0f);
+		m = glm::translate(m, t.translation);
+		m = m * glm::toMat4(t.rotation);
+		m = glm::scale(m, t.scale);
+		return m;
+	}
+
+	void Armature::updateBone(size_t index)
 	{
 		// we assume there are always at least 2 keys of animation data
 
-		// get current bone and update it's previous TRS values with current
+		// get current bone and update its previous WORLD TRS values with current
 		auto& bone = this->bones[index];
 		bone.previousTranslation = bone.translation;
 		bone.previousRotation = bone.rotation;
 		bone.previousScale = bone.scale;
 
-
 		// get vector of key indexes where vector index is the index of the activeAnimation and value is the keyIndex
 		std::vector<TRS> activeAnimationsTRS;
+		activeAnimationsTRS.reserve(this->activeAnimations.size());
+
 		for (auto& aa : this->activeAnimations)
 		{
 			auto channel = &aa.animation->channels[bone.name];
 			auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
-			auto tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
+			size_t tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
 			size_t currentKeyIndex = !(tmpKey == channel->positionKeyTimes.size()) ? (tmpKey - 1) : (tmpKey - 2);
 
 			TRS trs;
@@ -97,48 +123,64 @@ namespace vel
 		}
 
 
+		//
+		// Compose LOCAL TRS
+		//
+		TRS localTRS;
+
 		// if activeAnimations has a size greater than 1, then do interpolation
 		if (activeAnimationsTRS.size() > 1)
 		{
-			TRS lerpTRS;
 			for (size_t i = 0; i < activeAnimationsTRS.size() - 1; i++)
 			{
-				// no need to lerp last element
-				if (i + 1 < activeAnimationsTRS.size())
+				// weight is stored on the "newer" animation layer
+				const float w = this->activeAnimations[i + 1].blendPercentage;
+
+				if (i == 0)
 				{
-					// if this is the first element, prime lerpTRS by lerping with first element
-					if (i == 0)
-					{
-						lerpTRS.translation = glm::lerp(activeAnimationsTRS[i].translation, activeAnimationsTRS[i + 1].translation, this->activeAnimations[i + 1].blendPercentage);
-						lerpTRS.rotation = glm::slerp(activeAnimationsTRS[i].rotation, activeAnimationsTRS[i + 1].rotation, this->activeAnimations[i + 1].blendPercentage);
-						lerpTRS.scale = glm::lerp(activeAnimationsTRS[i].scale, activeAnimationsTRS[i + 1].scale, this->activeAnimations[i + 1].blendPercentage);
-					}
-					// otherwise lerp using lerpTRS
-					else
-					{
-						lerpTRS.translation = glm::lerp(lerpTRS.translation, activeAnimationsTRS[i + 1].translation, this->activeAnimations[i + 1].blendPercentage);
-						lerpTRS.rotation = glm::slerp(lerpTRS.rotation, activeAnimationsTRS[i + 1].rotation, this->activeAnimations[i + 1].blendPercentage);
-						lerpTRS.scale = glm::lerp(lerpTRS.scale, activeAnimationsTRS[i + 1].scale, this->activeAnimations[i + 1].blendPercentage);
-					}
+					localTRS.translation = glm::lerp(activeAnimationsTRS[i].translation, activeAnimationsTRS[i + 1].translation, w);
+					localTRS.rotation = glm::slerp(activeAnimationsTRS[i].rotation, activeAnimationsTRS[i + 1].rotation, w);
+					localTRS.scale = glm::lerp(activeAnimationsTRS[i].scale, activeAnimationsTRS[i + 1].scale, w);
+				}
+				else
+				{
+					localTRS.translation = glm::lerp(localTRS.translation, activeAnimationsTRS[i + 1].translation, w);
+					localTRS.rotation = glm::slerp(localTRS.rotation, activeAnimationsTRS[i + 1].rotation, w);
+					localTRS.scale = glm::lerp(localTRS.scale, activeAnimationsTRS[i + 1].scale, w);
 				}
 			}
-
-			bone.matrix = glm::mat4(1.0f);
-			bone.matrix = glm::translate(bone.matrix, lerpTRS.translation);
-			bone.matrix = bone.matrix * glm::toMat4(lerpTRS.rotation);
-			bone.matrix = glm::scale(bone.matrix, lerpTRS.scale);
 		}
 		// otherwise, generate the bone matrix using the single animation
 		else
 		{
-			bone.matrix = glm::mat4(1.0f);
-			bone.matrix = glm::translate(bone.matrix, activeAnimationsTRS[0].translation);
-			bone.matrix = bone.matrix * glm::toMat4(activeAnimationsTRS[0].rotation);
-			bone.matrix = glm::scale(bone.matrix, activeAnimationsTRS[0].scale);
+			localTRS = activeAnimationsTRS[0];
 		}
 
-		bone.matrix = parentMatrix * bone.matrix;
-		glm::decompose(bone.matrix, bone.scale, bone.rotation, bone.translation, bone.skew, bone.perspective);
+
+		//
+		// Compose WORLD TRS (easy attachments and interpolation)
+		//
+		TRS parentWorld;
+
+		if (index == 0)
+		{
+			parentWorld.translation = this->transform.getTranslation();
+			parentWorld.rotation = this->transform.getRotation();
+			parentWorld.scale = this->transform.getScale();
+		}
+		else
+		{
+			const auto& p = this->bones[bone.parent];
+			parentWorld.translation = p.translation;
+			parentWorld.rotation = p.rotation;
+			parentWorld.scale = p.scale;
+		}
+
+		const TRS worldTRS = this->composeWorldTRS(parentWorld, localTRS);
+		bone.translation = worldTRS.translation;
+		bone.rotation = worldTRS.rotation;
+		bone.scale = worldTRS.scale;
+		bone.matrix = this->matrixFromTRS(worldTRS);
 	}
 
 	void Armature::updateAnimation(float runTime)
@@ -190,16 +232,21 @@ namespace vel
 			}
 			else
 			{
+				//for (size_t i = 0; i < this->bones.size(); i++)
+				//{
+				//	if (i == 0)
+				//	{
+				//		this->updateBone(0, this->transform.getMatrix());
+				//	}
+				//	else
+				//	{
+				//		this->updateBone(i, this->bones[this->bones[i].parent].matrix);
+				//	}
+				//}
+
 				for (size_t i = 0; i < this->bones.size(); i++)
 				{
-					if (i == 0)
-					{
-						this->updateBone(0, this->transform.getMatrix());
-					}
-					else
-					{
-						this->updateBone(i, this->bones[this->bones[i].parent].matrix);
-					}
+					this->updateBone(i);
 				}
 
 				activeAnimation.animationTime += stepTime;

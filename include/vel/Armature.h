@@ -39,10 +39,15 @@ namespace vel
 		float												runTime;
 		float												previousRunTime;
 
-		void												updateBone(size_t index, glm::mat4 parentMatrix);
+		//void												updateBone(size_t index, glm::mat4 parentMatrix);
+		void												updateBone(size_t index);
+
 		glm::vec3											calcTranslation(const float& time, size_t currentKeyIndex, Channel* channel);
 		glm::quat											calcRotation(const float& time, size_t currentKeyIndex, Channel* channel);
 		glm::vec3											calcScale(const float& time, size_t currentKeyIndex, Channel* channel);
+
+		vel::TRS											composeWorldTRS(const vel::TRS& parentW, const vel::TRS& local);
+		glm::mat4											matrixFromTRS(const vel::TRS& t);
 		
 		Transform											transform;
 
