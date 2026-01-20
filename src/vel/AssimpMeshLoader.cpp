@@ -155,7 +155,13 @@ namespace vel
 			a->duration = this->impScene->mAnimations[i]->mDuration;
 			a->tps = this->impScene->mAnimations[i]->mTicksPerSecond;
 
-			// add all channels to animation
+			// add all channels to animation. Pre-load data into tmpChannels, then sort and add to the animation
+			// so that the indexes of each bone are aligned with the bones of the armature, allowing us O(1) lookup
+			// at runtime, without the need for hashing a string and accessing non-contiguous memory. We're doing this
+			// this way because I'm not certain that the bones in the channels are in the same order as the bones
+			// in the armature. This safeguards against that, at the cost of having to copy all of the animation data
+			// twice. If loading times ever become an issue, this might be an area that could be improved.
+			std::unordered_map<std::string, Channel> tmpChannels;
 			for (unsigned int j = 0; j < this->impScene->mAnimations[i]->mNumChannels; j++)
 			{
 				auto c = Channel();
@@ -187,8 +193,13 @@ namespace vel
 					c.scalingKeyValues.push_back(glm::vec3(scale.x, scale.y, scale.z));
 				}
 
-				// add channel to animation
-				a->channels[this->impScene->mAnimations[i]->mChannels[j]->mNodeName.C_Str()] = c;
+				// add channel to tmpChannels
+				tmpChannels[this->impScene->mAnimations[i]->mChannels[j]->mNodeName.C_Str()] = c;
+			}
+
+			for (auto& ab : this->armature->getBones())
+			{
+				a->channels.push_back(tmpChannels[ab.name]);
 			}
 
 			// add this animation name/index to the armature's animations vector

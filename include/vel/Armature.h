@@ -73,7 +73,7 @@ namespace vel
 		unsigned int										getCurrentAnimationCycle();
 		float												getCurrentAnimationKeyTime();
 
-		void												setRestPose(const std::string& animationName); // uses data from first frame of provided animation
+		//void												setRestPose(const std::string& animationName); // uses data from first frame of provided animation
 
 		void												playAnimation(const std::string& animationName, bool repeat = true, int blendTime = 0);
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <unordered_map>
+#include <vector>
 #include <string>
 
 #include "vel/Channel.h"
@@ -13,7 +13,7 @@ namespace vel
 		std::string				name;
 		float					duration;
 		float					tps;
-		std::unordered_map<std::string, Channel> channels; // each individual bone in the animation, by name
+		std::vector<Channel>	channels; // each individual bone in the animation
 	};
 	
 }

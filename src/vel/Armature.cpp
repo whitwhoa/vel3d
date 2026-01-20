@@ -2,10 +2,8 @@
 #include <algorithm>
 
 
-//#define GLM_FORCE_ALIGNED_GENTYPES
 #include "glm/gtx/compatibility.hpp"
 #include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtx/matrix_decompose.hpp"
 #include "glm/gtx/string_cast.hpp"
 
 #include "vel/logger.hpp"
@@ -55,7 +53,8 @@ namespace vel
 		float deltaTime = channel->rotationKeyTimes[nextKeyIndex] - channel->rotationKeyTimes[currentKeyIndex];
 		float factor = ((time - channel->rotationKeyTimes[currentKeyIndex]) / deltaTime);
 
-		return glm::normalize(glm::slerp(channel->rotationKeyValues[currentKeyIndex], channel->rotationKeyValues[nextKeyIndex], factor));
+		//return glm::normalize(glm::slerp(channel->rotationKeyValues[currentKeyIndex], channel->rotationKeyValues[nextKeyIndex], factor));
+		return glm::slerp(channel->rotationKeyValues[currentKeyIndex], channel->rotationKeyValues[nextKeyIndex], factor);
 	}
 
 	glm::vec3 Armature::calcScale(const float& time, size_t currentKeyIndex, Channel* channel)
@@ -150,7 +149,7 @@ namespace vel
 			//}
 			//// END
 
-			auto channel = &aa.animation->channels[bone.name];
+			auto channel = &aa.animation->channels[index];
 			auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
 			size_t tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
 			size_t currentKeyIndex = !(tmpKey == channel->positionKeyTimes.size()) ? (tmpKey - 1) : (tmpKey - 2);
@@ -252,16 +251,21 @@ namespace vel
 			if (activeAnimation.blendPercentage >= 1.0f)
 			{
 				for (size_t i = 0; i < this->activeAnimations.size() - 1; i++)
+				{
 					this->activeAnimations.pop_front();
+				}
 
 				activeAnimation = this->activeAnimations.back();
 			}
 
 			activeAnimation.lastAnimationKeyTime = activeAnimation.animationKeyTime;
-			activeAnimation.animationKeyTime = (float)fmod(activeAnimation.animationTime * activeAnimation.animation->tps, activeAnimation.animation->duration);
+			activeAnimation.animationKeyTime = fmod(activeAnimation.animationTime * activeAnimation.animation->tps, activeAnimation.animation->duration);
 
 			if (activeAnimation.animationKeyTime < activeAnimation.lastAnimationKeyTime)
+			{
 				activeAnimation.currentAnimationCycle++;
+			}
+
 
 			if (activeAnimation.currentAnimationCycle == 1 && !activeAnimation.repeat)
 			{
@@ -287,17 +291,17 @@ namespace vel
 		}
 	}
 
-	void Armature::setRestPose(const std::string& animationName)
-	{
-		std::shared_ptr<vel::Animation> a = this->getAnimation(animationName);
-		
-		for (auto& b : this->bones)
-		{
-			b.restLocalTranslation = a->channels[b.name].positionKeyValues.at(0);
-			b.restLocalRotation = a->channels[b.name].rotationKeyValues.at(0);
-			b.restLocalScale = a->channels[b.name].scalingKeyValues.at(0);
-		}
-	}
+	//void Armature::setRestPose(const std::string& animationName)
+	//{
+	//	std::shared_ptr<vel::Animation> a = this->getAnimation(animationName);
+	//	
+	//	for (auto& b : this->bones)
+	//	{
+	//		b.restLocalTranslation = a->channels[b.name].positionKeyValues.at(0);
+	//		b.restLocalRotation = a->channels[b.name].rotationKeyValues.at(0);
+	//		b.restLocalScale = a->channels[b.name].scalingKeyValues.at(0);
+	//	}
+	//}
 
 	void Armature::playAnimation(const std::string& animationName, bool repeat, int blendTime)
 	{
