@@ -102,99 +102,39 @@ namespace vel
 		bone.previousRotation = bone.rotation;
 		bone.previousScale = bone.scale;
 
-		//VEL3D_LOG_TRACE("{}", bone.name);
-
-		//// DEBUG: quick dirty test
-		//if (bone.name == "Bip01_Spine1" || bone.name == "")
-		//{
-		//	TRS worldTRS;
-		//	worldTRS.translation = bone.translation;
-		//	worldTRS.rotation = bone.rotation;
-		//	worldTRS.scale = bone.scale;
-		//	bone.matrix = this->matrixFromTRS(worldTRS);
-
-		//	return;
-		//}
-		//// END
-
-		// get vector of key indexes where vector index is the index of the activeAnimation and value is the keyIndex
-		std::vector<TRS> activeAnimationsTRS;
-		activeAnimationsTRS.reserve(this->activeAnimations.size());
+		TRS localTRS{};
+		bool haveLocal = false;
 
 		for (auto& aa : this->activeAnimations)
 		{
-			TRS trs;
-
-			// TODO: commented below out, because I'm going to commit this and don't want this check to be done until
-			// we can implement the real solution. We will pick back up here, implement this, then move onto a solution
-			// that allows us to remove all of the string hash lookups for: auto channel = &aa.animation->channels[bone.name];
-			//// DEBUG: quick dirty test
-			//if (bone.name == "Bip01_Spine1" || bone.name == "Bip01_R_Clavicle" || bone.name == "Bip01_L_Clavicle"
-			//	|| bone.name == "Bip01_Neck" || bone.name == "Bip01_Head" || bone.name == "Bip01_L_UpperArm"
-			//	|| bone.name == "Bip01_L_Forearm" || bone.name == "Bip01_L_ForeTwist" || bone.name == "Bip01_L_Hand" 
-			//	|| bone.name == "Bip01_L_Finger0" || bone.name == "Bip01_L_Finger01" || bone.name == "Bip01_L_Finger1" 
-			//	|| bone.name == "Bip01_L_Finger11" || bone.name == "Bip01_L_Finger2" || bone.name == "Bip01_L_Finger21" 
-			//	|| bone.name == "Bip01_R_UpperArm" || bone.name == "Bip01_R_Forearm" || bone.name == "Bip01_R_ForeTwist" 
-			//	|| bone.name == "Bip01_R_Hand" || bone.name == "Bip01_R_Finger0" || bone.name == "Bip01_R_Finger01" 
-			//	|| bone.name == "Bip01_R_Finger1" || bone.name == "Bip01_R_Finger11" || bone.name == "Bip01_R_Finger2" 
-			//	|| bone.name == "Bip01_R_Finger21" || bone.name == "weapon_Bone" || bone.name == "knife_Bone")
-			//{
-			//	trs.translation = bone.restLocalTranslation;
-			//	trs.rotation = bone.restLocalRotation;
-			//	trs.scale = bone.restLocalScale;
-
-			//	activeAnimationsTRS.push_back(trs);
-
-			//	continue;
-			//}
-			//// END
-
 			auto channel = &aa.animation->channels[index];
 			auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
 			size_t tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
 			size_t currentKeyIndex = !(tmpKey == channel->positionKeyTimes.size()) ? (tmpKey - 1) : (tmpKey - 2);
 
-			trs.translation = this->calcTranslation(aa.animationKeyTime, currentKeyIndex, channel);
-			trs.rotation = this->calcRotation(aa.animationKeyTime, currentKeyIndex, channel);
-			trs.scale = this->calcScale(aa.animationKeyTime, currentKeyIndex, channel);
+			TRS aaTRS;
+			aaTRS.translation = this->calcTranslation(aa.animationKeyTime, currentKeyIndex, channel);
+			aaTRS.rotation = this->calcRotation(aa.animationKeyTime, currentKeyIndex,channel);
+			aaTRS.scale = this->calcScale(aa.animationKeyTime, currentKeyIndex, channel);
 
-			activeAnimationsTRS.push_back(trs);
-		}
-
-
-		//
-		// Compose LOCAL TRS
-		//
-		TRS localTRS;
-
-		// if activeAnimations has a size greater than 1, then do interpolation
-		if (activeAnimationsTRS.size() > 1)
-		{
-			for (size_t i = 0; i < activeAnimationsTRS.size() - 1; i++)
+			// --- blend into accumulated LOCAL TRS ---
+			if (!haveLocal)
 			{
-				// weight is stored on the "newer" animation layer
-				const float w = this->activeAnimations[i + 1].blendPercentage;
+				// First animation initializes the pose
+				localTRS = aaTRS;
+				haveLocal = true;
+			}
+			else
+			{
+				// Blend this animation on top of previous result
+				// Convention: blendPercentage belongs to the *newer* animation
+				const float w = aa.blendPercentage;
 
-				if (i == 0)
-				{
-					localTRS.translation = glm::lerp(activeAnimationsTRS[i].translation, activeAnimationsTRS[i + 1].translation, w);
-					localTRS.rotation = glm::slerp(activeAnimationsTRS[i].rotation, activeAnimationsTRS[i + 1].rotation, w);
-					localTRS.scale = glm::lerp(activeAnimationsTRS[i].scale, activeAnimationsTRS[i + 1].scale, w);
-				}
-				else
-				{
-					localTRS.translation = glm::lerp(localTRS.translation, activeAnimationsTRS[i + 1].translation, w);
-					localTRS.rotation = glm::slerp(localTRS.rotation, activeAnimationsTRS[i + 1].rotation, w);
-					localTRS.scale = glm::lerp(localTRS.scale, activeAnimationsTRS[i + 1].scale, w);
-				}
+				localTRS.translation = glm::lerp(localTRS.translation, aaTRS.translation, w);
+				localTRS.rotation = glm::slerp(localTRS.rotation, aaTRS.rotation, w);
+				localTRS.scale = glm::lerp(localTRS.scale, aaTRS.scale, w);
 			}
 		}
-		// otherwise, generate the bone matrix using the single animation
-		else
-		{
-			localTRS = activeAnimationsTRS[0];
-		}
-
 
 		//
 		// Compose WORLD TRS (easy attachments and interpolation)
