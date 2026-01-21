@@ -107,6 +107,9 @@ namespace vel
 
 		for (auto& aa : this->activeAnimations)
 		{
+			if (aa.animation->channelMask.test(index))
+				continue;
+
 			auto channel = &aa.animation->channels[index];
 			auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
 			size_t tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
@@ -230,18 +233,6 @@ namespace vel
 			}
 		}
 	}
-
-	//void Armature::setRestPose(const std::string& animationName)
-	//{
-	//	std::shared_ptr<vel::Animation> a = this->getAnimation(animationName);
-	//	
-	//	for (auto& b : this->bones)
-	//	{
-	//		b.restLocalTranslation = a->channels[b.name].positionKeyValues.at(0);
-	//		b.restLocalRotation = a->channels[b.name].rotationKeyValues.at(0);
-	//		b.restLocalScale = a->channels[b.name].scalingKeyValues.at(0);
-	//	}
-	//}
 
 	void Armature::playAnimation(const std::string& animationName, bool repeat, int blendTime)
 	{

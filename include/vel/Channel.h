@@ -8,6 +8,8 @@
 
 namespace vel
 {
+	// TODO: I bet this could be condensed into a single vector, with fixed strides, which
+	// would likely improve cache usage
 	struct Channel
 	{
 		std::vector<float> positionKeyTimes;

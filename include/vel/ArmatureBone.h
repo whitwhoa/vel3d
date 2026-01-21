@@ -32,12 +32,6 @@ namespace vel
 		glm::quat		previousRotation;
 		glm::vec3		previousScale;
 
-		// default rest position of this bone (used when animation excludes specific bones)
-		glm::vec3		restLocalTranslation;
-		glm::quat		restLocalRotation;
-		glm::vec3		restLocalScale;
-
-
 		// list of actors that are parented to this bone, useful
 		// if for example we have an armature that has objects parented to it,
 		// such as a character object with weapon actors parented at various
