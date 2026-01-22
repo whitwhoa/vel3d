@@ -144,6 +144,10 @@ namespace vel
 		// 
 		// Why do we not just update this when we loop over the actors in the render loop? There
 		// must be some reason why I don't do that???
+		//
+		// ...Yeah, if there are multiple cameras for the stage, we cannot update the previous transform
+		// until all cameras have rendered...but perhaps we can track if it's the last camera for the stage
+		// and if so, THEN update the actor's previous transform? Might work.
 		for (auto& pair : this->actors) 
 			for (auto& actor : pair.second) 
 				actor->updatePreviousTransform();

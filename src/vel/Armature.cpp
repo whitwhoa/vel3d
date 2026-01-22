@@ -94,10 +94,13 @@ namespace vel
 
 	void Armature::updateBone(size_t index)
 	{
-		// we assume there are always at least 2 keys of animation data
+		//
+		// !!!! we assume there are always at least 2 keys of animation data !!!!
+		//
 
+		
 		// get current bone and update its previous WORLD TRS values with current
-		auto& bone = this->bones[index];
+		vel::ArmatureBone& bone = this->bones[index];
 		bone.previousTranslation = bone.translation;
 		bone.previousRotation = bone.rotation;
 		bone.previousScale = bone.scale;
@@ -110,7 +113,7 @@ namespace vel
 			if (aa.animation->channelMask.test(index))
 				continue;
 
-			auto channel = &aa.animation->channels[index];
+			vel::Channel* channel = &aa.animation->channels[index];
 			auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
 			size_t tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
 			size_t currentKeyIndex = !(tmpKey == channel->positionKeyTimes.size()) ? (tmpKey - 1) : (tmpKey - 2);
