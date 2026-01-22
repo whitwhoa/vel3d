@@ -125,14 +125,14 @@ namespace vel
 	{
 		for (auto& a : this->armatures)
 			if(a->getShouldInterpolate())
-				a->updateAnimation(runTime);
+				a->updateAnimations(runTime);
 	}
 
 	void Stage::updateArmatureAnimations(float runTime)
 	{
 		for (auto& a : this->armatures)
 			if (!a->getShouldInterpolate())
-				a->updateAnimation(runTime);
+				a->updateAnimations(runTime);
 	}
 
 	void Stage::updatePreviousTransforms()

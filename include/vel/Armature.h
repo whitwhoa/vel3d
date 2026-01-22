@@ -35,12 +35,12 @@ namespace vel
 		bool												shouldInterpolate;
 		std::vector<ArmatureBone>							bones;
 		std::vector<std::shared_ptr<Animation>>				animations;
-		std::deque<ActiveAnimation>							activeAnimations;
+		std::vector<std::deque<ActiveAnimation>>			layers;
 		float												runTime;
 		float												previousRunTime;
 
 
-		void												updateBone(size_t index);
+		void												updateBone(size_t layerIndex, size_t boneIndex);
 
 		glm::vec3											calcTranslation(const float& time, size_t currentKeyIndex, Channel* channel);
 		glm::quat											calcRotation(const float& time, size_t currentKeyIndex, Channel* channel);
@@ -66,14 +66,23 @@ namespace vel
 		const std::string&									getName() const;
 		const std::vector<std::shared_ptr<Animation>>&		getAnimations() const;
 		std::optional<size_t>								getBoneIndex(const std::string& boneName);
-		void												updateAnimation(float runTime);
 		std::shared_ptr<Animation>							getAnimation(const std::string& animationName);
+		void												updateLayer(unsigned int id, float stepTime);
+		void												updateAnimations(float runTime);
+		
 
-		std::string											getCurrentAnimationName();
-		unsigned int										getCurrentAnimationCycle();
-		float												getCurrentAnimationKeyTime();
-
+		// These three methods need to be refactored to make sense with the new layer system...OR...keep these,
+		// along with the playAnimation() member, then make them wrappers to the new calls, this way we keep the
+		// old api, so old examples continue to function, and this is an easier way to just see an animation play
+		// without having to understand the layering system...yeah...
 		void												playAnimation(const std::string& animationName, bool repeat = true, int blendTime = 0);
+		//std::string										getCurrentAnimationName();
+		//unsigned int										getCurrentAnimationCycle();
+		//float												getCurrentAnimationKeyTime();
+
+		unsigned int										addAnimationLayer();
+		unsigned int										getAnimationLayerCount();
+		void												queueLayerAnimation(unsigned int layerIndex, const std::string& animationName, bool repeat = true, int blendTime = 0);
 
 		Transform&											getTransform();
 

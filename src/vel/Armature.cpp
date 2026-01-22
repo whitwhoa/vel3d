@@ -19,6 +19,8 @@ namespace vel
 		previousRunTime(0.0),
 		transform(Transform())
 	{
+		// default to a single animation layer
+		this->addAnimationLayer();
 	}
 
 	void Armature::setShouldInterpolate(bool val)
@@ -92,62 +94,60 @@ namespace vel
 		return m;
 	}
 
-	void Armature::updateBone(size_t index)
+	void Armature::updateBone(size_t layerIndex, size_t boneIndex)
 	{
 		//
 		// !!!! we assume there are always at least 2 keys of animation data !!!!
 		//
 
 		
-		// get current bone and update its previous WORLD TRS values with current
-		vel::ArmatureBone& bone = this->bones[index];
+		// update previous translation/rotation/scale (required for timestep interpolation)
+		ArmatureBone& bone = this->bones[boneIndex];
 		bone.previousTranslation = bone.translation;
 		bone.previousRotation = bone.rotation;
 		bone.previousScale = bone.scale;
 
-		TRS localTRS{};
-		bool haveLocal = false;
 
-		for (auto& aa : this->activeAnimations)
+		TRS localTRS{};
+		for(unsigned int i = 0; i < this->layers.at(layerIndex).size(); i++)
 		{
-			if (aa.animation->channelMask.test(index))
+			ActiveAnimation& aa = this->layers.at(layerIndex).at(i);
+
+			if (aa.animation->channelMask.test(boneIndex))
 				continue;
 
-			vel::Channel* channel = &aa.animation->channels[index];
+			Channel* channel = &aa.animation->channels[boneIndex];
 			auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
 			size_t tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
 			size_t currentKeyIndex = !(tmpKey == channel->positionKeyTimes.size()) ? (tmpKey - 1) : (tmpKey - 2);
 
 			TRS aaTRS;
 			aaTRS.translation = this->calcTranslation(aa.animationKeyTime, currentKeyIndex, channel);
-			aaTRS.rotation = this->calcRotation(aa.animationKeyTime, currentKeyIndex,channel);
+			aaTRS.rotation = this->calcRotation(aa.animationKeyTime, currentKeyIndex, channel);
 			aaTRS.scale = this->calcScale(aa.animationKeyTime, currentKeyIndex, channel);
 
-			// --- blend into accumulated LOCAL TRS ---
-			if (!haveLocal)
+			if (i == 0)
 			{
-				// First animation initializes the pose
+				// first (or only) animation in the queue, no blending required
 				localTRS = aaTRS;
-				haveLocal = true;
+				continue;
 			}
-			else
-			{
-				// Blend this animation on top of previous result
-				// Convention: blendPercentage belongs to the *newer* animation
-				const float w = aa.blendPercentage;
-
-				localTRS.translation = glm::lerp(localTRS.translation, aaTRS.translation, w);
-				localTRS.rotation = glm::slerp(localTRS.rotation, aaTRS.rotation, w);
-				localTRS.scale = glm::lerp(localTRS.scale, aaTRS.scale, w);
-			}
+			
+			// blend this animation on top of previous result
+			localTRS.translation = glm::lerp(localTRS.translation, aaTRS.translation, aa.blendPercentage);
+			localTRS.rotation = glm::slerp(localTRS.rotation, aaTRS.rotation, aa.blendPercentage);
+			localTRS.scale = glm::lerp(localTRS.scale, aaTRS.scale, aa.blendPercentage);
 		}
 
-		//
-		// Compose WORLD TRS (easy attachments and interpolation)
-		//
-		TRS parentWorld;
 
-		if (index == 0)
+
+		// we store the bone positions in world space for easy attachments and timestep interpolation
+		//
+		// first bone is always armature root bone. This is what we translate/rotate/scale to move
+		// the armature around the stage, which in turn moves all associated actors, thus, we set the
+		// transform of this bone to the position of the transform member we hold on Armature
+		TRS parentWorld;
+		if (boneIndex == 0)
 		{
 			parentWorld.translation = this->transform.getTranslation();
 			parentWorld.rotation = this->transform.getRotation();
@@ -168,76 +168,97 @@ namespace vel
 		bone.matrix = this->matrixFromTRS(worldTRS);
 	}
 
-	void Armature::updateAnimation(float runTime)
+	void Armature::updateAnimations(float runTime)
 	{
 		this->previousRunTime = this->runTime;
 		this->runTime = runTime;
 		auto stepTime = this->runTime - this->previousRunTime;
 
-		// get most recent active animation
-		auto& activeAnimation = this->activeAnimations.back();
+		for (unsigned int i = 0; i < this->layers.size(); i++)
+			this->updateLayer(i, stepTime);
+	}
 
-		// current active animation is either set to repeat, or not repeat but has not completed it's first cycle
-		if (activeAnimation.repeat || (!activeAnimation.repeat && activeAnimation.currentAnimationCycle == 0))
+	void Armature::updateLayer(unsigned int id, float stepTime)
+	{
+		//
+		// Updates various required information for each ActiveAnimation of the layer belonging to `id`,
+		// then updates each armature bone by calling updateBone() method which uses the previously
+		// updated ActiveAnimations data
+		//
+
+		// get most recent layer animation (ie what bones are blending toward)
+		auto& layerAnimation = this->layers.at(id).back();
+
+		// current layer animation has completed, and is not set to repeat
+		if (!(layerAnimation.repeat || (!layerAnimation.repeat && layerAnimation.currentAnimationCycle == 0)))
+			return;
+
+		
+		layerAnimation.blendPercentage = 1.0f;
+
+		if (layerAnimation.blendTime > 0.0f)
+			layerAnimation.blendPercentage = (layerAnimation.animationTime / (layerAnimation.blendTime / 1000.0f));
+
+
+		// if blendPercentage is >= 1.0f, we have completed the blending phase and this animation can continue to play without 
+		// interpolating between previous animations, therefore we clear all previous animations from this->layers.at(id)
+		if (layerAnimation.blendPercentage >= 1.0f)
 		{
+			for (size_t i = 0; i < this->layers.at(id).size() - 1; i++)
+				this->layers.at(id).pop_front();
 
-			if (activeAnimation.blendTime > 0.0)
-			{
-				activeAnimation.blendPercentage = (float)(activeAnimation.animationTime / (activeAnimation.blendTime / 1000.0));
-			}
-			else
-			{
-				activeAnimation.blendPercentage = 1.0f;
-			}
-				
-
-			// if blendPercentage is greater than or equal to 1.0f, then we have completed the blending phase and this animation
-			// can continue to play without interpolating between previous animations, therefore we clear all previous animations
-			// from this->activeAnimations
-			if (activeAnimation.blendPercentage >= 1.0f)
-			{
-				for (size_t i = 0; i < this->activeAnimations.size() - 1; i++)
-				{
-					this->activeAnimations.pop_front();
-				}
-
-				activeAnimation = this->activeAnimations.back();
-			}
-
-			activeAnimation.lastAnimationKeyTime = activeAnimation.animationKeyTime;
-			activeAnimation.animationKeyTime = fmod(activeAnimation.animationTime * activeAnimation.animation->tps, activeAnimation.animation->duration);
-
-			if (activeAnimation.animationKeyTime < activeAnimation.lastAnimationKeyTime)
-			{
-				activeAnimation.currentAnimationCycle++;
-			}
-
-
-			if (activeAnimation.currentAnimationCycle == 1 && !activeAnimation.repeat)
-			{
-				activeAnimation.animationKeyTime = activeAnimation.lastAnimationKeyTime;
-
-				for (size_t i = 0; i < this->bones.size(); i++)
-				{
-					auto& bone = this->bones[i];
-					bone.previousTranslation = bone.translation;
-					bone.previousRotation = bone.rotation;
-					bone.previousScale = bone.scale;
-				}
-			}
-			else
-			{
-				for (size_t i = 0; i < this->bones.size(); i++)
-				{
-					this->updateBone(i);
-				}
-
-				activeAnimation.animationTime += stepTime;
-			}
+			layerAnimation = this->layers.at(id).back();
 		}
+
+
+		layerAnimation.lastAnimationKeyTime = layerAnimation.animationKeyTime;
+		layerAnimation.animationKeyTime = fmod(layerAnimation.animationTime * layerAnimation.animation->tps, layerAnimation.animation->duration);
+
+		// if true, animation has wrapped and we need to increment the animation cycle count
+		if (layerAnimation.animationKeyTime < layerAnimation.lastAnimationKeyTime)
+			layerAnimation.currentAnimationCycle++;
+
+
+		// if we have JUST completed an animation cycle THIS tick, and the animation is not set to repeat
+		if (layerAnimation.currentAnimationCycle == 1 && !layerAnimation.repeat)
+		{
+			layerAnimation.animationKeyTime = layerAnimation.lastAnimationKeyTime;
+
+			for (size_t i = 0; i < this->bones.size(); i++)
+			{
+				auto& bone = this->bones[i];
+				bone.previousTranslation = bone.translation;
+				bone.previousRotation = bone.rotation;
+				bone.previousScale = bone.scale;
+			}
+
+			return;
+		}
+
+		// update all armature bones and increase animation time for this animation
+		for (size_t i = 0; i < this->bones.size(); i++)
+			this->updateBone(id, i);
+
+		layerAnimation.animationTime += stepTime;
 	}
 
 	void Armature::playAnimation(const std::string& animationName, bool repeat, int blendTime)
+	{
+		this->queueLayerAnimation(0, animationName, repeat, blendTime);
+	}
+
+	unsigned int Armature::addAnimationLayer()
+	{
+		this->layers.push_back(std::deque<ActiveAnimation>());
+		return this->layers.size();
+	}
+
+	unsigned int Armature::getAnimationLayerCount()
+	{
+		return this->layers.size();
+	}
+
+	void Armature::queueLayerAnimation(unsigned int layerIndex, const std::string& animationName, bool repeat, int blendTime)
 	{
 		ActiveAnimation a;
 		a.animation = this->getAnimation(animationName);
@@ -250,30 +271,29 @@ namespace vel
 		a.blendPercentage = 0.0f;
 		a.repeat = repeat;
 
-
-		this->activeAnimations.push_back(a);
+		this->layers.at(layerIndex).push_back(a);
 	}
 
-	float Armature::getCurrentAnimationKeyTime()
-	{
-		return this->activeAnimations.back().animationKeyTime;
-	}
+	//float Armature::getCurrentAnimationKeyTime()
+	//{
+	//	return this->activeAnimations.back().animationKeyTime;
+	//}
 
-	unsigned int Armature::getCurrentAnimationCycle()
-	{
-		if (this->activeAnimations.size() > 0)
-			return this->activeAnimations.back().currentAnimationCycle;
-		else
-			return 0;
-	}
+	//unsigned int Armature::getCurrentAnimationCycle()
+	//{
+	//	if (this->activeAnimations.size() > 0)
+	//		return this->activeAnimations.back().currentAnimationCycle;
+	//	else
+	//		return 0;
+	//}
 
-	std::string Armature::getCurrentAnimationName()
-	{
-		if (this->activeAnimations.size() > 0)
-			return this->activeAnimations.back().animationName;
-		else
-			return "";
-	}
+	//std::string Armature::getCurrentAnimationName()
+	//{
+	//	if (this->activeAnimations.size() > 0)
+	//		return this->activeAnimations.back().animationName;
+	//	else
+	//		return "";
+	//}
 
 	const std::vector<std::shared_ptr<Animation>>& Armature::getAnimations() const
 	{
