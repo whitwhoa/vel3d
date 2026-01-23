@@ -195,7 +195,7 @@ namespace vel
 			auto& b = this->bones[i];
 			b.previousTranslation = b.translation;
 			b.previousRotation = b.rotation;
-			b.previousScale = b.previousScale;
+			b.previousScale = b.scale;
 		}
 
 		for (unsigned int i = 0; i < this->layers.size(); i++)
