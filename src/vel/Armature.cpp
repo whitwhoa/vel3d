@@ -17,10 +17,33 @@ namespace vel
 		shouldInterpolate(true),
 		runTime(0.0),
 		previousRunTime(0.0),
-		transform(Transform())
+		transform(Transform()),
+		poseA({}),
+		poseB({}),
+		posePrev(nullptr),
+		poseCur(nullptr)
 	{
 		// default to a single animation layer
 		this->addAnimationLayer();
+	}
+
+	void Armature::initPoseBuffers()
+	{
+		this->poseA.resize(this->bones.size());
+		this->poseB.resize(this->bones.size());
+
+		this->posePrev = this->poseA.data();
+		this->poseCur = this->poseB.data();
+
+		// seed both with current bone world pose so first frame interpolates cleanly
+		for (size_t i = 0; i < this->bones.size(); ++i)
+		{
+			this->posePrev[i].translation = this->bones[i].translation;
+			this->posePrev[i].rotation = this->bones[i].rotation;
+			this->posePrev[i].scale = this->bones[i].scale;
+
+			this->poseCur[i] = this->posePrev[i];
+		}
 	}
 
 	void Armature::setShouldInterpolate(bool val)
@@ -94,7 +117,7 @@ namespace vel
 		return m;
 	}
 
-	void Armature::updateBone(size_t layerIndex, size_t boneIndex)
+	void Armature::updateBone(size_t boneIndex)
 	{
 		//
 		// !!!! we assume there are always at least 2 keys of animation data !!!!
@@ -104,52 +127,70 @@ namespace vel
 		ArmatureBone& bone = this->bones[boneIndex];
 
 
-		TRS localTRS{};
-		bool haveLocal = false;
+		// stack all layers to build finalLocal
+		TRS finalLocal{};
+		bool haveFinal = false;
 
-		for(unsigned int i = 0; i < this->layers.at(layerIndex).size(); i++)
+		for (size_t layerIndex = 0; layerIndex < this->layers.size(); layerIndex++)
 		{
-			ActiveAnimation& aa = this->layers.at(layerIndex).at(i);
+			TRS layerLocal{};
+			bool haveLayer = false;
 
-			if (aa.animation->channelMask.test(boneIndex))
+			for (size_t i = 0; i < this->layers.at(layerIndex).size(); ++i)
 			{
-				// bone exists in mask, do not include transforms for this bone for this animation
-				// in the final calculation
-				continue;
-			}				
+				ActiveAnimation& aa = this->layers.at(layerIndex).at(i);
 
-			Channel* channel = &aa.animation->channels[boneIndex];
-			auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
-			size_t tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
-			size_t currentKeyIndex = !(tmpKey == channel->positionKeyTimes.size()) ? (tmpKey - 1) : (tmpKey - 2);
+				if (aa.animation->channelMask.test(boneIndex))
+					continue;
 
-			TRS aaTRS;
-			aaTRS.translation = this->calcTranslation(aa.animationKeyTime, currentKeyIndex, channel);
-			aaTRS.rotation = this->calcRotation(aa.animationKeyTime, currentKeyIndex, channel);
-			aaTRS.scale = this->calcScale(aa.animationKeyTime, currentKeyIndex, channel);
+				Channel* channel = &aa.animation->channels[boneIndex];
+				auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
+				size_t tmpKey = (size_t)(it - channel->positionKeyTimes.begin());
+				size_t currentKeyIndex = !(tmpKey == channel->positionKeyTimes.size()) ? (tmpKey - 1) : (tmpKey - 2);
 
-			if (!haveLocal)
-			{
-				// first (or only) animation in the queue, no blending required
-				localTRS = aaTRS;
+				TRS aaTRS;
+				aaTRS.translation = this->calcTranslation(aa.animationKeyTime, currentKeyIndex, channel);
+				aaTRS.rotation = this->calcRotation(aa.animationKeyTime, currentKeyIndex, channel);
+				aaTRS.scale = this->calcScale(aa.animationKeyTime, currentKeyIndex, channel);
 
-				// set haveLocal to true, so that we will know later outside of this loop that at
-				// least one animation in the layer was not masked and that we need to include
-				// the transforms of this bone in the final calculation
-				haveLocal = true;
-				
-				continue;
+				if (!haveLayer)
+				{
+					layerLocal = aaTRS;
+					haveLayer = true;
+
+					continue;
+				}
+
+				if (aa.blendPercentage <= 0.0f) 
+					continue;
+
+				if (aa.blendPercentage >= 1.0f)
+				{ 
+					layerLocal = aaTRS; 
+					continue; 
+				}
+
+				// blend this animation on top of previous result
+				layerLocal.translation = glm::lerp(layerLocal.translation, aaTRS.translation, aa.blendPercentage);
+				layerLocal.rotation = glm::slerp(layerLocal.rotation, aaTRS.rotation, aa.blendPercentage);
+				layerLocal.scale = glm::lerp(layerLocal.scale, aaTRS.scale, aa.blendPercentage);
 			}
-			
-			// blend this animation on top of previous result
-			localTRS.translation = glm::lerp(localTRS.translation, aaTRS.translation, aa.blendPercentage);
-			localTRS.rotation = glm::slerp(localTRS.rotation, aaTRS.rotation, aa.blendPercentage);
-			localTRS.scale = glm::lerp(localTRS.scale, aaTRS.scale, aa.blendPercentage);
+
+			if (!haveLayer)
+				continue;
+
+			finalLocal = layerLocal;
+			haveFinal = true;	
 		}
 
-		// this bone did not contribute to the animation on this layer, proceed no further
-		if (!haveLocal)
-			return;
+
+		// If no layers contributed, fallback to identity.
+		if (!haveFinal)
+		{
+			finalLocal.translation = glm::vec3(0.0f);
+			finalLocal.rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+			finalLocal.scale = glm::vec3(1.0f);
+		}
 
 
 		// we store the bone positions in world space for easy attachments and timestep interpolation
@@ -172,7 +213,12 @@ namespace vel
 			parentWorld.scale = p.scale;
 		}
 
-		const TRS worldTRS = this->composeWorldTRS(parentWorld, localTRS);
+		const TRS worldTRS = this->composeWorldTRS(parentWorld, finalLocal);
+
+		this->poseCur[boneIndex].translation = worldTRS.translation;
+		this->poseCur[boneIndex].rotation = worldTRS.rotation;
+		this->poseCur[boneIndex].scale = worldTRS.scale;
+
 		bone.translation = worldTRS.translation;
 		bone.rotation = worldTRS.rotation;
 		bone.scale = worldTRS.scale;
@@ -183,20 +229,18 @@ namespace vel
 	{
 		this->previousRunTime = this->runTime;
 		this->runTime = runTime;
-		auto stepTime = this->runTime - this->previousRunTime;
+		float stepTime = this->runTime - this->previousRunTime;
 
-		// don't like having to do this at all, but perhaps once we see everything working,
-		// we can go back and refactor all of this logic so that we only loop over all bones once somehow
-		for (unsigned int i = 0; i < this->bones.size(); i++)
-		{
-			auto& b = this->bones[i];
-			b.previousTranslation = b.translation;
-			b.previousRotation = b.rotation;
-			b.previousScale = b.scale;
-		}
+		// swap pose buffers
+		std::swap(this->posePrev, this->poseCur);
 
-		for (unsigned int i = 0; i < this->layers.size(); i++)
-			this->updateLayer(i, stepTime);
+		// update layer state 
+		for (size_t layerIndex = 0; layerIndex < this->layers.size(); ++layerIndex)
+			this->updateLayer((unsigned int)layerIndex, stepTime);
+
+		// for each bone, evaluate layers + compose world matrices
+		for (size_t boneIndex = 0; boneIndex < this->bones.size(); ++boneIndex)
+			this->updateBone(boneIndex);
 	}
 
 	void Armature::updateLayer(unsigned int id, float stepTime)
@@ -244,21 +288,8 @@ namespace vel
 		if (layerAnimation.currentAnimationCycle == 1 && !layerAnimation.repeat)
 		{
 			layerAnimation.animationKeyTime = layerAnimation.lastAnimationKeyTime;
-
-			for (size_t i = 0; i < this->bones.size(); i++)
-			{
-				auto& bone = this->bones[i];
-				bone.previousTranslation = bone.translation;
-				bone.previousRotation = bone.rotation;
-				bone.previousScale = bone.scale;
-			}
-
 			return;
 		}
-
-		// update all armature bones and increase animation time for this animation
-		for (size_t i = 0; i < this->bones.size(); i++)
-			this->updateBone(id, i);
 
 		layerAnimation.animationTime += stepTime;
 	}
@@ -293,6 +324,24 @@ namespace vel
 		a.repeat = repeat;
 
 		this->layers.at(layerIndex).push_back(a);
+	}
+
+	const glm::mat4& Armature::getBoneWorldMatrix(size_t i)
+	{
+		return bones[i].matrix;
+	}
+
+	glm::mat4 Armature::getBoneWorldMatrixInterpolated(size_t i, float alpha)
+	{
+		const TRS& a = this->posePrev[i];
+		const TRS& b = this->poseCur[i];
+
+		TRS t;
+		t.translation = glm::lerp(a.translation, b.translation, alpha);
+		t.rotation = glm::slerp(a.rotation, b.rotation, alpha);
+		t.scale = glm::lerp(a.scale, b.scale, alpha);
+
+		return this->matrixFromTRS(t);
 	}
 
 	//float Armature::getCurrentAnimationKeyTime()

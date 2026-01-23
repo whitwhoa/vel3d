@@ -407,10 +407,10 @@ namespace vel
 
 			float ft = static_cast<float>(this->loopTime);
 			
-			//double t1 = this->getRuntimeSec();
+			double t1 = this->getRuntimeSec();
 			this->activeScene->updateAnimations(ft);
-			//double t2 = this->getRuntimeSec();
-			//VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
+			double t2 = this->getRuntimeSec();
+			VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
 
 			this->activeScene->updateBillboards();
 

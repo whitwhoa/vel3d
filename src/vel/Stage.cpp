@@ -148,6 +148,8 @@ namespace vel
 		// ...Yeah, if there are multiple cameras for the stage, we cannot update the previous transform
 		// until all cameras have rendered...but perhaps we can track if it's the last camera for the stage
 		// and if so, THEN update the actor's previous transform? Might work.
+		//
+		// double buffer???
 		for (auto& pair : this->actors) 
 			for (auto& actor : pair.second) 
 				actor->updatePreviousTransform();

@@ -13,20 +13,13 @@
 #include "vel/ArmatureBone.h"
 #include "vel/Transform.h"
 #include "vel/ActiveAnimation.h"
-
+#include "vel/TRS.h"
 
 
 
 namespace vel
 {
 	class Scene;
-
-	struct TRS
-	{
-		glm::vec3		translation;
-		glm::quat		rotation;
-		glm::vec3		scale;
-	};
 
 	class Armature
 	{
@@ -38,9 +31,16 @@ namespace vel
 		std::vector<std::deque<ActiveAnimation>>			layers;
 		float												runTime;
 		float												previousRunTime;
+		Transform											transform;
+
+		std::vector<TRS>									poseA;
+		std::vector<TRS>									poseB;
+		TRS*												posePrev;
+		TRS*												poseCur;
 
 
-		void												updateBone(size_t layerIndex, size_t boneIndex);
+		//void												updateBone(size_t layerIndex, size_t boneIndex);
+		void												updateBone(size_t boneIndex);
 
 		glm::vec3											calcTranslation(const float& time, size_t currentKeyIndex, Channel* channel);
 		glm::quat											calcRotation(const float& time, size_t currentKeyIndex, Channel* channel);
@@ -49,11 +49,12 @@ namespace vel
 		vel::TRS											composeWorldTRS(const vel::TRS& parentW, const vel::TRS& local);
 		glm::mat4											matrixFromTRS(const vel::TRS& t);
 		
-		Transform											transform;
+		
 
 
 	public:
 		Armature(std::string name);
+		void												initPoseBuffers();
 		void												setShouldInterpolate(bool val);
 		bool												getShouldInterpolate();
 		void												addBone(ArmatureBone b);
@@ -82,9 +83,9 @@ namespace vel
 		//float												getCurrentAnimationKeyTime();
 
 		
-		
-
 		Transform&											getTransform();
 
+		const glm::mat4&									getBoneWorldMatrix(size_t i);
+		glm::mat4											getBoneWorldMatrixInterpolated(size_t i, float alpha);
 	};
 }

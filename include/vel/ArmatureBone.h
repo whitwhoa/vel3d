@@ -42,7 +42,7 @@ namespace vel
 		std::vector<Actor*> childActors;
 
 
-		glm::mat4		getRenderMatrix();
-		glm::mat4		getRenderMatrixInterpolated(float alpha);
+		//glm::mat4		getRenderMatrix();
+		//glm::mat4		getRenderMatrixInterpolated(float alpha);
 	};
 }

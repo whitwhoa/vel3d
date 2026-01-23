@@ -19,9 +19,9 @@ namespace vel
 		for (auto& activeBone : a->getActiveBones())
 		{
 			if (armInterp)
-				meshBoneTransform = armature->getBone(activeBone.first).getRenderMatrixInterpolated(alphaTime) * mesh->getBone(boneIndex).offsetMatrix;
+				meshBoneTransform = armature->getBoneWorldMatrixInterpolated(activeBone.first, alphaTime) * mesh->getBone(boneIndex).offsetMatrix;
 			else
-				meshBoneTransform = armature->getBone(activeBone.first).getRenderMatrix() * mesh->getBone(boneIndex).offsetMatrix;
+				meshBoneTransform = armature->getBoneWorldMatrix(activeBone.first) * mesh->getBone(boneIndex).offsetMatrix;
 
 			boneData.push_back(std::pair<unsigned int, glm::mat4>(activeBone.second, meshBoneTransform));
 			boneIndex++;

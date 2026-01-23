@@ -345,6 +345,10 @@ namespace vel
 
 					b.parent = biOpt.value();
 				}
+
+				// Initialize pose buffers that we utilize to avoid copying all data every frame for
+				// render interpolation
+				this->armature->initPoseBuffers();
 			}
 			else
 			{
