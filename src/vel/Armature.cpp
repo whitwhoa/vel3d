@@ -109,12 +109,18 @@ namespace vel
 
 
 		TRS localTRS{};
+		bool haveLocal = false;
+
 		for(unsigned int i = 0; i < this->layers.at(layerIndex).size(); i++)
 		{
 			ActiveAnimation& aa = this->layers.at(layerIndex).at(i);
 
 			if (aa.animation->channelMask.test(boneIndex))
+			{
+				// bone exists in mask, do not include transforms for this bone for this animation
+				// in the final calculation
 				continue;
+			}				
 
 			Channel* channel = &aa.animation->channels[boneIndex];
 			auto it = std::upper_bound(channel->positionKeyTimes.begin(), channel->positionKeyTimes.end(), aa.animationKeyTime);
@@ -126,10 +132,16 @@ namespace vel
 			aaTRS.rotation = this->calcRotation(aa.animationKeyTime, currentKeyIndex, channel);
 			aaTRS.scale = this->calcScale(aa.animationKeyTime, currentKeyIndex, channel);
 
-			if (i == 0)
+			if (!haveLocal)
 			{
 				// first (or only) animation in the queue, no blending required
 				localTRS = aaTRS;
+
+				// set haveLocal to true, so that we will know later outside of this loop that at
+				// least one animation in the layer was not masked and that we need to include
+				// the transforms of this bone in the final calculation
+				haveLocal = true;
+				
 				continue;
 			}
 			
@@ -139,7 +151,9 @@ namespace vel
 			localTRS.scale = glm::lerp(localTRS.scale, aaTRS.scale, aa.blendPercentage);
 		}
 
-
+		// this bone did not contribute to the animation on this layer, proceed no further
+		if (!haveLocal)
+			return;
 
 		// we store the bone positions in world space for easy attachments and timestep interpolation
 		//
@@ -173,6 +187,16 @@ namespace vel
 		this->previousRunTime = this->runTime;
 		this->runTime = runTime;
 		auto stepTime = this->runTime - this->previousRunTime;
+
+		// don't like having to do this at all, but perhaps once we see everything working,
+		// we can go back and refactor all of this logic so that we only loop over all bones once somehow
+		for (unsigned int i = 0; i < this->bones.size(); i++)
+		{
+			auto& b = this->bones[i];
+			b.previousTranslation = b.translation;
+			b.previousRotation = b.rotation;
+			b.previousScale = b.previousScale;
+		}
 
 		for (unsigned int i = 0; i < this->layers.size(); i++)
 			this->updateLayer(i, stepTime);
