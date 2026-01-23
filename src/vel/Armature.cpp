@@ -101,6 +101,9 @@ namespace vel
 		//
 
 
+		ArmatureBone& bone = this->bones[boneIndex];
+
+
 		TRS localTRS{};
 		bool haveLocal = false;
 
@@ -147,6 +150,7 @@ namespace vel
 		// this bone did not contribute to the animation on this layer, proceed no further
 		if (!haveLocal)
 			return;
+
 
 		// we store the bone positions in world space for easy attachments and timestep interpolation
 		//
