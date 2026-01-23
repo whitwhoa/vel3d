@@ -71,18 +71,18 @@ namespace vel
 		void												updateAnimations(float runTime);
 		
 
-		// These three methods need to be refactored to make sense with the new layer system...OR...keep these,
-		// along with the playAnimation() member, then make them wrappers to the new calls, this way we keep the
-		// old api, so old examples continue to function, and this is an easier way to just see an animation play
-		// without having to understand the layering system...yeah...
+		unsigned int										addAnimationLayer();
+		unsigned int										getAnimationLayerCount();
+
 		void												playAnimation(const std::string& animationName, bool repeat = true, int blendTime = 0);
+		void												playAnimation(unsigned int layerIndex, const std::string& animationName, bool repeat = true, int blendTime = 0);
+		
 		//std::string										getCurrentAnimationName();
 		//unsigned int										getCurrentAnimationCycle();
 		//float												getCurrentAnimationKeyTime();
 
-		unsigned int										addAnimationLayer();
-		unsigned int										getAnimationLayerCount();
-		void												queueLayerAnimation(unsigned int layerIndex, const std::string& animationName, bool repeat = true, int blendTime = 0);
+		
+		
 
 		Transform&											getTransform();
 

@@ -263,11 +263,6 @@ namespace vel
 		layerAnimation.animationTime += stepTime;
 	}
 
-	void Armature::playAnimation(const std::string& animationName, bool repeat, int blendTime)
-	{
-		this->queueLayerAnimation(0, animationName, repeat, blendTime);
-	}
-
 	unsigned int Armature::addAnimationLayer()
 	{
 		this->layers.push_back(std::deque<ActiveAnimation>());
@@ -279,7 +274,12 @@ namespace vel
 		return this->layers.size();
 	}
 
-	void Armature::queueLayerAnimation(unsigned int layerIndex, const std::string& animationName, bool repeat, int blendTime)
+	void Armature::playAnimation(const std::string& animationName, bool repeat, int blendTime)
+	{
+		this->playAnimation(0, animationName, repeat, blendTime);
+	}
+
+	void Armature::playAnimation(unsigned int layerIndex, const std::string& animationName, bool repeat, int blendTime)
 	{
 		ActiveAnimation a;
 		a.animation = this->getAnimation(animationName);
