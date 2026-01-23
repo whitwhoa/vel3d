@@ -100,13 +100,6 @@ namespace vel
 		// !!!! we assume there are always at least 2 keys of animation data !!!!
 		//
 
-		
-		// update previous translation/rotation/scale (required for timestep interpolation)
-		ArmatureBone& bone = this->bones[boneIndex];
-		bone.previousTranslation = bone.translation;
-		bone.previousRotation = bone.rotation;
-		bone.previousScale = bone.scale;
-
 
 		TRS localTRS{};
 		bool haveLocal = false;
