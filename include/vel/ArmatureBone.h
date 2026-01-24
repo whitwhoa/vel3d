@@ -18,6 +18,7 @@ namespace vel
 	struct ArmatureBone
 	{
 		Armature*		parentArmature;
+		size_t			parentArmatureIndex;
 		std::string		name;
 		std::string		parentName;
 		size_t			parent;
@@ -25,12 +26,7 @@ namespace vel
 		glm::vec3		translation;
 		glm::quat		rotation;
 		glm::vec3		scale;
-		glm::mat4		matrix; 
-
-		// used to interpolate render state
-		glm::vec3		previousTranslation;
-		glm::quat		previousRotation;
-		glm::vec3		previousScale;
+		glm::mat4		matrix;
 
 		// list of actors that are parented to this bone, useful
 		// if for example we have an armature that has objects parented to it,
@@ -40,9 +36,5 @@ namespace vel
 		// we need to clear those ArmatureBone pointers on the weapon objects so they
 		// are no longer parented to the armature which no longer exists
 		std::vector<Actor*> childActors;
-
-
-		//glm::mat4		getRenderMatrix();
-		//glm::mat4		getRenderMatrixInterpolated(float alpha);
 	};
 }

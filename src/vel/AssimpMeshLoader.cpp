@@ -133,6 +133,7 @@ namespace vel
 			bone.name = boneName;
 			bone.parentName = nodeParentName == "RootNode" ? boneName : node->mParent->mName.C_Str();
 			bone.parentArmature = this->armature.get();
+			bone.parentArmatureIndex = this->armature->getBones().size();
 
 			this->armature->addBone(bone);
 		}

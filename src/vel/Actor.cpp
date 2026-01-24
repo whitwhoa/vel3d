@@ -143,7 +143,7 @@ namespace vel
 		if (this->parentArmatureBone == nullptr)
 			return this->parentActor->getWorldMatrix() * this->transform.getMatrix();
 
-		//return this->parentActor->getWorldMatrix() * this->parentArmatureBone->matrix * this->transform.getMatrix();
+		// if this actor is parented to the bone of an armature (any actor's armature)
 		return this->parentArmatureBone->matrix * this->transform.getMatrix();
 	}
 
@@ -153,7 +153,7 @@ namespace vel
 		if (!this->isDynamic() || !this->previousTransform)
 			return this->getWorldMatrix();
 
-		auto actorMatrix = Transform::interpolateTransforms(this->previousTransform.value(), this->transform, alpha);
+		glm::mat4 actorMatrix = Transform::interpolateTransforms(this->previousTransform.value(), this->transform, alpha);
 
 		// if this actor has no parent, simply return the matrix of it's transform
 		if (this->parentActor == nullptr && this->parentArmatureBone == nullptr)
@@ -163,13 +163,12 @@ namespace vel
 		if (this->parentArmatureBone == nullptr)
 			return this->parentActor->getWorldRenderMatrix(alpha) * actorMatrix;
 
-		//auto boneMatrix = this->parentArmatureBone->getRenderMatrix(alpha);
-		//return this->parentActor->getWorldRenderMatrix(alpha) * boneMatrix * actorMatrix;
-		
+		// if we made it here, we know that this actor is parented to the bone of an armature (any actor's armature)
 		if (this->parentArmatureBone->parentArmature->getShouldInterpolate())
-			return this->parentArmatureBone->getRenderMatrixInterpolated(alpha) * actorMatrix;
+			return this->parentArmatureBone->parentArmature->getBoneWorldMatrixInterpolated(this->parentArmatureBone->parentArmatureIndex, alpha) * actorMatrix;
 		
-		return this->parentArmatureBone->getRenderMatrix() * actorMatrix;
+		// armature owning our parent bone was not set to interpolate, use non interpolated bone transform matrix
+		return this->parentArmatureBone->parentArmature->getBoneWorldMatrix(this->parentArmatureBone->parentArmatureIndex) * actorMatrix;
 	}
 
 	glm::vec3 Actor::getInterpolatedTranslation(float alpha)
