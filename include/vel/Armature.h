@@ -38,8 +38,6 @@ namespace vel
 		TRS*												posePrev;
 		TRS*												poseCur;
 
-
-		//void												updateBone(size_t layerIndex, size_t boneIndex);
 		void												updateBone(size_t boneIndex);
 
 		glm::vec3											calcTranslation(const float& time, size_t currentKeyIndex, Channel* channel);
@@ -78,9 +76,9 @@ namespace vel
 		void												playAnimation(const std::string& animationName, bool repeat = true, int blendTime = 0);
 		void												playAnimation(unsigned int layerIndex, const std::string& animationName, bool repeat = true, int blendTime = 0);
 		
-		//std::string										getCurrentAnimationName();
-		//unsigned int										getCurrentAnimationCycle();
-		//float												getCurrentAnimationKeyTime();
+		std::string											getCurrentAnimationName(unsigned int layerIndex = 0);
+		unsigned int										getCurrentAnimationCycle(unsigned int layerIndex = 0);
+		float												getCurrentAnimationKeyTime(unsigned int layerIndex = 0);
 
 		
 		Transform&											getTransform();

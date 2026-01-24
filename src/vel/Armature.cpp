@@ -344,26 +344,26 @@ namespace vel
 		return this->matrixFromTRS(t);
 	}
 
-	//float Armature::getCurrentAnimationKeyTime()
-	//{
-	//	return this->activeAnimations.back().animationKeyTime;
-	//}
+	float Armature::getCurrentAnimationKeyTime(unsigned int layerIndex)
+	{
+		return this->layers.at(layerIndex).back().animationKeyTime;
+	}
 
-	//unsigned int Armature::getCurrentAnimationCycle()
-	//{
-	//	if (this->activeAnimations.size() > 0)
-	//		return this->activeAnimations.back().currentAnimationCycle;
-	//	else
-	//		return 0;
-	//}
+	unsigned int Armature::getCurrentAnimationCycle(unsigned int layerIndex)
+	{
+		if (this->layers.at(layerIndex).size() > 0)
+			return this->layers.at(layerIndex).back().currentAnimationCycle;
+		
+		return 0;
+	}
 
-	//std::string Armature::getCurrentAnimationName()
-	//{
-	//	if (this->activeAnimations.size() > 0)
-	//		return this->activeAnimations.back().animationName;
-	//	else
-	//		return "";
-	//}
+	std::string Armature::getCurrentAnimationName(unsigned int layerIndex)
+	{
+		if (this->layers.at(layerIndex).size() > 0)
+			return this->layers.at(layerIndex).back().animationName;
+
+		return "";
+	}
 
 	const std::vector<std::shared_ptr<Animation>>& Armature::getAnimations() const
 	{
