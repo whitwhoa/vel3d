@@ -12,19 +12,21 @@ namespace vel
 		Armature* armature = a->getArmature();
 		bool armInterp = armature->getShouldInterpolate();
 
-		size_t boneIndex = 0;
 		std::vector<std::pair<unsigned int, glm::mat4>> boneData;
 
 		glm::mat4 meshBoneTransform;
 		for (auto& activeBone : a->getActiveBones())
 		{
 			if (armInterp)
-				meshBoneTransform = armature->getBoneWorldMatrixInterpolated(activeBone.first, alphaTime) * mesh->getBone(boneIndex).offsetMatrix;
+			{
+				meshBoneTransform = armature->getBoneWorldMatrixInterpolated(activeBone.first, alphaTime) * mesh->getBone(activeBone.second).offsetMatrix;
+			}
 			else
-				meshBoneTransform = armature->getBoneWorldMatrix(activeBone.first) * mesh->getBone(boneIndex).offsetMatrix;
+			{
+				meshBoneTransform = armature->getBoneWorldMatrix(activeBone.first) * mesh->getBone(activeBone.second).offsetMatrix;
+			}
 
 			boneData.push_back(std::pair<unsigned int, glm::mat4>(activeBone.second, meshBoneTransform));
-			boneIndex++;
 		}
 
 		gpu->updateBonesUBO(boneData);

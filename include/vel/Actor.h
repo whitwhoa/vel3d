@@ -45,11 +45,11 @@ namespace vel
 		ArmatureBone*									parentArmatureBone;
 		std::vector<Actor*>								childActors;
 
-		Armature*										armature;
-		std::vector<std::pair<size_t, unsigned int>>	activeBones; // the bones from the armature that are actually used by the mesh, 
-																	// the glue between an armature and a mesh (index is mesh bone index, value is armature bone index)
-		
-		Mesh*											mesh;
+		Armature*											armature;
+		std::vector<std::pair<unsigned int, unsigned int>>	activeBones; // the bones from the armature that are actually used by the mesh, 
+																		// the glue between an armature and a mesh
+																		// pair::first == armature bone index, pair::second == mesh bone index
+		Mesh*												mesh;
 
 		// std::unique_ptr<Material> so we can have polymorphism, copy constructor and copy assignment operators overwritten to perform clone
 		// as each actor needs it's own copy of it's material
@@ -96,8 +96,8 @@ namespace vel
 		const bool										isDynamic() const;
 		
 
-		const std::vector<std::pair<size_t, unsigned int>>& getActiveBones() const;
-		void											setActiveBones(std::vector<std::pair<size_t, unsigned int>> activeBones);
+		const std::vector<std::pair<unsigned int, unsigned int>>& getActiveBones() const;
+		void											setActiveBones(std::vector<std::pair<unsigned int, unsigned int>> activeBones);
 
 		void											setParentActor(Actor* a);
 		void											setParentArmatureBone(ArmatureBone* b);

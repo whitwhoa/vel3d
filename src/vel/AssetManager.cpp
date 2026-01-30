@@ -260,7 +260,7 @@ namespace vel
 		return -1;
 	}
 
-	// returns a tuple of a vector of mesh names that were loaded along with the name of an armature
+	// returns optional std::pair of a vector of mesh names that were loaded along with the name of an armature
 	// if the loaded file happened to contain an armature as well
 	std::optional<std::pair<std::vector<Mesh*>, Armature*>> AssetManager::loadMesh(const std::string& path)
 	{

@@ -1,6 +1,7 @@
 #include <iostream>
 
 
+#include "vel/logger.hpp"
 #include "vel/App.h"
 #include "vel/Stage.h"
 
@@ -53,16 +54,19 @@ namespace vel
 			auto act = this->getActor(actorName);
 			act->setArmature(sa);
 
-			std::vector<std::pair<size_t, unsigned int>> activeBones;
+			std::vector<std::pair<unsigned int, unsigned int>> activeBones;
 			unsigned int index = 0;
 			for (auto& meshBone : act->getMesh()->getBones())
 			{
 				// associate the index of the armature bone with the index of the mesh bone used for transformation
 				auto biOpt = act->getArmature()->getBoneIndex(meshBone.name);
 				if (!biOpt)
+				{
+					VEL3D_LOG_WARN("Stage::addArmature: Armature: {} does not contain bone with name {}.", act->getArmature()->getName(), meshBone.name);
 					continue;
+				}
 
-				activeBones.push_back(std::pair<size_t, unsigned int>(biOpt.value(), index));
+				activeBones.push_back(std::pair<unsigned int, unsigned int>(biOpt.value(), index));
 				index++;
 			}
 

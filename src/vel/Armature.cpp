@@ -426,9 +426,9 @@ namespace vel
 		return nullptr;
 	}
 
-	std::optional<size_t> Armature::getBoneIndex(const std::string& boneName)
+	std::optional<unsigned int> Armature::getBoneIndex(const std::string& boneName)
 	{
-		for (size_t i = 0; i < this->bones.size(); i++)
+		for (unsigned int i = 0; i < this->bones.size(); i++)
 			if (this->bones.at(i).name == boneName)
 				return i;
 

@@ -64,7 +64,7 @@ namespace vel
 		ArmatureBone*										getBone(const std::string& boneName);
 		const std::string&									getName() const;
 		const std::vector<std::shared_ptr<Animation>>&		getAnimations() const;
-		std::optional<size_t>								getBoneIndex(const std::string& boneName);
+		std::optional<unsigned int>							getBoneIndex(const std::string& boneName);
 		std::shared_ptr<Animation>							getAnimation(const std::string& animationName);
 		void												updateLayer(unsigned int id, float stepTime);
 		void												updateAnimations(float runTime);
