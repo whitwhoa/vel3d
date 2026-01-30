@@ -14,7 +14,7 @@ namespace vel
 	//	return ++copyCount;
 	//}
 
-	Actor::Actor(std::string name) :
+	Actor::Actor(const std::string& name) :
 		name(name),
 		visible(true),
 		dynamic(false),

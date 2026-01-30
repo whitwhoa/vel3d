@@ -52,7 +52,7 @@ namespace vel
 		void*											userPointer;
 
 	public:
-		Actor(std::string name);
+		Actor(const std::string& name);
 
 		
 		Actor(const Actor& original); // Copy constructor
