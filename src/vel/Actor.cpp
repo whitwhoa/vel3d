@@ -88,30 +88,42 @@ namespace vel
 		this->previousTransform.reset();
 	}
 
-	void Actor::removeChildActor(Actor* aIn, bool calledFromRemoveParentActor)
+	//----------------------------------------------------------------------------------------------
+	void Actor::_removeChildActor(Actor* child)
 	{
-		for (size_t i = 0; i < this->childActors.size(); i++)
-		{
-			if (this->childActors.at(i) == aIn)
-			{
-				if (!calledFromRemoveParentActor)
-					aIn->removeParentActor(true);
-
-				this->childActors.erase(this->childActors.begin() + i);
-			}
-		}
+		auto& v = this->childActors;
+		auto it = std::find(v.begin(), v.end(), child);
+		if (it != v.end())
+			v.erase(it);
 	}
 
-	void Actor::removeParentActor(bool calledFromRemoveChildActor)
+	void Actor::_removeParentActor()
 	{
-		if (this->parentActor != nullptr)
-		{
-			if (!calledFromRemoveChildActor)
-				this->parentActor->removeChildActor(this, true);
-
-			this->parentActor = nullptr;
-		}
+		this->parentActor = nullptr;
 	}
+
+	// called from child, means i no longer want to be parented to another actor, so remove me from it's
+	// list of children, then remove it's pointer from me
+	void Actor::removeParentActor()
+	{
+		if (!this->parentActor)
+			return;
+
+		this->parentActor->_removeChildActor(this);
+		this->_removeParentActor();
+	}
+
+	// called from parent, means i don't want the provided actor pointer to be parented to me anymore, so
+	// remove it from my list, then remove my pointer from the child
+	void Actor::removeChildActor(Actor* child)
+	{
+		if (!child || child->parentActor != this)
+			return;
+
+		this->_removeChildActor(child);
+		child->_removeParentActor();
+	}
+	// --------------------------------------------------------------------------
 
 	void Actor::setName(std::string newName)
 	{

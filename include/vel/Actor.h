@@ -35,6 +35,12 @@ namespace vel
 		Transform										transform;
 		std::optional<Transform>						previousTransform;
 
+		/*
+			> If parentActor is not null, this actor is a child of the actor pointed to by parentActor
+			> TODO: add statement about bone when we flesh out the rest of the logic
+			> If childActors.size() > 0, this actor is a parent pointed to by all Actors within childActors
+			> If both of the above statements can be true, meaning that any Actor can be both child and parent
+		*/
 		Actor*											parentActor;
 		ArmatureBone*									parentArmatureBone;
 		std::vector<Actor*>								childActors;
@@ -50,6 +56,11 @@ namespace vel
 		std::unique_ptr<Material>						material; // actor must own it's own copy of a material because of animators
 		
 		void*											userPointer;
+
+
+		void											_removeParentActor();
+		void											_removeChildActor(Actor* child);
+		
 
 	public:
 		Actor(const std::string& name);
@@ -107,8 +118,8 @@ namespace vel
 		glm::quat										getInterpolatedRotation(float alpha);
 		glm::vec3										getInterpolatedScale(float alpha);
 
-		void											removeParentActor(bool calledFromRemoveChildActor = false);
-		void											removeChildActor(Actor* a, bool calledFromRemoveParentActor = false);		
+		void											removeParentActor();
+		void											removeChildActor(Actor* child);
 
 		void*											getUserPointer();
 		void											setUserPointer(void* p);
