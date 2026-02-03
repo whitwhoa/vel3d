@@ -12,22 +12,45 @@
 
 namespace vel
 {
+	enum class AnimUpdateMode 
+	{ 
+		SimInterpolated, 
+		SimStep,
+		RenderOnly 
+	};
+
 	class SkeletonAnimator
 	{
 	private:
-		bool logical;
+		const ozz::animation::Skeleton*				skeleton;
+		AnimUpdateMode								mode;
 
-	protected:
-		ozz::animation::Skeleton* skeleton;
-		std::vector<ozz::animation::Animation*> 	animations;
+		// TODO: Samplers
+		// TODO: Additives
 
-		ozz::vector<ozz::math::SoaTransform> 		localTransforms;
-		ozz::vector<ozz::math::Float4x4> 			modelMatrices;
+		// Depending on AnimUpdateMode, we either utilize localsA/B and the double buffer
+		// technique to then later interpolate values into finalLocalTransforms, or use
+		// finalLocalTransforms directly
+
+		ozz::vector<ozz::math::SoaTransform>		localsA;
+		ozz::vector<ozz::math::SoaTransform>		localsB;
+		ozz::vector<ozz::math::SoaTransform>*		simCurr;
+		ozz::vector<ozz::math::SoaTransform>*		simPrev;
+		ozz::vector<ozz::math::Float4x4>			simModels;
+
+
+		ozz::vector<ozz::math::SoaTransform>		renderLocals;
+		ozz::vector<ozz::math::Float4x4>			renderModels;
+
+		bool		sampleInto(ozz::vector<ozz::math::SoaTransform>& dst);
 
 	public:
-		SkeletonAnimator(ozz::animation::Skeleton* skeleton, bool isLogical = false);
+		SkeletonAnimator(ozz::animation::Skeleton* skeleton, AnimUpdateMode mode = AnimUpdateMode::RenderOnly);
 
-		unsigned int addAnimation(ozz::animation::Animation* a);
+		
+
+		void			logicUpdate(float dt);
+		void			renderUpdate(float dt);
 
 
 
