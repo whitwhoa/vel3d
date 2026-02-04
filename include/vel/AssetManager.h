@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include <optional>
 
+#include "ozz/animation/runtime/animation.h"
+#include "ozz/animation/runtime/skeleton.h"
 
 #include "vel/Shader.h"
 #include "vel/Mesh.h"
@@ -40,6 +42,8 @@ namespace vel
 		std::vector<std::pair<std::unique_ptr<Material>, int>>		materials;
 		std::vector<std::pair<std::unique_ptr<FontBitmap>, int>>	fontBitmaps;
 		std::vector<std::pair<std::unique_ptr<Camera>, int>>		cameras;
+		std::unordered_map<std::string, std::pair<std::unique_ptr<ozz::animation::Skeleton>, int>> skeletons;
+		std::unordered_map<std::string, std::pair<std::unique_ptr<ozz::animation::Animation>, int>> animations;
 
 
 		int													getShaderIndex(const std::string& name);
@@ -102,10 +106,16 @@ namespace vel
 		Camera*						addCamera(std::unique_ptr<Camera> c);
 		Camera*						getCamera(const std::string& name);
 		void						removeCamera(const Camera* pCamera);
-		
 
 		std::unique_ptr<Mesh>		loadTextActorMesh(const TextActor* ta);
+
+		ozz::animation::Skeleton*	loadSkeleton(const std::string& name, const std::string& path);
+		ozz::animation::Skeleton*	getSkeleton(const std::string& name);
+		void						removeSkeleton(const std::string& name);
 		
+		ozz::animation::Animation*	loadAnimation(const std::string& name, const std::string& path);
+		ozz::animation::Animation*	getAnimation(const std::string& name);
+		void						removeAnimation(const std::string& name);
 
 	};
 

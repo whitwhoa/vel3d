@@ -161,19 +161,19 @@ namespace vel
 		for (auto& pCam : this->camerasInUse)
 			this->assetManager->removeCamera(pCam);
 		
-		for(auto& pMaterial : this->materialsInUse)
+		for (auto& pMaterial : this->materialsInUse)
 			this->assetManager->removeMaterial(pMaterial);
 		
-		for(auto& pTexture : this->texturesInUse)
+		for (auto& pTexture : this->texturesInUse)
 			this->assetManager->removeTexture(pTexture);
 
 		for (auto& pFontBitmap : this->fontBitmapsInUse)
 			this->assetManager->removeFontBitmap(pFontBitmap);
 		
-		for(auto& pMesh : this->meshesInUse)
+		for (auto& pMesh : this->meshesInUse)
 			this->assetManager->removeMesh(pMesh);
         
-		for(auto& pShader : this->shadersInUse)
+		for (auto& pShader : this->shadersInUse)
 			this->assetManager->removeShader(pShader);
 
 		for (auto& cw : this->collisionWorlds)
@@ -181,6 +181,12 @@ namespace vel
 
 		for (auto& s : this->soundsInUse)
 			this->audioDevice->removeSound(s);
+
+		for (auto& s : this->skeletonsInUse)
+			this->assetManager->removeSkeleton(s);
+
+		for (auto& a : this->animationsInUse)
+			this->assetManager->removeAnimation(a);
 
 		this->gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
 	}
@@ -204,7 +210,6 @@ namespace vel
 		return fb;
 	}
 
-	
 	Texture* Scene::loadTexture(const std::string& name, const std::string& path, bool freeAfterGPULoad, unsigned int uvWrapping)
 	{
 		Texture* t = this->assetManager->loadTexture(name, path, freeAfterGPULoad, uvWrapping);
@@ -212,6 +217,24 @@ namespace vel
 		this->texturesInUse.push_back(t);
 
 		return t;
+	}
+
+	ozz::animation::Skeleton* Scene::loadSkeleton(const std::string& name, const std::string& path)
+	{
+		ozz::animation::Skeleton* s = this->assetManager->loadSkeleton(name, path);
+
+		this->skeletonsInUse.push_back(name);
+
+		return s;
+	}
+
+	ozz::animation::Animation* Scene::loadAnimation(const std::string& name, const std::string& path)
+	{
+		ozz::animation::Animation* s = this->assetManager->loadAnimation(name, path);
+
+		this->animationsInUse.push_back(name);
+
+		return s;
 	}
 	
 	void Scene::addShaderInUse(Shader* s)

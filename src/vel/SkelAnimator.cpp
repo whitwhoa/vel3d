@@ -80,6 +80,22 @@ namespace vel
 			O.scale = this->lerpSoaFloat3(A.scale, B.scale, t);
 			O.rotation = this->nLerpSoaQuaternion(A.rotation, B.rotation, t);
 		}
+
+		ozz::animation::LocalToModelJob ltm;
+		ltm.skeleton = this->skeleton;
+		ltm.input = make_span(this->renderLocalTransforms);
+		ltm.output = make_span(this->renderModelMatrices);
+		ltm.Run();
+	}
+
+	const ozz::math::Float4x4& SkelAnimator::getSimBoneMatrix(unsigned int i)
+	{
+		return this->simModelMatrices.at(i);
+	}
+
+	const ozz::math::Float4x4& SkelAnimator::getRenderBoneMatrix(unsigned int i)
+	{
+		return this->renderModelMatrices.at(i);
 	}
 
 }

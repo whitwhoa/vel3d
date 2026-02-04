@@ -41,5 +41,8 @@ namespace vel
 		void			update(float logicTick);
 		void			renderLerp(float alpha);
 
+		const ozz::math::Float4x4& getSimBoneMatrix(unsigned int i);
+		const ozz::math::Float4x4& getRenderBoneMatrix(unsigned int i);
+
 	};
 }
