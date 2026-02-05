@@ -4,6 +4,9 @@
 #include <memory>
 #include <cstdint>
 
+#include "ozz/animation/runtime/skeleton.h"
+#include "ozz/animation//runtime/animation.h"
+
 #include "vel/AssetManager.h"
 #include "vel/Stage.h"
 #include "vel/CollisionWorld.h"
@@ -23,14 +26,19 @@ namespace vel
 		float									fixedAnimationTime;
 
 		std::vector<Mesh*>						meshesInUse;
-		std::vector<Armature*>					armaturesInUse;
+		std::vector<std::string>				skeletonsInUse;
+		std::vector<std::string>				animationsInUse;
 
 		int										getCollisionWorldIndex(const std::string& name);
 
 		bool									loadMesh(const std::string& path);
 		Mesh*									getMesh(const std::string& name);
 
-		Armature*								getArmature(const std::string& name);
+		ozz::animation::Skeleton*				loadSkeleton(const std::string& name, const std::string& path);
+		ozz::animation::Skeleton*				getSkeleton(const std::string& name);
+
+		ozz::animation::Animation*				loadAnimation(const std::string& name, const std::string& path);
+		ozz::animation::Animation*				getAnimation(const std::string& name);
 
 		Stage*									addStage(const std::string& name);
 		Stage*									getStage(const std::string& name);

@@ -5,7 +5,6 @@
 #include <string>
 #include <optional>
 
-#include "ozz/animation/runtime/skeleton.h"
 
 #include "vel/GPU.h"
 #include "vel/InputState.h"
@@ -60,8 +59,7 @@ namespace vel
 		std::vector<FontBitmap*> 			fontBitmapsInUse;
 		std::vector<Camera*>				camerasInUse;
 		std::vector<std::string>			soundsInUse;
-		std::vector<std::string>			skeletonsInUse;
-		std::vector<std::string>			animationsInUse;
+		
 
 		glm::vec3							cameraPosition;
 		glm::mat4							cameraProjectionMatrix;
@@ -81,8 +79,6 @@ namespace vel
 		int									audioGroupKey;
 		Texture*							loadTexture(const std::string& name, const std::string& path, bool freeAfterGPULoad = true, unsigned int uvWrapping = 1);
 		FontBitmap*							loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath);
-		ozz::animation::Skeleton*			loadSkeleton(const std::string& name, const std::string& path);
-		ozz::animation::Animation*			loadAnimation(const std::string& name, const std::string& path);
 
 		void								loadBGMSound(const std::string& path);
 		bool								loadSFXSound(const std::string& path);
@@ -138,8 +134,7 @@ namespace vel
 		FontBitmap*							getFontBitmap(const std::string& name);
 		Camera*								getCamera(const std::string& name);
 		Material*							getMaterial(const std::string& name);
-		ozz::animation::Skeleton*			getSkeleton(const std::string& name);
-		ozz::animation::Animation*			getAnimation(const std::string& name);
+		
 
 	public:
 		Scene(const std::string& dataDir, GPU* gpu);

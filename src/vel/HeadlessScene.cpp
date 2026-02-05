@@ -55,20 +55,15 @@ namespace vel
 
 	bool HeadlessScene::loadMesh(const std::string& path)
 	{
-		auto mdpOpt = this->assetManager->loadMesh(path);
-		if (!mdpOpt)
+		std::vector<Mesh*> loadedMeshes = this->assetManager->loadMesh(path);
+		if (loadedMeshes.size() == 0)
 		{
 			VEL3D_LOG_DEBUG("HeadlessScene::loadMesh: call to assetManager->loadMesh resulted in nullopt");
 			return false;
 		}
 
-		auto meshDataPair = mdpOpt.value();
-
-		for (auto& t : meshDataPair.first)
+		for (auto& t : loadedMeshes)
 			this->meshesInUse.push_back(t);
-
-		if (meshDataPair.second)
-			this->armaturesInUse.push_back(meshDataPair.second);
 
 		return true;
 	}
@@ -78,9 +73,32 @@ namespace vel
 		return this->assetManager->getMesh(name);
 	}
 
-	Armature* HeadlessScene::getArmature(const std::string& name)
+	ozz::animation::Skeleton* HeadlessScene::loadSkeleton(const std::string& name, const std::string& path)
 	{
-		return this->assetManager->getArmature(name);
+		ozz::animation::Skeleton* s = this->assetManager->loadSkeleton(name, path);
+
+		this->skeletonsInUse.push_back(name);
+
+		return s;
+	}
+
+	ozz::animation::Skeleton* HeadlessScene::getSkeleton(const std::string& name)
+	{
+		return this->assetManager->getSkeleton(name);
+	}
+
+	ozz::animation::Animation* HeadlessScene::loadAnimation(const std::string& name, const std::string& path)
+	{
+		ozz::animation::Animation* s = this->assetManager->loadAnimation(name, path);
+
+		this->animationsInUse.push_back(name);
+
+		return s;
+	}
+
+	ozz::animation::Animation* HeadlessScene::getAnimation(const std::string& name)
+	{
+		return this->assetManager->getAnimation(name);
 	}
 
 	Stage* HeadlessScene::addStage(const std::string& name)

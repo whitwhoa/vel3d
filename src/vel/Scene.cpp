@@ -154,9 +154,6 @@ namespace vel
 	void Scene::freeAssets()
 	{
 		VEL3D_LOG_DEBUG("Freeing assets for scene: {}", this->name);
-
-		for(auto& pArm : this->armaturesInUse)
-			this->assetManager->removeArmature(pArm);
         
 		for (auto& pCam : this->camerasInUse)
 			this->assetManager->removeCamera(pCam);
@@ -217,24 +214,6 @@ namespace vel
 		this->texturesInUse.push_back(t);
 
 		return t;
-	}
-
-	ozz::animation::Skeleton* Scene::loadSkeleton(const std::string& name, const std::string& path)
-	{
-		ozz::animation::Skeleton* s = this->assetManager->loadSkeleton(name, path);
-
-		this->skeletonsInUse.push_back(name);
-
-		return s;
-	}
-
-	ozz::animation::Animation* Scene::loadAnimation(const std::string& name, const std::string& path)
-	{
-		ozz::animation::Animation* s = this->assetManager->loadAnimation(name, path);
-
-		this->animationsInUse.push_back(name);
-
-		return s;
 	}
 	
 	void Scene::addShaderInUse(Shader* s)

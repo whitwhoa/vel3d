@@ -26,7 +26,6 @@ namespace vel
 		std::vector<unsigned int>           indices;
 		std::vector<MeshBone>				bones;
 		std::optional<GpuMesh>              gpuMesh;
-		glm::mat4							globalInverseMatrix;
 		std::optional<AABB>					aabb;
 
 
@@ -43,8 +42,6 @@ namespace vel
 		std::vector<unsigned int>&			getIndices();
 		const bool                          isRenderable() const;
 		const bool                          hasBones() const;
-		void								setGlobalInverseMatrix(glm::mat4 gim);
-		glm::mat4							getGlobalInverseMatrix();
 		MeshBone&							getBone(size_t index);
 		MeshBone*							getBone(std::string boneName);
 		const std::vector<MeshBone>&		getBones() const;

@@ -263,68 +263,43 @@ namespace vel
 		return -1;
 	}
 
-	// returns optional std::pair of a vector of mesh names that were loaded along with the name of an armature
-	// if the loaded file happened to contain an armature as well
-	std::optional<std::pair<std::vector<Mesh*>, Armature*>> AssetManager::loadMesh(const std::string& path)
+	std::vector<Mesh*> AssetManager::loadMesh(const std::string& path)
 	{
-		std::optional<std::pair<std::vector<std::string>, std::string>> plOpt = this->meshLoader->preload(path);
-		if (!plOpt)
+		const std::vector<std::string>& preLoadData = this->meshLoader->preload(path);
+		if (preLoadData.size() == 0)
 		{
 			VEL3D_LOG_DEBUG("AssetManager::loadMesh: failed to preload required data for loading of mesh");
-			return std::nullopt;
+			return {};
 		}
 
-		auto preLoadData = plOpt.value();
-
-		std::pair<std::vector<Mesh*>, Armature*> out({}, nullptr);
+		std::vector<Mesh*> out;
 
 		// check for duplicates
-		std::pair<std::vector<std::string>, std::string> requiredData;
-		for (auto& pld : preLoadData.first)
+		std::vector<std::string> requiredData;
+		for (auto& pld : preLoadData)
 		{
 			int meshIndex = this->getMeshIndex(pld);
 
 			if (meshIndex == -1)
 			{
-				requiredData.first.push_back(pld);
+				requiredData.push_back(pld);
 			}		
 			else
 			{
 				this->meshes.at(meshIndex).second++;
-				out.first.push_back(this->meshes.at(meshIndex).first.get());
+				out.push_back(this->meshes.at(meshIndex).first.get());
 			}
 		}
 
-		if (preLoadData.second != "")
-		{
-			int armatureIndex = this->getArmatureIndex(preLoadData.second);
+		std::vector<std::unique_ptr<Mesh>> loadedAssets = this->meshLoader->load(&requiredData);
 
-			if (armatureIndex == -1)
-			{
-				requiredData.second = preLoadData.second;
-			}
-			else
-			{
-				this->armatures.at(armatureIndex).second++;
-				out.second = this->armatures.at(armatureIndex).first.get();
-			}
-		}
-
-		auto loadedAssets = this->meshLoader->load(requiredData);
-
-		for (auto& lam : loadedAssets.first)
+		for (auto& lam : loadedAssets)
 		{
 			this->meshes.push_back(std::pair<std::unique_ptr<Mesh>, int>(std::move(lam), 1));
-			out.first.push_back(this->meshes.back().first.get());
+			out.push_back(this->meshes.back().first.get());
 
 			if (this->gpu != nullptr)
 				this->gpu->loadMesh(this->meshes.back().first.get());
-		}
-
-		if (loadedAssets.second)
-		{
-			this->armatures.push_back(std::pair<std::unique_ptr<Armature>, int>(std::move(loadedAssets.second), 1));
-			out.second = this->armatures.back().first.get();
 		}
 
 		this->meshLoader->reset();
@@ -403,61 +378,61 @@ namespace vel
 	}
 
 
-	/***********************************************************************************************
-	* ARMATURES
-	************************************************************************************************/
-	int AssetManager::getArmatureIndex(const std::string& name)
-	{
-		for (int i = 0; i < this->armatures.size(); i++)
-			if (this->armatures.at(i).first->getName() == name)
-				return i;
+	///***********************************************************************************************
+	//* ARMATURES
+	//************************************************************************************************/
+	//int AssetManager::getArmatureIndex(const std::string& name)
+	//{
+	//	for (int i = 0; i < this->armatures.size(); i++)
+	//		if (this->armatures.at(i).first->getName() == name)
+	//			return i;
 
-		return -1;
-	}
+	//	return -1;
+	//}
 
-	int AssetManager::getArmatureIndex(const Armature* a)
-	{
-		for (int i = 0; i < this->armatures.size(); i++)
-			if (this->armatures.at(i).first.get() == a)
-				return i;
+	//int AssetManager::getArmatureIndex(const Armature* a)
+	//{
+	//	for (int i = 0; i < this->armatures.size(); i++)
+	//		if (this->armatures.at(i).first.get() == a)
+	//			return i;
 
-		return -1;
-	}
+	//	return -1;
+	//}
 
-	Armature* AssetManager::getArmature(const std::string& name)
-	{
-		int armIndex = this->getArmatureIndex(name);
+	//Armature* AssetManager::getArmature(const std::string& name)
+	//{
+	//	int armIndex = this->getArmatureIndex(name);
 
-		if (armIndex == -1)
-		{
-			VEL3D_LOG_DEBUG("AssetManager::getArmature(): Attempting to get armature that does not exis: {}", name);
-			return nullptr;
-		}
+	//	if (armIndex == -1)
+	//	{
+	//		VEL3D_LOG_DEBUG("AssetManager::getArmature(): Attempting to get armature that does not exis: {}", name);
+	//		return nullptr;
+	//	}
 
-		return this->armatures.at(armIndex).first.get();
-	}
+	//	return this->armatures.at(armIndex).first.get();
+	//}
 
-	void AssetManager::removeArmature(const Armature* pArm)
-	{
-		int armIndex = this->getArmatureIndex(pArm);
+	//void AssetManager::removeArmature(const Armature* pArm)
+	//{
+	//	int armIndex = this->getArmatureIndex(pArm);
 
-		if (armIndex == -1)
-			return;
+	//	if (armIndex == -1)
+	//		return;
 
-		auto& a = this->armatures.at(armIndex);
-		a.second--;
+	//	auto& a = this->armatures.at(armIndex);
+	//	a.second--;
 
-		if (a.second == 0)
-		{
-			VEL3D_LOG_DEBUG("Full remove Armature: {}", pArm->getName());
+	//	if (a.second == 0)
+	//	{
+	//		VEL3D_LOG_DEBUG("Full remove Armature: {}", pArm->getName());
 
-			this->armatures.erase(this->armatures.begin() + armIndex);
+	//		this->armatures.erase(this->armatures.begin() + armIndex);
 
-			return;
-		}
+	//		return;
+	//	}
 
-		VEL3D_LOG_DEBUG("Decrement Armature usageCount, retain: {}", pArm->getName());
-	}
+	//	VEL3D_LOG_DEBUG("Decrement Armature usageCount, retain: {}", pArm->getName());
+	//}
 
 
 	/***********************************************************************************************

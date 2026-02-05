@@ -41,22 +41,11 @@ namespace vel
 		return this->bones.at(index);
 	}
 
-	glm::mat4 Mesh::getGlobalInverseMatrix()
-	{
-		return this->globalInverseMatrix;
-	}
-
-	void Mesh::setGlobalInverseMatrix(glm::mat4 gim)
-	{
-		this->globalInverseMatrix = gim;
-	}
-
 	const bool Mesh::hasBones() const
 	{
 		if (this->bones.size() > 0)
-		{
 			return true;
-		}
+
 		return false;
 	}
 
@@ -69,6 +58,7 @@ namespace vel
 			{
 				this->vertices[vertexIndex].weights.ids[i] = boneIndex;
 				this->vertices[vertexIndex].weights.weights[i] = weight;
+
 				return;
 			}
 		}		

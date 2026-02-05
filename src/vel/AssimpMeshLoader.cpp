@@ -12,11 +12,7 @@ namespace vel
 	AssimpMeshLoader::AssimpMeshLoader() :
 		impScene(nullptr),
 		currentAssetFile(""),
-		armatureInFile(""),
-		armatureToLoad(""),
-		armature(nullptr),
-		currentMeshTextureId(0),
-		currentGlobalInverseMatrix(glm::mat4())
+		currentMeshTextureId(0)
 	{
 		
 	}
@@ -27,185 +23,46 @@ namespace vel
 		this->impScene = nullptr;
 		this->currentAssetFile = "";
 		this->meshesInFile.clear();
-		this->armatureInFile = "";
-		this->meshesToLoad.clear();
-		this->armatureToLoad = "";
 		this->meshes.clear();
-		this->armature = nullptr;
 		this->currentMeshTextureId = 0;
-		this->processedNodes.clear();
-		this->currentMeshBones.clear();
-		this->currentGlobalInverseMatrix = glm::mat4();
 	}
 
-	std::optional<std::pair<std::vector<std::string>, std::string>> AssimpMeshLoader::preload(const std::string& filePath)
+	void AssimpMeshLoader::preProcessNode(aiNode* node)
+	{
+		std::string nodeName = node->mName.C_Str();
+
+		if (nodeName != "RootNode" && node->mNumMeshes > 0)
+			this->meshesInFile.push_back(nodeName);
+
+		for (unsigned int i = 0; i < node->mNumChildren; i++)
+			this->preProcessNode(node->mChildren[i]);
+	}
+
+	const std::vector<std::string>& AssimpMeshLoader::preload(const std::string& filePath)
 	{
 		this->currentAssetFile = filePath;
-		std::pair<std::vector<std::string>, std::string> output;
 
 		this->impScene = this->aiImporter.ReadFile(this->currentAssetFile, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
 		if (!this->impScene || !this->impScene->mRootNode)
 		{
 			VEL3D_LOG_DEBUG("AssimpMeshLoader::preload(): {}", this->aiImporter.GetErrorString());
-			return std::nullopt;
+		}
+		else
+		{
+			this->preProcessNode(this->impScene->mRootNode);
 		}
 
-		this->preProcessNode(this->impScene->mRootNode);
-
-		this->processedNodes.clear();
-
-		output.first = this->meshesInFile;
-		output.second = this->armatureInFile;
-
-		return output;
+		return this->meshesInFile;
 	}
 
-	std::pair<std::vector<std::unique_ptr<Mesh>>, std::unique_ptr<Armature>>
-		AssimpMeshLoader::load(const std::pair<const std::vector<std::string>, const std::string>& loadables)
+	std::vector<std::unique_ptr<Mesh>> AssimpMeshLoader::load(const std::vector<std::string>* loadables)
 	{
-		this->meshesToLoad = loadables.first;
-		this->armatureToLoad = loadables.second;
+		this->meshesToLoad = loadables;
 
 		this->processNode(this->impScene->mRootNode);
 
-		return std::pair<std::vector<std::unique_ptr<Mesh>>, std::unique_ptr<Armature>>(std::move(this->meshes), std::move(this->armature));
-	}
-
-	bool AssimpMeshLoader::isRootArmatureNode(aiNode* node)
-	{
-		// if this node has children, and no mesh, assume that it is an armature
-		// (this is very naive, but should work for the time being so we can move forward
-		// with skeletal animation implementation. This method can be revised in the future
-		// to be more accurate)
-		std::string nodeName = node->mParent->mName.C_Str();
-		if (nodeName == "RootNode" && node->mNumChildren > 0 && node->mNumMeshes == 0)
-			return true;
-		else
-			return false;
-	}
-
-	bool AssimpMeshLoader::nodeHasBeenProcessed(aiNode* in)
-	{
-		for (auto& pn : this->processedNodes)
-			if (pn == in)
-				return true;
-
-		return false;
-	}
-
-	void AssimpMeshLoader::preProcessNode(aiNode* node)
-	{
-		std::string nodeName = node->mName.C_Str();
-		//std::cout << "processNode:" << nodeName << std::endl;
-
-		// If this is not the RootNode and this node has not already been processed
-		if (nodeName != "RootNode" && !this->nodeHasBeenProcessed(node))
-		{
-			if (this->isRootArmatureNode(node))
-				this->armatureInFile = nodeName;
-			else
-				this->meshesInFile.push_back(nodeName);
-		}
-
-		// Do the same for each of its children
-		for (unsigned int i = 0; i < node->mNumChildren; i++)
-			this->preProcessNode(node->mChildren[i]);
-	}
-
-	void AssimpMeshLoader::processArmatureNode(aiNode* node)
-	{
-		std::string nodeName = node->mName.C_Str();
-
-		if (nodeName != "RootNode" && !string_contains("_end", nodeName))
-		{
-
-			std::string boneName = nodeName;
-			std::string nodeParentName = node->mParent->mName.C_Str();
-
-			if (nodeParentName == "RootNode")
-			{
-				VEL3D_LOG_DEBUG("Loading new Armature: {}", nodeName);
-				this->armature = std::make_unique<Armature>(boneName);
-			}
-
-			ArmatureBone bone;
-			bone.name = boneName;
-			bone.parentName = nodeParentName == "RootNode" ? boneName : node->mParent->mName.C_Str();
-			bone.parentArmature = this->armature.get();
-			bone.parentArmatureIndex = this->armature->getBones().size();
-
-			this->armature->addBone(bone);
-		}
-
-		this->processedNodes.push_back(node);
-
-		// Do the same for each of its children
-		for (unsigned int i = 0; i < node->mNumChildren; i++)
-			this->processArmatureNode(node->mChildren[i]);
-	}
-
-	void AssimpMeshLoader::processAnimations()
-	{
-		for (unsigned int i = 0; i < this->impScene->mNumAnimations; i++)
-		{
-			// create a new animation
-			std::shared_ptr<Animation> a = std::make_shared<Animation>();
-			std::string animationName = this->impScene->mAnimations[i]->mName.C_Str();
-			a->name = explode_string(animationName, '|')[1];
-			a->duration = this->impScene->mAnimations[i]->mDuration;
-			a->tps = this->impScene->mAnimations[i]->mTicksPerSecond;
-
-			// add all channels to animation. Pre-load data into tmpChannels, then sort and add to the animation
-			// so that the indexes of each bone are aligned with the bones of the armature, allowing us O(1) lookup
-			// at runtime, without the need for hashing a string and accessing non-contiguous memory. We're doing this
-			// this way because I'm not certain that the bones in the channels are in the same order as the bones
-			// in the armature. This safeguards against that, at the cost of having to copy all of the animation data
-			// twice. If loading times ever become an issue, this might be an area that could be improved.
-			std::unordered_map<std::string, Channel> tmpChannels;
-			for (unsigned int j = 0; j < this->impScene->mAnimations[i]->mNumChannels; j++)
-			{
-				auto c = Channel();
-
-				// positions
-				for (unsigned int k = 0; k < this->impScene->mAnimations[i]->mChannels[j]->mNumPositionKeys; k++)
-				{
-					auto position = this->impScene->mAnimations[i]->mChannels[j]->mPositionKeys[k].mValue;
-					auto time = (float)this->impScene->mAnimations[i]->mChannels[j]->mPositionKeys[k].mTime;
-					c.positionKeyTimes.push_back(time);
-					c.positionKeyValues.push_back(glm::vec3(position.x, position.y, position.z));
-				}
-
-				// rotations
-				for (unsigned int k = 0; k < this->impScene->mAnimations[i]->mChannels[j]->mNumRotationKeys; k++)
-				{
-					auto rotation = this->impScene->mAnimations[i]->mChannels[j]->mRotationKeys[k].mValue;
-					auto time = (float)this->impScene->mAnimations[i]->mChannels[j]->mPositionKeys[k].mTime;
-					c.rotationKeyTimes.push_back(time);
-					c.rotationKeyValues.push_back(glm::quat(rotation.w, rotation.x, rotation.y, rotation.z));
-				}
-
-				// scalings
-				for (unsigned int k = 0; k < this->impScene->mAnimations[i]->mChannels[j]->mNumScalingKeys; k++)
-				{
-					auto scale = this->impScene->mAnimations[i]->mChannels[j]->mScalingKeys[k].mValue;
-					auto time = (float)this->impScene->mAnimations[i]->mChannels[j]->mPositionKeys[k].mTime;
-					c.scalingKeyTimes.push_back(time);
-					c.scalingKeyValues.push_back(glm::vec3(scale.x, scale.y, scale.z));
-				}
-
-				// add channel to tmpChannels
-				tmpChannels[this->impScene->mAnimations[i]->mChannels[j]->mNodeName.C_Str()] = c;
-			}
-
-			for (auto& ab : this->armature->getBones())
-			{
-				a->channels.push_back(tmpChannels[ab.name]);
-			}
-
-			// add this animation name/index to the armature's animations vector
-			this->armature->addAnimation(a);
-		}
+		return std::move(this->meshes);
 	}
 
 	void AssimpMeshLoader::processMesh(aiMesh* aiMesh, std::vector<Vertex>& meshVertices, 
@@ -323,110 +180,82 @@ namespace vel
 	{
 		std::string nodeName = node->mName.C_Str();
 
-		if (nodeName == "RootNode")
-			this->currentGlobalInverseMatrix = glm::inverse(this->aiMatrix4x4ToGlm(node->mTransformation));
-
-		// If this is not the RootNode and this node has not already been processed
-		if (nodeName != "RootNode" && !this->nodeHasBeenProcessed(node))
+		// If this is not the RootNode
+		if (nodeName != "RootNode")
 		{
-			if (nodeName == this->armatureToLoad)
+			// use node name for mesh name...
+
+			bool shouldLoadMesh = false;
+			for (auto& mn : *this->meshesToLoad)
 			{
-				this->processArmatureNode(node);
-
-				this->processAnimations();
-
-				// Obtain parent indexes for each bone using their
-				// boneNames (done so that these indexes can be used at runtime instead
-				// of loops and string comparisons)
-				for (auto& b : this->armature->getBones())
+				if (mn == nodeName)
 				{
-					std::optional<size_t> biOpt = this->armature->getBoneIndex(b.parentName);
-					if (!biOpt)
-						return;
-
-					b.parent = biOpt.value();
+					shouldLoadMesh = true;
+					break;
 				}
-
-				// Initialize pose buffers that we utilize to avoid copying all data every frame for
-				// render interpolation
-				this->armature->initPoseBuffers();
 			}
-			else
+
+			if (!shouldLoadMesh)
+				return;
+
+			// ...otherwise loop through all meshes for this node, creating a Mesh for each one
+
+			VEL3D_LOG_DEBUG("Loading new Mesh: {}", nodeName);
+
+
+			// create one single mesh from all of the aiMeshes
+
+			std::vector<Vertex> meshVertices = {};
+			std::vector<unsigned int> meshIndices = {};
+			std::vector<MeshBone> meshBones = {};
+
+			unsigned int meshCount = node->mNumMeshes;
+
+			// if more than one mesh then we need to sort these meshes by the names of their
+			// materials, unless the name of their material is "DefaultMaterial", then we process
+			// those after the named material meshes
+			std::vector<aiMesh*> defaultMaterialMeshes;
+			std::vector<std::pair<std::string, aiMesh*>> customMaterialMeshes;
+			for (unsigned int i = 0; i < meshCount; i++)
 			{
-				// use node name for mesh name...
-
-				bool shouldLoadMesh = false;
-				for (auto& mn : this->meshesToLoad)
+				auto tmpMesh = this->impScene->mMeshes[node->mMeshes[(i)]];
+				auto matName = this->impScene->mMaterials[tmpMesh->mMaterialIndex]->GetName().C_Str();
+				if (matName == "DefaultMaterial")
 				{
-					if (mn == nodeName)
-					{
-						shouldLoadMesh = true;
-						break;
-					}
+					defaultMaterialMeshes.push_back(tmpMesh);
+					continue;
 				}
 
-				if (!shouldLoadMesh)
-					return;
-
-				// ...otherwise loop through all meshes for this node, creating a Mesh for each one
-
-				VEL3D_LOG_DEBUG("Loading new Mesh: {}", nodeName);
-
-
-				// create one single mesh from all of the aiMeshes
-
-				std::vector<Vertex> meshVertices = {};
-				std::vector<unsigned int> meshIndices = {};
-				std::vector<MeshBone> meshBones = {};
-
-				auto meshCount = node->mNumMeshes;
-
-				// if more than one mesh then we need to sort these meshes by the names of their
-				// materials, unless the name of their material is "DefaultMaterial", then we process
-				// those after the named material meshes
-				std::vector<aiMesh*> defaultMaterialMeshes;
-				std::vector<std::pair<std::string, aiMesh*>> customMaterialMeshes;
-				for (unsigned int i = 0; i < meshCount; i++)
-				{
-					auto tmpMesh = this->impScene->mMeshes[node->mMeshes[(i)]];
-					auto matName = this->impScene->mMaterials[tmpMesh->mMaterialIndex]->GetName().C_Str();
-					if (matName == "DefaultMaterial")
-					{
-						defaultMaterialMeshes.push_back(tmpMesh);
-						continue;
-					}
-
-					customMaterialMeshes.push_back(std::pair<std::string, aiMesh*>(matName, tmpMesh));
-				}
-
-				// now sort meshes based on material names
-				std::sort(customMaterialMeshes.begin(), customMaterialMeshes.end());
-
-				// reset mesh texture id... this was a fun little bug to figure out
-				this->currentMeshTextureId = 0;
-
-				// process all custom material meshes
-				for (auto& cm : customMaterialMeshes)
-				{
-					this->processMesh(cm.second, meshVertices, meshIndices, meshBones);
-					this->currentMeshTextureId++;
-				}
-
-				// process all "DefaultMaterial" meshes
-				for (auto& dm : defaultMaterialMeshes)
-				{
-					this->processMesh(dm, meshVertices, meshIndices, meshBones);
-					this->currentMeshTextureId++;
-				}
-
-				std::unique_ptr<Mesh> finalMesh = std::make_unique<Mesh>(nodeName);
-				finalMesh->setVertices(meshVertices);
-				finalMesh->setIndices(meshIndices);
-				finalMesh->setBones(meshBones);
-				finalMesh->setGlobalInverseMatrix(this->currentGlobalInverseMatrix);
-
-				this->meshes.push_back(std::move(finalMesh));
+				customMaterialMeshes.push_back(std::pair<std::string, aiMesh*>(matName, tmpMesh));
 			}
+
+			// now sort meshes based on material names
+			std::sort(customMaterialMeshes.begin(), customMaterialMeshes.end());
+
+			// reset mesh texture id... this was a fun little bug to figure out
+			this->currentMeshTextureId = 0;
+
+			// process all custom material meshes
+			for (auto& cm : customMaterialMeshes)
+			{
+				this->processMesh(cm.second, meshVertices, meshIndices, meshBones);
+				this->currentMeshTextureId++;
+			}
+
+			// process all "DefaultMaterial" meshes
+			for (auto& dm : defaultMaterialMeshes)
+			{
+				this->processMesh(dm, meshVertices, meshIndices, meshBones);
+				this->currentMeshTextureId++;
+			}
+
+			std::unique_ptr<Mesh> finalMesh = std::make_unique<Mesh>(nodeName);
+			finalMesh->setVertices(meshVertices);
+			finalMesh->setIndices(meshIndices);
+			finalMesh->setBones(meshBones);
+
+			this->meshes.push_back(std::move(finalMesh));
+			
 		}
 
 		// Do the same for each of its children

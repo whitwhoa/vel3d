@@ -37,7 +37,7 @@ namespace vel
 
 		std::vector<std::pair<std::unique_ptr<Shader>, int>>		shaders;
 		std::vector<std::pair<std::unique_ptr<Mesh>, int>>			meshes;
-		std::vector<std::pair<std::unique_ptr<Armature>, int>>		armatures;
+		//std::vector<std::pair<std::unique_ptr<Armature>, int>>		armatures;
 		std::vector<std::pair<std::unique_ptr<Texture>, int>>		textures;
 		std::vector<std::pair<std::unique_ptr<Material>, int>>		materials;
 		std::vector<std::pair<std::unique_ptr<FontBitmap>, int>>	fontBitmaps;
@@ -52,8 +52,8 @@ namespace vel
 		int													getMeshIndex(const std::string& name);
 		int													getMeshIndex(const Mesh* m);
 
-		int													getArmatureIndex(const std::string& name);
-		int													getArmatureIndex(const Armature* a);
+		//int													getArmatureIndex(const std::string& name);
+		//int													getArmatureIndex(const Armature* a);
 
 		int													getTextureIndex(const std::string& name);
 		int													getTextureIndex(const Texture* t);
@@ -81,15 +81,15 @@ namespace vel
 		Shader*						getShader(const std::string& name);
 		void						removeShader(const Shader* pShader);
 
-		std::optional<std::pair<std::vector<Mesh*>, Armature*>> loadMesh(const std::string& path);
+		std::vector<Mesh*>			loadMesh(const std::string& path);
 		Mesh*						addMesh(std::unique_ptr<Mesh> m);
 		Mesh*						getMesh(const std::string& name);
 		void						updateMesh(Mesh* m);
 		void						removeMesh(const Mesh* pMesh);
 		void						incrementMeshUsage(const Mesh* pMesh);
 
-		Armature*					getArmature(const std::string& name);
-		void						removeArmature(const Armature* pArm);
+		//Armature*					getArmature(const std::string& name);
+		//void						removeArmature(const Armature* pArm);
 
 		Texture*					loadTexture(const std::string& name, const std::string& path, bool freeAfterGPULoad = true, unsigned int uvWrapping = 1);
 		Texture*					getTexture(const std::string& name);
