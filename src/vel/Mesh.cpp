@@ -49,21 +49,6 @@ namespace vel
 		return false;
 	}
 
-	void Mesh::addVertexWeight(unsigned int vertexIndex, unsigned int boneIndex, float weight)
-	{
-		// wtff???...oh ok, this just looks weird, but it's looping through each index in the raw array
-		for (unsigned int i = 0; i < (sizeof(this->vertices[vertexIndex].weights.ids) / sizeof(this->vertices[vertexIndex].weights.ids[0])); i++)
-		{
-			if (this->vertices[vertexIndex].weights.weights[i] == 0.0f)
-			{
-				this->vertices[vertexIndex].weights.ids[i] = boneIndex;
-				this->vertices[vertexIndex].weights.weights[i] = weight;
-
-				return;
-			}
-		}		
-	}
-
 	void Mesh::setVertices(std::vector<Vertex>& vertices)
 	{
 		this->vertices = vertices;

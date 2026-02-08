@@ -141,19 +141,6 @@ namespace vel
 
 	void Stage::updatePreviousTransforms()
 	{
-		// OMG we loop through all actors twice 0_0 once here then once in the render loop...wow,
-		// well...I guess if it ain't broke...
-		//
-		// !TODO: There has to be a better way to do this...
-		// 
-		// Why do we not just update this when we loop over the actors in the render loop? There
-		// must be some reason why I don't do that???
-		//
-		// ...Yeah, if there are multiple cameras for the stage, we cannot update the previous transform
-		// until all cameras have rendered...but perhaps we can track if it's the last camera for the stage
-		// and if so, THEN update the actor's previous transform? Might work.
-		//
-		// double buffer???
 		for (auto& pair : this->actors) 
 			for (auto& actor : pair.second) 
 				actor->updatePreviousTransform();

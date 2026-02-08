@@ -39,7 +39,7 @@ namespace vel
 			> If parentActor is not null, this actor is a child of the actor pointed to by parentActor
 			> TODO: add statement about bone when we flesh out the rest of the logic
 			> If childActors.size() > 0, this actor is a parent pointed to by all Actors within childActors
-			> If both of the above statements can be true, meaning that any Actor can be both child and parent
+			> Both of the above statements can be true, meaning that any Actor can be both child and parent
 		*/
 		Actor*											parentActor;
 		ArmatureBone*									parentArmatureBone;

@@ -31,7 +31,6 @@ namespace vel
 
 	public:
 											Mesh(std::string name);
-		void								addVertexWeight(unsigned int vertexIndex, unsigned int boneIndex, float weight);
 		void                                setGpuMesh(GpuMesh gm);
 		void								setVertices(std::vector<Vertex>& vertices);
 		void								setIndices(std::vector<unsigned int>& indices);
