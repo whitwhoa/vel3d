@@ -36,7 +36,7 @@ namespace vel
 		SkelAnimator(ozz::animation::Skeleton* skeleton);
 
 		virtual bool	init() = 0;
-		virtual void	onUpdate(float logicTick) = 0;
+		virtual bool	onUpdate(float logicTick) = 0;
 
 		void			update(float logicTick);
 		void			renderLerp(float alpha);
