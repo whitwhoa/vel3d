@@ -152,7 +152,7 @@ namespace vel
 
 		void								setInputState(const InputState* is);
 
-		void								updateAnimations(float frameTime);
+		void								lerpAnimators(float alpha);
 		void								draw(float frameTime, float alpha);
 		void								updatePreviousTransforms();
 

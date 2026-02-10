@@ -9,6 +9,7 @@
 #include "LinearMath/btVector3.h"
 #include "LinearMath/btQuaternion.h"
 #include "LinearMath/btTransform.h"
+#include "ozz/base/maths/simd_math.h"
 
 namespace vel
 {
@@ -34,4 +35,5 @@ namespace vel
 	float lerpf(float a, float b, float f);
 	bool randomFiftyFifty();
 	glm::quat calculateRotation(const glm::vec3& from, const glm::vec3& to);
+	glm::mat4 ozzFloat4x4ToGlmMat4(const ozz::math::Float4x4& in);
 }

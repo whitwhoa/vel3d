@@ -196,4 +196,16 @@ namespace vel
 		return rotation;
 	}
 
+	glm::mat4 ozzFloat4x4ToGlmMat4(const ozz::math::Float4x4& in)
+	{
+		glm::mat4 out;
+
+		ozz::math::StorePtrU(in.cols[0], &out[0][0]);
+		ozz::math::StorePtrU(in.cols[1], &out[1][0]);
+		ozz::math::StorePtrU(in.cols[2], &out[2][0]);
+		ozz::math::StorePtrU(in.cols[3], &out[3][0]);
+
+		return out;
+	}
+
 }

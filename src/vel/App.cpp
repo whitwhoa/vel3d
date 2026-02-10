@@ -377,23 +377,20 @@ namespace vel
 				const float flt = static_cast<float>(this->fixedLogicTime);
 
 				this->activeScene->stepPhysics(flt);
+				this->activeScene->postPhysics(flt);
+
 				this->activeScene->updatePreviousTransforms();
 
+				//double t1 = this->getRuntimeSec();
+				this->activeScene->updateAnimations(flt);
+				//double t2 = this->getRuntimeSec();
+				//VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
 
 				//double t1 = this->getRuntimeSec();
 				this->activeScene->fixedLoop(flt);
 				//double t2 = this->getRuntimeSec();
 				//VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
-
-
-				//double t1 = this->getRuntimeSec();
-				this->activeScene->updateFixedAnimations(flt);
-				//double t2 = this->getRuntimeSec();
-				//VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
-
 				
-				this->activeScene->postPhysics(flt);
-
 				if (this->audioDevice)
 					this->audioDevice->cleanUpManagedSFX();
 
@@ -413,7 +410,7 @@ namespace vel
 			float ft = static_cast<float>(this->loopTime);
 			
 			//double t1 = this->getRuntimeSec();
-			this->activeScene->updateAnimations(ft);
+			this->activeScene->lerpAnimators(renderLerp);
 			//double t2 = this->getRuntimeSec();
 			//VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
 

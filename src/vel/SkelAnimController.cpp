@@ -11,7 +11,7 @@ namespace vel
         timeRatio(0.f),
         prevTimeRatio(0.f),
         playbackSpeed(1.f),
-        play(true),
+        playing(true),
         loop(true)
 	{}
 
@@ -20,14 +20,14 @@ namespace vel
         this->prevTimeRatio = 0.0f;
         this->timeRatio = 0.0f;
         this->playbackSpeed = 1.f;
-        this->play = true;
+        this->playing = true;
     }
 
     int SkelAnimController::update(const ozz::animation::Animation& animation, float dt)
     {
         float newRatio = this->timeRatio;
 
-        if (this->play)
+        if (this->playing)
         {
             newRatio = this->timeRatio + dt * this->playbackSpeed / animation.duration();
         }
@@ -69,9 +69,9 @@ namespace vel
         return this->prevTimeRatio;
     }
 
-    void SkelAnimController::setPlaybackSpeed(float speed)
+    void SkelAnimController::setPlaybackSpeed(float s)
     {
-        this->playbackSpeed = speed;
+        this->playbackSpeed = s;
     }
 
     float SkelAnimController::getPlaybackSpeed() const
@@ -89,9 +89,14 @@ namespace vel
         return this->loop;
     }
 
-    bool SkelAnimController::playing() const
+    bool SkelAnimController::getPlaying() const
     {
-        return this->play;
+        return this->playing;
+    }
+
+    void SkelAnimController::setPlaying(bool p)
+    {
+        this->playing = p;
     }
 
 }

@@ -1,4 +1,6 @@
 
+#include <string>
+
 #include "ozz/animation/runtime/local_to_model_job.h"
 #include "ozz/animation/runtime/sampling_job.h"
 
@@ -96,6 +98,16 @@ namespace vel
 	const ozz::math::Float4x4& SkelAnimator::getRenderBoneMatrix(unsigned int i)
 	{
 		return this->renderModelMatrices.at(i);
+	}
+
+	int SkelAnimator::getBoneIndex(const std::string& name)
+	{
+		const auto& names = this->skeleton->joint_names();
+		for (size_t i = 0; i < names.size(); ++i) 
+			if (std::strcmp(names[i], name.c_str()) == 0) 
+				return static_cast<int>(i);
+
+		return -1;
 	}
 
 }

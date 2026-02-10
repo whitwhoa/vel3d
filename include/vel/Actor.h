@@ -1,6 +1,5 @@
 #pragma once
 
-#include <optional>
 #include <string>
 
 #include "glm/glm.hpp"
@@ -8,8 +7,7 @@
 #include "btBulletDynamicsCommon.h"
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
 
-#include "vel/Armature.h"
-#include "vel/ArmatureBone.h"
+#include "vel/SkelAnimator.h"
 #include "vel/Mesh.h"
 #include "vel/Transform.h"
 
@@ -33,7 +31,7 @@ namespace vel
 		bool											dynamic;
 
 		Transform										transform;
-		std::optional<Transform>						previousTransform;
+		Transform										previousTransform;
 
 		/*
 			> If parentActor is not null, this actor is a child of the actor pointed to by parentActor
@@ -42,10 +40,10 @@ namespace vel
 			> Both of the above statements can be true, meaning that any Actor can be both child and parent
 		*/
 		Actor*											parentActor;
-		ArmatureBone*									parentArmatureBone;
+		int												parentActorBone;
 		std::vector<Actor*>								childActors;
 
-		Armature*											armature;
+		SkelAnimator*										animator;
 		std::vector<std::pair<unsigned int, unsigned int>>	activeBones; // the bones from the armature that are actually used by the mesh, 
 																		// the glue between an armature and a mesh
 																		// pair::first == armature bone index, pair::second == mesh bone index
@@ -80,9 +78,9 @@ namespace vel
 		Mesh*											getMesh();
 		Mesh*											getMesh() const;
 
-		void											setArmature(Armature* arm);
-		Armature*										getArmature();
-		Armature*										getArmature() const;
+		bool											setAnimator(SkelAnimator* a);
+		SkelAnimator*									getAnimator();
+
 
 		void											setMaterial(Material* m);
 		Material*										getMaterial();
@@ -100,7 +98,7 @@ namespace vel
 		void											setActiveBones(std::vector<std::pair<unsigned int, unsigned int>> activeBones);
 
 		void											setParentActor(Actor* a);
-		void											setParentArmatureBone(ArmatureBone* b);
+		void											setParentActorBone(Actor* a, int boneId);
 
 		void											addChildActor(Actor* a);
 		std::vector<Actor*>&							getChildActors();
@@ -108,9 +106,8 @@ namespace vel
 		Transform&										getTransform();
 		const Transform&								getTransform() const;
 
-		std::optional<Transform>&						getPreviousTransform();
+		const Transform&								getPreviousTransform() const;
 		void											updatePreviousTransform();
-		void											clearPreviousTransform();
 
 		glm::mat4										getWorldMatrix();
 		glm::mat4										getWorldRenderMatrix(float alpha); // contains logic for interpolation

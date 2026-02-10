@@ -58,7 +58,7 @@ namespace vel
 
 		void									setAssetManager(AssetManager* am);
 
-		void									updateFixedAnimations(float runTime);
+		void									updateAnimations(float delta);
 		void									stepPhysics(float delta);
 
 		virtual bool							load() = 0;

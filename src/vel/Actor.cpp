@@ -3,6 +3,7 @@
 #include "vel/functions.h"
 #include "vel/EmptyMaterial.h"
 #include "vel/Actor.h"
+#include "vel/logger.hpp"
 
 
 namespace vel
@@ -19,9 +20,10 @@ namespace vel
 		visible(true),
 		dynamic(false),
 		transform(Transform()),
+		previousTransform(Transform()),
 		parentActor(nullptr),
-		parentArmatureBone(nullptr),
-		armature(nullptr),
+		parentActorBone(-1),
+		animator(nullptr),
 		mesh(nullptr),
 		//material(nullptr),
 		material(std::make_unique<EmptyMaterial>("EMPTY", nullptr)),
@@ -34,14 +36,16 @@ namespace vel
 		visible(a.isVisible()),
 		dynamic(a.isDynamic()),
 		transform(a.getTransform()),
+		previousTransform(a.getPreviousTransform()),
 		parentActor(nullptr),
-		parentArmatureBone(nullptr),
-		armature(nullptr),
+		parentActorBone(-1),
+		animator(nullptr),
 		mesh(a.getMesh()),
 		material(a.getMaterial()->clone()),
 		userPointer(nullptr)
 	{}
 
+	// TODO: Need to identify why this was done and why it only sets the subset of members
 	Actor& Actor::operator=(const Actor& a)
 	{
 		if (this == &a)
@@ -81,11 +85,6 @@ namespace vel
 	Material* Actor::getMaterial() const
 	{
 		return this->material.get();
-	}
-
-	void Actor::clearPreviousTransform()
-	{
-		this->previousTransform.reset();
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -148,63 +147,54 @@ namespace vel
 	glm::mat4 Actor::getWorldMatrix()
 	{
 		// if this actor has no parent, simply return the matrix of it's transform
-		if (this->parentActor == nullptr && this->parentArmatureBone == nullptr)
+		if (this->parentActor == nullptr && this->parentActorBone == -1)
 			return this->transform.getMatrix();
 
-		// if this actor is parented to another actor (parenting to actor will override bone parenting)
-		if (this->parentArmatureBone == nullptr)
+		// if this actor is parented to another actor, and not to that actor's bone
+		if (this->parentActorBone == -1)
 			return this->parentActor->getWorldMatrix() * this->transform.getMatrix();
 
-		// if this actor is parented to the bone of an armature (any actor's armature)
-		return this->parentArmatureBone->matrix * this->transform.getMatrix();
+		// if this actor is parented to the bone of its parent actor
+		return this->parentActor->getWorldMatrix() * 
+			ozzFloat4x4ToGlmMat4(this->parentActor->getAnimator()->getSimBoneMatrix(this->parentActorBone)) * 
+			this->transform.getMatrix();
 	}
 
 	glm::mat4 Actor::getWorldRenderMatrix(float alpha)
 	{
 		// actor is not dynamic (does not move) so interpolation is not required, simply return it's world matrix
-		if (!this->isDynamic() || !this->previousTransform)
+		if (!this->isDynamic())
 			return this->getWorldMatrix();
 
-		glm::mat4 actorMatrix = Transform::interpolateTransforms(this->previousTransform.value(), this->transform, alpha);
+		glm::mat4 selfMat = Transform::interpolateTransforms(this->previousTransform, this->transform, alpha);
 
 		// if this actor has no parent, simply return the matrix of it's transform
-		if (this->parentActor == nullptr && this->parentArmatureBone == nullptr)
-			return actorMatrix;
+		if (this->parentActor == nullptr && this->parentActorBone == -1)
+			return selfMat;
 
-		// if this actor is parented to another actor (parenting to actor will override bone parenting)
-		if (this->parentArmatureBone == nullptr)
-			return this->parentActor->getWorldRenderMatrix(alpha) * actorMatrix;
+		// if this actor is parented to another actor
+		if (this->parentActorBone == -1)
+			return this->parentActor->getWorldRenderMatrix(alpha) * selfMat;
 
-		// if we made it here, we know that this actor is parented to the bone of an armature (any actor's armature)
-		if (this->parentArmatureBone->parentArmature->getShouldInterpolate())
-			return this->parentArmatureBone->parentArmature->getBoneWorldMatrixInterpolated(this->parentArmatureBone->parentArmatureIndex, alpha) * actorMatrix;
-		
-		// armature owning our parent bone was not set to interpolate, use non interpolated bone transform matrix
-		return this->parentArmatureBone->parentArmature->getBoneWorldMatrix(this->parentArmatureBone->parentArmatureIndex) * actorMatrix;
+		// if we made it here, we know that this actor is parented to a bone of its parent actor
+		return this->parentActor->getWorldRenderMatrix(alpha) *
+			ozzFloat4x4ToGlmMat4(this->parentActor->getAnimator()->getRenderBoneMatrix(this->parentActorBone)) *
+			selfMat;
 	}
 
 	glm::vec3 Actor::getInterpolatedTranslation(float alpha)
 	{
-		if (this->previousTransform) // insure we have a value for previousTransform from which to interpolate
-			return Transform::interpolateTranslations(this->previousTransform.value(), this->transform, alpha);
-
-		return this->transform.getTranslation();
+		return Transform::interpolateTranslations(this->previousTransform, this->transform, alpha);
 	}
 
 	glm::quat Actor::getInterpolatedRotation(float alpha)
 	{
-		if (this->previousTransform) // insure we have a value for previousTransform from which to interpolate
-			return Transform::interpolateRotations(this->previousTransform.value(), this->transform, alpha);
-
-		return this->transform.getRotation();
+		return Transform::interpolateRotations(this->previousTransform, this->transform, alpha);
 	}
 
 	glm::vec3 Actor::getInterpolatedScale(float alpha)
 	{
-		if (this->previousTransform) // insure we have a value for previousTransform from which to interpolate
-			return Transform::interpolateScales(this->previousTransform.value(), this->transform, alpha);
-
-		return this->transform.getScale();
+		return Transform::interpolateScales(this->previousTransform, this->transform, alpha);
 	}
 
 	void Actor::setDynamic(bool dynamic)
@@ -243,26 +233,32 @@ namespace vel
 		return this->childActors;
 	}
 
-	void Actor::setParentArmatureBone(ArmatureBone* b)
+	void Actor::setParentActorBone(Actor* a, int boneId)
 	{
 		// set the parent relationship
-		if(b != nullptr)
+		if(boneId != -1)
 		{
-			this->parentArmatureBone = b;
-			b->childActors.push_back(this);
+			this->parentActor = a;
+			this->parentActor->childActors.push_back(this);
+			this->parentActorBone = boneId;
+			
+			return;
 		}
+
 		// remove the parent relationship
-		else if(this->parentArmatureBone != nullptr)
+		if(this->parentActorBone != -1)
 		{
+			auto& childrenOfParent = this->parentActor->getChildActors();
 			size_t i = 0;
-			for(auto& a : this->parentArmatureBone->childActors)
+			for(auto& a : childrenOfParent)
 			{
-				if(a == this)
-					this->parentArmatureBone->childActors.erase(this->parentArmatureBone->childActors.begin() + i);
-				
+				if (a == this)
+					childrenOfParent.erase(childrenOfParent.begin() + i);
+
 				i++;
 			}
-			this->parentArmatureBone = nullptr;
+
+			this->parentActorBone = -1;
 		}
 	}
 
@@ -291,7 +287,7 @@ namespace vel
 		return this->transform;
 	}
 
-	std::optional<Transform>& Actor::getPreviousTransform()
+	const Transform& Actor::getPreviousTransform() const
 	{
 		return this->previousTransform;
 	}
@@ -316,25 +312,42 @@ namespace vel
 
 	const bool Actor::isAnimated() const
 	{
-		if (this->armature)
+		if (this->animator)
 			return true;
 
 		return false;
 	}
 
-	void Actor::setArmature(Armature* arm)
+	bool Actor::setAnimator(SkelAnimator* a)
 	{
-		this->armature = arm;
+		if (!this->mesh)
+		{
+			VEL3D_LOG_ERROR("Actor::setAnimator(): Attempting to add animator to actor that does not contain a mesh: {}", this->name);
+			return false;
+		}
+
+		this->animator = a;
+
+		unsigned int index = 0;
+		for (auto& meshBone : this->getMesh()->getBones())
+		{
+			int skelBoneIndex = this->animator->getBoneIndex(meshBone.name);
+			if (skelBoneIndex == -1)
+			{
+				VEL3D_LOG_ERROR("Actor::setAnimator(): Skeleton does not contain bone with name {}.", meshBone.name);
+				return false;
+			}
+
+			this->activeBones.push_back(std::pair<unsigned int, unsigned int>(skelBoneIndex, index));
+			index++;
+		}
+
+		return true;
 	}
 
-	Armature* Actor::getArmature()
+	SkelAnimator* Actor::getAnimator()
 	{
-		return this->armature;
-	}
-
-	Armature* Actor::getArmature() const
-	{
-		return this->armature;
+		return this->animator;
 	}
 
 }

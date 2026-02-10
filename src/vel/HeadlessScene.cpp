@@ -39,11 +39,11 @@ namespace vel
 		this->assetManager = am;
 	}
 
-	void HeadlessScene::updateFixedAnimations(float delta)
+	void HeadlessScene::updateAnimations(float delta)
 	{
 		this->fixedAnimationTime += delta;
 		for (auto& s : this->stages)
-			s->updateFixedArmatureAnimations(this->fixedAnimationTime);
+			s->updateAnimators(delta);
 	}
 
 	void HeadlessScene::stepPhysics(float delta)

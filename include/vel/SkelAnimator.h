@@ -43,6 +43,7 @@ namespace vel
 
 		const ozz::math::Float4x4& getSimBoneMatrix(unsigned int i);
 		const ozz::math::Float4x4& getRenderBoneMatrix(unsigned int i);
+		int getBoneIndex(const std::string& name);
 
 	};
 }

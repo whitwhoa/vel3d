@@ -18,7 +18,7 @@ namespace vel
 		float playbackSpeed;
 
 		// Animation play mode state: play/pause.
-		bool play;
+		bool playing;
 
 		// Animation loop mode.
 		bool loop;
@@ -39,19 +39,21 @@ namespace vel
 		float getPrevTimeRatio() const;
 
 		// Sets playback speed.
-		void setPlaybackSpeed(float _speed);
+		void setPlaybackSpeed(float s);
 
 		// Gets playback speed.
 		float getPlaybackSpeed() const;
 
 		// Sets loop modes. If true, animation time is always clamped between 0 and 1.
-		void setLoop(bool _loop);
+		void setLoop(bool l);
 
 		// Gets loop mode.
 		bool getLoop() const;
 
 		// Get if animation is playing, otherwise it is paused.
-		bool playing() const;
+		bool getPlaying() const;
+
+		void setPlaying(bool p);
 
 		// Updates animation time if in "play" state, according to playback speed and
 		// given frame time dt.

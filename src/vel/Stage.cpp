@@ -27,53 +27,9 @@ namespace vel
 		return this->name;
 	}
 
-	int Stage::getArmatureIndex(const std::string& name)
+	void Stage::addSkelAnimator(std::unique_ptr<SkelAnimator> sa)
 	{
-		for (int i = 0; i < this->armatures.size(); i++)
-			if (this->armatures.at(i)->getName() == name)
-				return i;
-
-		return -1;
-	}
-
-	Armature* Stage::getArmature(const std::string& armatureName)
-	{
-		return this->armatures.at(this->getArmatureIndex(armatureName)).get();
-	}
-
-	Armature* Stage::addArmature(Armature* a, const std::string& defaultAnimation, const std::vector<std::string>& actorsIn)
-	{
-		this->armatures.push_back(std::make_unique<Armature>(*a));
-
-		Armature* sa = this->armatures.back().get();
-
-		sa->playAnimation(defaultAnimation);
-
-		for (auto& actorName : actorsIn)
-		{
-			auto act = this->getActor(actorName);
-			act->setArmature(sa);
-
-			std::vector<std::pair<unsigned int, unsigned int>> activeBones;
-			unsigned int index = 0;
-			for (auto& meshBone : act->getMesh()->getBones())
-			{
-				// associate the index of the armature bone with the index of the mesh bone used for transformation
-				auto biOpt = act->getArmature()->getBoneIndex(meshBone.name);
-				if (!biOpt)
-				{
-					VEL3D_LOG_WARN("Stage::addArmature: Armature: {} does not contain bone with name {}.", act->getArmature()->getName(), meshBone.name);
-					continue;
-				}
-
-				activeBones.push_back(std::pair<unsigned int, unsigned int>(biOpt.value(), index));
-				index++;
-			}
-
-			act->setActiveBones(activeBones);
-		}
-
-		return sa;
+		this->animators.push_back(std::move(sa));
 	}
 
 	bool Stage::getClearDepthBuffer()
@@ -125,18 +81,16 @@ namespace vel
 		return this->cameras;
 	}
 
-	void Stage::updateFixedArmatureAnimations(float runTime)
+	void Stage::updateAnimators(float logicTick)
 	{
-		for (auto& a : this->armatures)
-			if(a->getShouldInterpolate())
-				a->updateAnimations(runTime);
+		for (auto& a : this->animators)
+			a->update(logicTick);
 	}
 
-	void Stage::updateArmatureAnimations(float runTime)
+	void Stage::lerpAnimators(float alpha)
 	{
-		for (auto& a : this->armatures)
-			if (!a->getShouldInterpolate())
-				a->updateAnimations(runTime);
+		for (auto& a : this->animators)
+			a->renderLerp(alpha);
 	}
 
 	void Stage::updatePreviousTransforms()

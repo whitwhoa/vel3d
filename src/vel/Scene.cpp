@@ -539,11 +539,10 @@ namespace vel
 
 	/* Misc
 	--------------------------------------------------*/
-	void Scene::updateAnimations(float delta)
+	void Scene::lerpAnimators(float alpha)
 	{
-		this->animationTime += delta;
 		for (auto& s : this->stages)
-			s->updateArmatureAnimations(this->animationTime);
+			s->lerpAnimators(alpha);
 	}
 
 	//LineActor* Scene::addLineActor(Stage* stage, const std::string& name, std::vector<glm::vec2> points, glm::vec4 color)
