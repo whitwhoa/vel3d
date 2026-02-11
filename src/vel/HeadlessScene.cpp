@@ -8,8 +8,7 @@ namespace vel
 		tick(0),
 		dataDir(dataDir),
 		name(""),
-		assetManager(nullptr),
-		fixedAnimationTime(0.0f)
+		assetManager(nullptr)
 	{}
 
 	HeadlessScene::~HeadlessScene() {}
@@ -39,9 +38,8 @@ namespace vel
 		this->assetManager = am;
 	}
 
-	void HeadlessScene::updateAnimations(float delta)
+	void HeadlessScene::updateAnimators(float delta)
 	{
-		this->fixedAnimationTime += delta;
 		for (auto& s : this->stages)
 			s->updateAnimators(delta);
 	}

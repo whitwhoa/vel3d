@@ -1,6 +1,7 @@
 #include "vel/SkinnedMaterialMixin.h"
 #include "vel/Actor.h"
 #include "vel/GPU.h"
+#include "vel/functions.h"
 
 namespace vel
 {
@@ -9,23 +10,14 @@ namespace vel
 	void SkinnedMaterialMixin::updateBones(float alphaTime, GPU* gpu, Actor* a)
 	{
 		Mesh* mesh = a->getMesh();
-		Armature* armature = a->getArmature();
-		bool armInterp = armature->getShouldInterpolate();
+		SkelAnimator* animator = a->getAnimator();
 
 		std::vector<std::pair<unsigned int, glm::mat4>> boneData;
 
 		glm::mat4 meshBoneTransform;
 		for (auto& activeBone : a->getActiveBones())
-		{
-			if (armInterp)
-			{
-				meshBoneTransform = armature->getBoneWorldMatrixInterpolated(activeBone.first, alphaTime) * mesh->getBone(activeBone.second).offsetMatrix;
-			}
-			else
-			{
-				meshBoneTransform = armature->getBoneWorldMatrix(activeBone.first) * mesh->getBone(activeBone.second).offsetMatrix;
-			}
-
+		{		
+			meshBoneTransform = ozzFloat4x4ToGlmMat4(animator->getRenderBoneMatrix(activeBone.first)) * mesh->getBone(activeBone.second).offsetMatrix;
 			boneData.push_back(std::pair<unsigned int, glm::mat4>(activeBone.second, meshBoneTransform));
 		}
 

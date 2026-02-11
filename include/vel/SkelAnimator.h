@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-
+#include <string>
 
 #include "ozz/base/maths/simd_math.h"
 #include "ozz/base/maths/soa_transform.h"

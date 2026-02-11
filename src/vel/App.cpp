@@ -382,7 +382,7 @@ namespace vel
 				this->activeScene->updatePreviousTransforms();
 
 				//double t1 = this->getRuntimeSec();
-				this->activeScene->updateAnimations(flt);
+				this->activeScene->updateAnimators(flt);
 				//double t2 = this->getRuntimeSec();
 				//VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
 

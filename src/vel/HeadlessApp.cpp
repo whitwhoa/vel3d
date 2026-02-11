@@ -86,9 +86,9 @@ namespace vel
 		this->activeScene->setTick(this->currentSimTick);
 
 		this->activeScene->stepPhysics(dt);
-		this->activeScene->fixedLoop(dt);
-		this->activeScene->updateFixedAnimations(dt);
 		this->activeScene->postPhysics(dt);
+		this->activeScene->updateAnimators(dt);
+		this->activeScene->fixedLoop(dt);
 	}
 
 

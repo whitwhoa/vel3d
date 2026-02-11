@@ -21,15 +21,12 @@ namespace vel
 		if (this->skeleton->num_joints() != this->animation->num_tracks())
 			return false;
 
-		// Allocates runtime buffers.
-		const int numSoaJoints = this->skeleton->num_soa_joints();
-		this->simLocalTransforms->resize(numSoaJoints);
-
-		const int numJoints = this->skeleton->num_joints();
-		this->simModelMatrices.resize(numJoints);
+		// Since this example is very basic, the only buffers we're using are the
+		// required buffers that are initialized in SkelAnimator base class, which is
+		// why this looks odd compared to the ozz example
 
 		// Allocate a context that matches animation requirements.
-		this->context.Resize(numJoints);
+		this->context.Resize(this->skeleton->num_joints());
 
 		return true;
 	}

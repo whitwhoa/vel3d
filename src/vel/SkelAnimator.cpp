@@ -10,10 +10,16 @@ namespace vel
 {
 	SkelAnimator::SkelAnimator(ozz::animation::Skeleton* skeleton) :
 		skeleton(skeleton),
-		simPrevLocalTransforms(nullptr),
-		simLocalTransforms(nullptr)
+		simPrevLocalTransforms(&this->localTransformsA),
+		simLocalTransforms(&this->localTransformsB)
 	{
-		
+		// Allocate runtime buffers.
+		this->localTransformsA.resize(this->skeleton->num_soa_joints());
+		this->localTransformsB.resize(this->skeleton->num_soa_joints());
+		this->renderLocalTransforms.resize(this->skeleton->num_soa_joints());
+
+		this->simModelMatrices.resize(this->skeleton->num_joints());
+		this->renderModelMatrices.resize(this->skeleton->num_joints());
 	}
 
 	ozz::math::SoaFloat3 SkelAnimator::lerpSoaFloat3(const ozz::math::SoaFloat3& a, const ozz::math::SoaFloat3& b, const ozz::math::SimdFloat4& t)
@@ -68,19 +74,22 @@ namespace vel
 	void SkelAnimator::renderLerp(float alpha)
 	{
 		const int n = this->simPrevLocalTransforms->size();
-		this->renderLocalTransforms.resize(n);
+		//this->renderLocalTransforms.resize(n);
 
 		const ozz::math::SimdFloat4 t = ozz::math::simd_float4::Load1(alpha);
+		const ozz::math::SoaTransform* prev = simPrevLocalTransforms->data();
+		const ozz::math::SoaTransform* cur = simLocalTransforms->data();
+		ozz::math::SoaTransform* out = renderLocalTransforms.data();
 
 		for (int i = 0; i < n; ++i)
 		{
-			const ozz::math::SoaTransform& A = this->simPrevLocalTransforms->at(i);
-			const ozz::math::SoaTransform& B = this->simLocalTransforms->at(i);
-			ozz::math::SoaTransform& O = this->renderLocalTransforms.at(i);
+			const ozz::math::SoaTransform& A = prev[i];
+			const ozz::math::SoaTransform& B = cur[i];
+			ozz::math::SoaTransform& O = out[i];
 
-			O.translation = this->lerpSoaFloat3(A.translation, B.translation, t);
-			O.scale = this->lerpSoaFloat3(A.scale, B.scale, t);
-			O.rotation = this->nLerpSoaQuaternion(A.rotation, B.rotation, t);
+			O.translation = lerpSoaFloat3(A.translation, B.translation, t);
+			O.scale = lerpSoaFloat3(A.scale, B.scale, t);
+			O.rotation = nLerpSoaQuaternion(A.rotation, B.rotation, t);
 		}
 
 		ozz::animation::LocalToModelJob ltm;

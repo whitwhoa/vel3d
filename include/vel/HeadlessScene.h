@@ -23,7 +23,6 @@ namespace vel
 		AssetManager*							assetManager;
 		std::vector<std::unique_ptr<Stage>>		stages;
 		std::vector<CollisionWorld*> 			collisionWorlds;
-		float									fixedAnimationTime;
 
 		std::vector<Mesh*>						meshesInUse;
 		std::vector<std::string>				skeletonsInUse;
@@ -58,7 +57,7 @@ namespace vel
 
 		void									setAssetManager(AssetManager* am);
 
-		void									updateAnimations(float delta);
+		void									updateAnimators(float delta);
 		void									stepPhysics(float delta);
 
 		virtual bool							load() = 0;
