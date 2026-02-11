@@ -10,13 +10,8 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
-
 #include "vel/Mesh.h"
-#include "vel/Armature.h"
 #include "vel/VertexBoneData.h"
-#include "vel/Animation.h"
-
-
 #include "vel/MeshLoaderInterface.h"
 
 

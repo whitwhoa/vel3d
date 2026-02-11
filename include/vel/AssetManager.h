@@ -12,15 +12,12 @@
 #include "vel/Texture.h"
 #include "vel/Material.h"
 #include "vel/MaterialAnimator.h"
-#include "vel/Animation.h"
-#include "vel/Armature.h"
 #include "vel/FontBitmap.h"
 #include "vel/FontGlyphInfo.h"
 #include "vel/GPU.h"
 #include "vel/TextActor.h"
 #include "vel/MeshLoaderInterface.h"
 
-#include "vel/AssetTrackers.h"
 
 namespace vel
 {
