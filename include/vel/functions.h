@@ -36,4 +36,5 @@ namespace vel
 	bool randomFiftyFifty();
 	glm::quat calculateRotation(const glm::vec3& from, const glm::vec3& to);
 	glm::mat4 ozzFloat4x4ToGlmMat4(const ozz::math::Float4x4& in);
+	void quatToPitchYawRad(const glm::quat& q, float& outYawRad, float& outPitchRad);
 }

@@ -208,4 +208,22 @@ namespace vel
 		return out;
 	}
 
+	void quatToPitchYawRad(const glm::quat& q, float& outPitchRad, float& outYawRad)
+	{
+		// Rotate a canonical forward vector by the orientation.
+		// GLM convention: forward is -Z.
+		glm::vec3 fwd = q * glm::vec3(0.0f, 0.0f, -1.0f);
+
+		// Yaw: angle around world up, based on XZ projection of forward.
+		// yaw = atan2(fwd.x, -fwd.z) for forward=-Z convention.
+		outYawRad = std::atan2(fwd.x, -fwd.z);
+
+		// Pitch: angle up/down. Clamp to avoid NaNs from numerical drift.
+		float fy = glm::clamp(fwd.y, -1.0f, 1.0f);
+		outPitchRad = std::asin(fy);
+
+		// Note: This pitch is in [-pi/2, pi/2], which matches typical FPS pitch limits.
+		// IE: [-90, +90]
+	}
+
 }
