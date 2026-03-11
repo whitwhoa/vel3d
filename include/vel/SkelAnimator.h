@@ -4,6 +4,7 @@
 #include <string>
 
 #include "ozz/base/maths/simd_math.h"
+#include "ozz/base/maths/simd_quaternion.h"
 #include "ozz/base/maths/soa_transform.h"
 #include "ozz/base/containers/vector.h"
 
@@ -44,6 +45,16 @@ namespace vel
 		const ozz::math::Float4x4& getSimBoneMatrix(unsigned int i);
 		const ozz::math::Float4x4& getRenderBoneMatrix(unsigned int i);
 		int getBoneIndex(const std::string& name);
+		std::vector<std::string> allBoneNames();
+
+
+
+		// Multiplies a single quaternion at a specific index in a SoA transform range.
+		static void multiplySoATransformQuaternion(
+			int _index, 
+			const ozz::math::SimdQuaternion& _quat, 
+			const ozz::span<ozz::math::SoaTransform>& _transforms
+		);
 
 	};
 }
