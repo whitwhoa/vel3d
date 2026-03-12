@@ -132,7 +132,7 @@ namespace vel
 		return names;
 	}
 
-	void multiplySoATransformQuaternion(
+	void SkelAnimator::multiplySoATransformQuaternion(
 		int _index, 
 		const ozz::math::SimdQuaternion& _quat,
 		const ozz::span<ozz::math::SoaTransform>& _transforms
