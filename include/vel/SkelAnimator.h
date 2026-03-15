@@ -48,13 +48,5 @@ namespace vel
 		std::vector<std::string> allBoneNames();
 
 
-
-		// Multiplies a single quaternion at a specific index in a SoA transform range.
-		static void multiplySoATransformQuaternion(
-			int _index, 
-			const ozz::math::SimdQuaternion& _quat, 
-			const ozz::span<ozz::math::SoaTransform>& _transforms
-		);
-
 	};
 }
