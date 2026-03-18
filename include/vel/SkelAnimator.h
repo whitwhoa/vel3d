@@ -32,6 +32,8 @@ namespace vel
 		ozz::vector<ozz::math::SoaTransform>*		simLocalTransforms;
 		ozz::vector<ozz::math::Float4x4>			simModelMatrices;
 
+		void clearMask(ozz::vector<ozz::math::SimdFloat4>& weights, float value = 0.0f);
+		static void setJointWeight(ozz::vector<ozz::math::SimdFloat4>& weights, int joint_index, float value);
 
 	public:
 		SkelAnimator(ozz::animation::Skeleton* skeleton);
@@ -47,6 +49,10 @@ namespace vel
 		int getBoneIndex(const std::string& name);
 		std::vector<std::string> allBoneNames();
 
+
+
+		
+		
 
 	};
 }

@@ -65,6 +65,13 @@ namespace vel
 		return q;
 	}
 
+	void SkelAnimator::clearMask(ozz::vector<ozz::math::SimdFloat4>& weights, float value)
+	{
+		const ozz::math::SimdFloat4 v = value == 0.0f ? ozz::math::simd_float4::zero() : ozz::math::simd_float4::one();
+		for (int i = 0; i < this->skeleton->num_soa_joints(); ++i)
+			weights[i] = v;
+	}
+
 	void SkelAnimator::update(float logicTick)
 	{
 		std::swap(simPrevLocalTransforms, simLocalTransforms);
@@ -131,5 +138,13 @@ namespace vel
 
 		return names;
 	}
+
+	void SkelAnimator::setJointWeight(ozz::vector<ozz::math::SimdFloat4>& weights, int joint_index, float value)
+	{
+		ozz::math::SimdFloat4& soa = weights[joint_index / 4];
+		soa = ozz::math::SetI(soa, ozz::math::simd_float4::Load1(value), joint_index % 4);
+	}
+
+	
 
 }
