@@ -16,6 +16,7 @@ namespace vel
 	class SkelAnimator
 	{
 	private:
+		float										simTime;
 		ozz::vector<ozz::math::SoaTransform>		localTransformsA;
 		ozz::vector<ozz::math::SoaTransform>		localTransformsB;
 		
@@ -44,6 +45,7 @@ namespace vel
 		void			update(float logicTick);
 		void			renderLerp(float alpha);
 
+		float			getSimTime() const;
 		const ozz::math::Float4x4& getSimBoneMatrix(unsigned int i);
 		const ozz::math::Float4x4& getRenderBoneMatrix(unsigned int i);
 		int getBoneIndex(const std::string& name);

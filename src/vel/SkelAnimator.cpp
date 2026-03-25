@@ -9,6 +9,7 @@
 namespace vel
 {
 	SkelAnimator::SkelAnimator(ozz::animation::Skeleton* skeleton) :
+		simTime(0.0f),
 		skeleton(skeleton),
 		simPrevLocalTransforms(&this->localTransformsA),
 		simLocalTransforms(&this->localTransformsB)
@@ -72,9 +73,17 @@ namespace vel
 			weights[i] = v;
 	}
 
+	float SkelAnimator::getSimTime() const
+	{
+		return this->simTime;
+	}
+
 	void SkelAnimator::update(float logicTick)
 	{
 		std::swap(simPrevLocalTransforms, simLocalTransforms);
+
+		this->simTime += logicTick;
+
 		this->onUpdate(logicTick);
 	}
 
