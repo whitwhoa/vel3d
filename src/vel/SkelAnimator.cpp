@@ -23,6 +23,21 @@ namespace vel
 		this->renderModelMatrices.resize(this->skeleton->num_joints());
 	}
 
+	void multiplySoATransformQuaternion(int _index, const ozz::math::SimdQuaternion& _quat,	const ozz::span<ozz::math::SoaTransform>& _transforms) 
+	{
+		assert(_index >= 0 && static_cast<size_t>(_index) < _transforms.size() * 4 && "joint index out of bound.");
+
+		// Convert soa to aos in order to perform quaternion multiplication, and then back to soa.
+		ozz::math::SoaTransform& soa_transform_ref = _transforms[_index / 4];
+		ozz::math::SimdQuaternion aos_quats[4];
+		ozz::math::Transpose4x4(&soa_transform_ref.rotation.x, &aos_quats->xyzw);
+
+		ozz::math::SimdQuaternion& aos_quat_ref = aos_quats[_index & 3];
+		aos_quat_ref = aos_quat_ref * _quat;
+
+		ozz::math::Transpose4x4(&aos_quats->xyzw, &soa_transform_ref.rotation.x);
+	}
+
 	ozz::math::SoaFloat3 SkelAnimator::lerpSoaFloat3(const ozz::math::SoaFloat3& a, const ozz::math::SoaFloat3& b, const ozz::math::SimdFloat4& t)
 	{
 		ozz::math::SoaFloat3 out;
