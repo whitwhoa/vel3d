@@ -35,7 +35,9 @@ namespace vel
 
 		void clearMask(ozz::vector<ozz::math::SimdFloat4>& weights, float value = 0.0f);
 		static void setJointWeight(ozz::vector<ozz::math::SimdFloat4>& weights, int joint_index, float value);
-		void multiplySoATransformQuaternion(int _index, const ozz::math::SimdQuaternion& _quat, const ozz::span<ozz::math::SoaTransform>& _transforms);
+		static void multiplySoATransformQuaternion(int _index, const ozz::math::SimdQuaternion& _quat, const ozz::span<ozz::math::SoaTransform>& _transforms);
+		static void multiplyJointLocalRotation(int joint, const ozz::math::SimdQuaternion& delta, ozz::span<ozz::math::SoaTransform> transforms);
+		static ozz::math::SimdQuaternion extractQuaternionLane(const ozz::math::SoaQuaternion& q, int lane);
 
 	public:
 		SkelAnimator(ozz::animation::Skeleton* skeleton);

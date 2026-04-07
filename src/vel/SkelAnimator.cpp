@@ -23,7 +23,40 @@ namespace vel
 		this->renderModelMatrices.resize(this->skeleton->num_joints());
 	}
 
-	void multiplySoATransformQuaternion(int _index, const ozz::math::SimdQuaternion& _quat,	const ozz::span<ozz::math::SoaTransform>& _transforms) 
+	ozz::math::SimdQuaternion SkelAnimator::extractQuaternionLane(const ozz::math::SoaQuaternion& q, int lane)
+	{
+		float x[4];
+		float y[4];
+		float z[4];
+		float w[4];
+
+		ozz::math::StorePtrU(q.x, x);
+		ozz::math::StorePtrU(q.y, y);
+		ozz::math::StorePtrU(q.z, z);
+		ozz::math::StorePtrU(q.w, w);
+
+		ozz::math::SimdQuaternion out;
+		out.xyzw = ozz::math::simd_float4::Load(x[lane], y[lane], z[lane], w[lane]);
+
+		return out;
+	}
+
+	void SkelAnimator::multiplyJointLocalRotation(int joint, const ozz::math::SimdQuaternion& delta, ozz::span<ozz::math::SoaTransform> transforms)
+	{
+		const int soa_index = joint / 4;
+		const int lane = joint % 4;
+
+		ozz::math::SoaTransform& t = transforms[soa_index];
+		ozz::math::SimdQuaternion current = extractQuaternionLane(t.rotation, lane);
+		const ozz::math::SimdQuaternion result = delta * current;
+
+		t.rotation.x = ozz::math::SetI(t.rotation.x, ozz::math::SplatX(result.xyzw), lane);
+		t.rotation.y = ozz::math::SetI(t.rotation.y, ozz::math::SplatY(result.xyzw), lane);
+		t.rotation.z = ozz::math::SetI(t.rotation.z, ozz::math::SplatZ(result.xyzw), lane);
+		t.rotation.w = ozz::math::SetI(t.rotation.w, ozz::math::SplatW(result.xyzw), lane);
+	}
+
+	void SkelAnimator::multiplySoATransformQuaternion(int _index, const ozz::math::SimdQuaternion& _quat,	const ozz::span<ozz::math::SoaTransform>& _transforms)
 	{
 		assert(_index >= 0 && static_cast<size_t>(_index) < _transforms.size() * 4 && "joint index out of bound.");
 
