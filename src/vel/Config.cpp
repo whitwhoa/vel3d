@@ -2,7 +2,8 @@
 #include <sstream>
 #include <iostream>
 
-#include "vel/logger.hpp"
+#include "spdlog/spdlog.h"
+
 #include "vel/Config.h"
 #include "vel/functions.h"
 
@@ -62,7 +63,7 @@ namespace vel
 
         if (!conf.is_open()) 
         {
-            VEL3D_LOG_DEBUG("Config::loadFromFile: Failed to load config.ini file at path: {}", path);
+            SPDLOG_DEBUG("Config::loadFromFile: Failed to load config.ini file at path: {}", path);
             return std::nullopt;
         }
 

@@ -25,7 +25,8 @@
 #include "btBulletCollisionCommon.h"
 #include "btBulletDynamicsCommon.h"
 
-#include "vel/logger.hpp"
+#include "spdlog/spdlog.h"
+
 #include "vel/App.h"
 
 using namespace std::chrono_literals;
@@ -63,7 +64,7 @@ namespace vel
 
 		const MMRESULT r = timeBeginPeriod(1);
 		if(r != TIMERR_NOERROR)
-			VEL3D_LOG_WARN("App::App(): unable to adjust windows time interval");
+			SPDLOG_WARN("App::App(): unable to adjust windows time interval");
 
 #endif
 
@@ -125,7 +126,7 @@ namespace vel
 
 	void App::removeScene(const std::string& name)
 	{
-		VEL3D_LOG_DEBUG("App::removeScene: Removing Scene: {}", name);
+		SPDLOG_DEBUG("App::removeScene: Removing Scene: {}", name);
 
 		size_t i = 0;
 		for (auto& s : this->scenes)
@@ -159,7 +160,7 @@ namespace vel
 
 	void App::swapScene(const std::string& name)
 	{
-		VEL3D_LOG_DEBUG("App::swapScene: Swapping to Scene: {}", name);
+		SPDLOG_DEBUG("App::swapScene: Swapping to Scene: {}", name);
 
 		for (auto& s : this->scenes)
 		{
@@ -192,7 +193,7 @@ namespace vel
 		className.erase(0, 6);
 		scene->setName(className);
 
-		VEL3D_LOG_DEBUG("App::addScene: Adding Scene: {}", className);
+		SPDLOG_DEBUG("App::addScene: Adding Scene: {}", className);
 
 		// inject window size and resolution into scene
 		scene->setWindowSize(this->window->getWindowSize().x, this->window->getWindowSize().y);
@@ -384,12 +385,12 @@ namespace vel
 				//double t1 = this->getRuntimeSec();
 				this->activeScene->updateAnimators(flt);
 				//double t2 = this->getRuntimeSec();
-				//VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
+				//SPDLOG_TRACE("{:.15f}", t2 - t1);
 
 				//double t1 = this->getRuntimeSec();
 				this->activeScene->fixedLoop(flt);
 				//double t2 = this->getRuntimeSec();
-				//VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
+				//SPDLOG_TRACE("{:.15f}", t2 - t1);
 				
 				if (this->audioDevice)
 					this->audioDevice->cleanUpManagedSFX();
@@ -412,7 +413,7 @@ namespace vel
 			//double t1 = this->getRuntimeSec();
 			this->activeScene->lerpAnimators(renderLerp);
 			//double t2 = this->getRuntimeSec();
-			//VEL3D_LOG_TRACE("{:.15f}", t2 - t1);
+			//SPDLOG_TRACE("{:.15f}", t2 - t1);
 
 			this->activeScene->updateBillboards();
 

@@ -8,7 +8,7 @@
 #include "nvapi/NvApiDriverSettings.h"
 #include <string>
 
-#include "vel/logger.hpp"
+#include "spdlog/spdlog.h"
 
 namespace vel
 {
@@ -22,7 +22,7 @@ namespace vel
             NvAPI_GetErrorMessage(status, szDesc);
             msg = msg + std::string("NVAPI Error: ") + std::string(szDesc);
 
-            VEL3D_LOG_WARN("nvapi.hpp nvapiStatusOk(): {}", msg);
+            SPDLOG_WARN("nvapi.hpp nvapiStatusOk(): {}", msg);
 
             return false;
         }
@@ -64,11 +64,11 @@ namespace vel
         // for debugging use ^ in prod
         if (!nvapiStatusOk(NvAPI_Initialize()))
         {
-            VEL3D_LOG_WARN("Unable to initialize Nvidia api");
+            SPDLOG_WARN("Unable to initialize Nvidia api");
             return;
         }
         
-        VEL3D_LOG_INFO("Nvidia api initialized successfully");
+        SPDLOG_INFO("Nvidia api initialized successfully");
 
         // initialize session
         NvDRSSessionHandle hSession;
@@ -161,7 +161,7 @@ namespace vel
             return;
         }
 
-        VEL3D_LOG_INFO("Nvidia application profile updated successfully");
+        SPDLOG_INFO("Nvidia application profile updated successfully");
 
         NvAPI_DRS_DestroySession(hSession);
 

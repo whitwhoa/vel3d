@@ -1,6 +1,8 @@
 
+#include "spdlog/spdlog.h"
+
 #include "vel/HeadlessScene.h"
-#include "vel/logger.hpp"
+
 
 namespace vel
 {
@@ -56,7 +58,7 @@ namespace vel
 		std::vector<Mesh*> loadedMeshes = this->assetManager->loadMesh(path);
 		if (loadedMeshes.size() == 0)
 		{
-			VEL3D_LOG_DEBUG("HeadlessScene::loadMesh: call to assetManager->loadMesh resulted in nullopt");
+			SPDLOG_DEBUG("HeadlessScene::loadMesh: call to assetManager->loadMesh resulted in nullopt");
 			return false;
 		}
 
@@ -116,7 +118,7 @@ namespace vel
 			if (this->stages.at(i)->getName() == name)
 				return this->stages.at(i).get();
 
-		VEL3D_LOG_DEBUG("HeadlessScene::getStage: Attempting to retrive stage that does not exist: {}" + name);
+		SPDLOG_DEBUG("HeadlessScene::getStage: Attempting to retrive stage that does not exist: {}" + name);
 
 		return nullptr;
 	}

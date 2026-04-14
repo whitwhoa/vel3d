@@ -1,6 +1,7 @@
 #include <iostream>
 
-#include "vel/logger.hpp"
+#include "spdlog/spdlog.h"
+
 #include "vel/Mesh.h"
 
 
@@ -106,7 +107,7 @@ namespace vel
 	{
 		if (!(width > 0.0f && height > 0.0f))
 		{
-			VEL3D_LOG_DEBUG("Mesh::initBillboardQuad: Billboard width and height must be positive.");
+			SPDLOG_DEBUG("Mesh::initBillboardQuad: Billboard width and height must be positive.");
 			return false;
 		}
 

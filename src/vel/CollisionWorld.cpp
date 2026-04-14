@@ -2,7 +2,8 @@
 #include "BulletCollision/CollisionDispatch/btInternalEdgeUtility.h"
 #include "glm/glm.hpp"
 
-#include "vel/logger.hpp"
+#include "spdlog/spdlog.h"
+
 #include "vel/App.h"
 #include "vel/LightmapMaterialMixin.h"
 #include "vel/CollisionWorld.h"
@@ -386,7 +387,7 @@ namespace vel
 
 		if (triangleIndex < 0 || triangleIndex >= numTrianglesTotal) 
 		{
-			VEL3D_LOG_DEBUG("CollisionWorld::getTriangleVertices: Invalid triangle index");
+			SPDLOG_DEBUG("CollisionWorld::getTriangleVertices: Invalid triangle index");
 			return false;
 		}
 

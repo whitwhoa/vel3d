@@ -1,7 +1,8 @@
 #include <iostream>
 
 
-#include "vel/logger.hpp"
+#include "spdlog/spdlog.h"
+
 #include "vel/App.h"
 #include "vel/Stage.h"
 

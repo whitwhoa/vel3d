@@ -4,17 +4,22 @@
 #include <filesystem>
 
 #include "glad/gl.h"
+
 #include "GLFW/glfw3.h"
+
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
-#include <glm/gtx/string_cast.hpp>
+#include "glm/gtx/string_cast.hpp"
+
 #include "stb_headers/stb_image.h"
+
+#include "spdlog/spdlog.h"
 
 #include "vel/GPU.h"
 #include "vel/Vertex.h"
 #include "vel/functions.h"
-#include "vel/logger.hpp"
+
 
 
 namespace vel
@@ -130,7 +135,7 @@ namespace vel
 				statusString = "Unknown error";
 			}
 
-			VEL3D_LOG_DEBUG("GPU::createFinalRenderTarget: Framebuffer is not complete! Status code: {}", statusString);
+			SPDLOG_DEBUG("GPU::createFinalRenderTarget: Framebuffer is not complete! Status code: {}", statusString);
 
 			return nullptr;
 		}
@@ -494,7 +499,7 @@ namespace vel
 			glGetShaderInfoLog(vertex, 512, NULL, infoLog);
 			infoLogStr = infoLog;
 
-			VEL3D_LOG_DEBUG("GPU::loadShader: VERTEX::COMPILATION_FAILED: {}", infoLogStr);
+			SPDLOG_DEBUG("GPU::loadShader: VERTEX::COMPILATION_FAILED: {}", infoLogStr);
 			return false;
 		};
 
@@ -517,7 +522,7 @@ namespace vel
 				glGetShaderInfoLog(geometry, 512, NULL, infoLog);
 				infoLogStr = infoLog;
 
-				VEL3D_LOG_DEBUG("GPU::loadShader: GEOMETRY::COMPILATION_FAILED: {}", infoLogStr);
+				SPDLOG_DEBUG("GPU::loadShader: GEOMETRY::COMPILATION_FAILED: {}", infoLogStr);
 				return false;
 			};
 		}
@@ -539,7 +544,7 @@ namespace vel
 			glGetShaderInfoLog(fragment, 512, NULL, infoLog);
 			infoLogStr = infoLog;
 
-			VEL3D_LOG_DEBUG("GPU::loadShader: FRAGMENT::COMPILATION_FAILED: {}", infoLogStr);
+			SPDLOG_DEBUG("GPU::loadShader: FRAGMENT::COMPILATION_FAILED: {}", infoLogStr);
 			return false;
 		};
 
@@ -564,7 +569,7 @@ namespace vel
 			glGetProgramInfoLog(id, 512, NULL, infoLog);
 			infoLogStr = infoLog;
 
-			VEL3D_LOG_DEBUG("GPU::loadShader: PROGRAM::LINKING_FAILED: {}", infoLog);
+			SPDLOG_DEBUG("GPU::loadShader: PROGRAM::LINKING_FAILED: {}", infoLog);
 			return false;
 		}
 
@@ -668,7 +673,7 @@ namespace vel
 		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
-			VEL3D_LOG_DEBUG("GPU::updateRenderTarget: Framebuffer is not complete: 001");
+			SPDLOG_DEBUG("GPU::updateRenderTarget: Framebuffer is not complete: 001");
 			return false;
 		}
 
@@ -707,7 +712,7 @@ namespace vel
 		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
-			VEL3D_LOG_DEBUG("GPU::updateRenderTarget: Framebuffer is not complete: 002");
+			SPDLOG_DEBUG("GPU::updateRenderTarget: Framebuffer is not complete: 002");
 			return false;
 		}
 

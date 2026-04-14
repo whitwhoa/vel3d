@@ -1,18 +1,21 @@
 #include <iostream>
 #include <fstream>
 
-//#define GLM_FORCE_ALIGNED_GENTYPES
-#include <glm/gtx/string_cast.hpp>
+#include "spdlog/spdlog.h"
+
+#include "glm/gtx/string_cast.hpp"
+
 #include "imgui/imgui.h"
+
+#include "nlohmann/json.hpp"
 
 #include "vel/MaterialOptions.h"
 #include "vel/Scene.h"
 #include "vel/Vertex.h"
 #include "vel/Texture.h"
-#include "nlohmann/json.hpp"
 #include "vel/CollisionObjectTemplate.h"
 #include "vel/functions.h"
-#include "vel/logger.hpp"
+
 
 
 using json = nlohmann::json;
@@ -153,7 +156,7 @@ namespace vel
 
 	void Scene::freeAssets()
 	{
-		VEL3D_LOG_DEBUG("Freeing assets for scene: {}", this->name);
+		SPDLOG_DEBUG("Freeing assets for scene: {}", this->name);
         
 		for (auto& pCam : this->camerasInUse)
 			this->assetManager->removeCamera(pCam);

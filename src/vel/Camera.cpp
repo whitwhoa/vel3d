@@ -2,8 +2,8 @@
 //#define GLM_FORCE_ALIGNED_GENTYPES
 #include "glm/gtx/matrix_decompose.hpp"
 
+#include "spdlog/spdlog.h"
 
-#include "vel/logger.hpp"
 #include "vel/App.h"
 #include "vel/Camera.h"
 
@@ -160,7 +160,7 @@ namespace vel
 		// if current viewport size does not equal the previous tick's viewport size, we have to rebuild the render target
 		if (currentResolution != this->previousResolution)
 		{
-			VEL3D_LOG_DEBUG("Camera::update: viewport size altered");
+			SPDLOG_DEBUG("Camera::update: viewport size altered");
 
 			RenderTarget rt = this->gpu->createRenderTarget((this->getName() + "_RT"), currentResolution.x, currentResolution.y);
 			this->gpu->clearRenderTarget(&this->renderTarget.value());

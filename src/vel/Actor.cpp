@@ -1,9 +1,10 @@
 #include <iostream>
 
+#include "spdlog/spdlog.h"
+
 #include "vel/functions.h"
 #include "vel/EmptyMaterial.h"
 #include "vel/Actor.h"
-#include "vel/logger.hpp"
 
 
 namespace vel
@@ -322,7 +323,7 @@ namespace vel
 	{
 		if (!this->mesh)
 		{
-			VEL3D_LOG_ERROR("Actor::setAnimator(): Attempting to add animator to actor that does not contain a mesh: {}", this->name);
+			SPDLOG_ERROR("Actor::setAnimator(): Attempting to add animator to actor that does not contain a mesh: {}", this->name);
 			return false;
 		}
 
@@ -334,7 +335,7 @@ namespace vel
 			int skelBoneIndex = this->animator->getBoneIndex(meshBone.name);
 			if (skelBoneIndex == -1)
 			{
-				VEL3D_LOG_ERROR("Actor::setAnimator(): Skeleton does not contain bone with name {}.", meshBone.name);
+				SPDLOG_ERROR("Actor::setAnimator(): Skeleton does not contain bone with name {}.", meshBone.name);
 				return false;
 			}
 

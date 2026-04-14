@@ -17,10 +17,12 @@
 #include "ozz/base/io/archive.h"
 #include "ozz/base/io/stream.h"
 
+#include "spdlog/spdlog.h"
+
 #include "vel/AssetManager.h"
 #include "vel/AssimpMeshLoader.h"
 #include "vel/functions.h"
-#include "vel/logger.hpp"
+
 
 using namespace std::chrono_literals;
 
@@ -63,7 +65,7 @@ namespace vel
 
 		if (!shaderFile.is_open()) 
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadShaderFile(): could not open shader file: {}", shaderPath);
+			SPDLOG_DEBUG("AssetManager::loadShaderFile(): could not open shader file: {}", shaderPath);
 			return std::nullopt;
 		}
 
@@ -73,7 +75,7 @@ namespace vel
 
 		if (shaderStream.str().empty()) 
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadShaderFile(): Shader file is empty: {}", shaderPath);
+			SPDLOG_DEBUG("AssetManager::loadShaderFile(): Shader file is empty: {}", shaderPath);
 			return std::nullopt;
 		}
 
@@ -118,14 +120,14 @@ namespace vel
 
 		if (shaderIndex > -1)
 		{
-			VEL3D_LOG_DEBUG("Existing Shader, bypass reload: {}", name);
+			SPDLOG_DEBUG("Existing Shader, bypass reload: {}", name);
 			
 			this->shaders.at(shaderIndex).second++;
 
 			return this->shaders.at(shaderIndex).first.get();
 		}
 
-		VEL3D_LOG_DEBUG("Loading new Shader: {}", name);
+		SPDLOG_DEBUG("Loading new Shader: {}", name);
 
 
 		// Process vertex shader script
@@ -210,7 +212,7 @@ namespace vel
 
 		if (shaderIndex == -1)
 		{
-			VEL3D_LOG_DEBUG("AssetManager::getShader(): Attempting to get shader that does not exist: {}", name);
+			SPDLOG_DEBUG("AssetManager::getShader(): Attempting to get shader that does not exist: {}", name);
 			return nullptr;
 		}
 
@@ -229,7 +231,7 @@ namespace vel
 
 		if (s.second == 0)
 		{
-			VEL3D_LOG_DEBUG("Full remove Shader: {}", pShader->name);
+			SPDLOG_DEBUG("Full remove Shader: {}", pShader->name);
 			
 			this->gpu->clearShader(s.first.get());
 
@@ -238,7 +240,7 @@ namespace vel
 			return;
 		}
 
-		VEL3D_LOG_DEBUG("Decrement Shader usageCount, retain: {}", pShader->name);
+		SPDLOG_DEBUG("Decrement Shader usageCount, retain: {}", pShader->name);
 	}
 
 
@@ -268,7 +270,7 @@ namespace vel
 		const std::vector<std::string>& preLoadData = this->meshLoader->preload(path);
 		if (preLoadData.size() == 0)
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadMesh: failed to preload required data for loading of mesh");
+			SPDLOG_DEBUG("AssetManager::loadMesh: failed to preload required data for loading of mesh");
 			return {};
 		}
 
@@ -329,7 +331,7 @@ namespace vel
 			}
 		}
 
-		VEL3D_LOG_DEBUG("{} is not an existing mesh, and cannot be incremented", pMesh->getName());
+		SPDLOG_DEBUG("{} is not an existing mesh, and cannot be incremented", pMesh->getName());
 	}
 
 	// updates gpu state of provided Mesh*
@@ -345,7 +347,7 @@ namespace vel
 
 		if (meshIndex == -1)
 		{
-			VEL3D_LOG_DEBUG("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
+			SPDLOG_DEBUG("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
 			return nullptr;
 		}
 
@@ -364,7 +366,7 @@ namespace vel
 
 		if(m.second == 0)
 		{
-			VEL3D_LOG_DEBUG("Full remove Mesh: {}", pMesh->getName());
+			SPDLOG_DEBUG("Full remove Mesh: {}", pMesh->getName());
 
 			if (this->gpu != nullptr)
 				this->gpu->clearMesh(m.first.get());
@@ -374,7 +376,7 @@ namespace vel
 			return;
 		}
 
-		VEL3D_LOG_DEBUG("Decrement Mesh usageCount, retain: {}", pMesh->getName());
+		SPDLOG_DEBUG("Decrement Mesh usageCount, retain: {}", pMesh->getName());
 	}
 
 
@@ -405,7 +407,7 @@ namespace vel
 
 	//	if (armIndex == -1)
 	//	{
-	//		VEL3D_LOG_DEBUG("AssetManager::getArmature(): Attempting to get armature that does not exis: {}", name);
+	//		SPDLOG_DEBUG("AssetManager::getArmature(): Attempting to get armature that does not exis: {}", name);
 	//		return nullptr;
 	//	}
 
@@ -424,14 +426,14 @@ namespace vel
 
 	//	if (a.second == 0)
 	//	{
-	//		VEL3D_LOG_DEBUG("Full remove Armature: {}", pArm->getName());
+	//		SPDLOG_DEBUG("Full remove Armature: {}", pArm->getName());
 
 	//		this->armatures.erase(this->armatures.begin() + armIndex);
 
 	//		return;
 	//	}
 
-	//	VEL3D_LOG_DEBUG("Decrement Armature usageCount, retain: {}", pArm->getName());
+	//	SPDLOG_DEBUG("Decrement Armature usageCount, retain: {}", pArm->getName());
 	//}
 
 
@@ -498,14 +500,14 @@ namespace vel
 
 		if(textureIndex > -1)
 		{
-			VEL3D_LOG_DEBUG("Existing Texture, bypass reload: {}", name);
+			SPDLOG_DEBUG("Existing Texture, bypass reload: {}", name);
 
 			this->textures.at(textureIndex).second++;
 
 			return this->textures.at(textureIndex).first.get();
 		}
 
-		VEL3D_LOG_DEBUG("Load new Texture: {}", name);
+		SPDLOG_DEBUG("Load new Texture: {}", name);
 
 		std::unique_ptr<Texture> texture = std::make_unique<Texture>();
 		texture->name = name;
@@ -526,7 +528,7 @@ namespace vel
 
 				if (!td)
 				{
-					VEL3D_LOG_DEBUG("AssetManager::loadTexture(): failed to load all files in directory: {}", path);
+					SPDLOG_DEBUG("AssetManager::loadTexture(): failed to load all files in directory: {}", path);
 					return nullptr;
 				}
 
@@ -540,7 +542,7 @@ namespace vel
 
 			if (!td)
 			{
-				VEL3D_LOG_DEBUG("AssetManager::loadTexture(): Unable to load texture at path: {}", path);
+				SPDLOG_DEBUG("AssetManager::loadTexture(): Unable to load texture at path: {}", path);
 				return nullptr;
 			}
 
@@ -572,7 +574,7 @@ namespace vel
 
 		if (textureIndex == -1)
 		{
-			VEL3D_LOG_DEBUG("AssetManager::getTexture(): Attempting to get texture that does not exist: {}", name);
+			SPDLOG_DEBUG("AssetManager::getTexture(): Attempting to get texture that does not exist: {}", name);
 			return nullptr;
 		}
 
@@ -591,7 +593,7 @@ namespace vel
 		
 		if (t.second == 0)
 		{
-			VEL3D_LOG_DEBUG("Full remove Texture: {}", pTexture->name);
+			SPDLOG_DEBUG("Full remove Texture: {}", pTexture->name);
 
 			this->gpu->clearTexture(t.first.get());
 
@@ -605,7 +607,7 @@ namespace vel
 			return;
 		}
 
-		VEL3D_LOG_DEBUG("Decrement Texture usageCount, retain: {}", pTexture->name);
+		SPDLOG_DEBUG("Decrement Texture usageCount, retain: {}", pTexture->name);
 	}
 
 
@@ -637,14 +639,14 @@ namespace vel
 
 		if (materialIndex > -1)
 		{
-			VEL3D_LOG_DEBUG("Existing Material, bypass reload: {}", m->getName());
+			SPDLOG_DEBUG("Existing Material, bypass reload: {}", m->getName());
 
 			this->materials.at(materialIndex).second++;
 
 			return this->materials.at(materialIndex).first.get();
 		}
 
-		VEL3D_LOG_DEBUG("Loading new Material: {}", m->getName());
+		SPDLOG_DEBUG("Loading new Material: {}", m->getName());
 
 		this->materials.push_back(std::pair<std::unique_ptr<Material>, int>(std::move(m), 1));
 
@@ -657,7 +659,7 @@ namespace vel
 
 		if (materialIndex == -1)
 		{
-			VEL3D_LOG_DEBUG("AssetManager::getMaterial(): Attempting to get material that does not exist: {}", name);
+			SPDLOG_DEBUG("AssetManager::getMaterial(): Attempting to get material that does not exist: {}", name);
 			return nullptr;
 		}
 
@@ -676,14 +678,14 @@ namespace vel
 
 		if (m.second == 0)
 		{
-			VEL3D_LOG_DEBUG("Full remove Material: {}", pMaterial->getName());
+			SPDLOG_DEBUG("Full remove Material: {}", pMaterial->getName());
 
 			this->materials.erase(this->materials.begin() + materialIndex);
 
 			return;
 		}
 
-		VEL3D_LOG_DEBUG("Decrement Material usageCount, retain: {}", pMaterial->getName());
+		SPDLOG_DEBUG("Decrement Material usageCount, retain: {}", pMaterial->getName());
 	}
 
 
@@ -714,14 +716,14 @@ namespace vel
 
 		if (cameraIndex > -1)
 		{
-			VEL3D_LOG_DEBUG("Existing Camera, bypass reload: {}", c->getName());
+			SPDLOG_DEBUG("Existing Camera, bypass reload: {}", c->getName());
 
 			this->cameras.at(cameraIndex).second++;
 
 			return this->cameras.at(cameraIndex).first.get();
 		}
 
-		VEL3D_LOG_DEBUG("Loading new Camera: {}", c->getName());
+		SPDLOG_DEBUG("Loading new Camera: {}", c->getName());
 
 		this->cameras.push_back(std::pair<std::unique_ptr<Camera>, int>(std::move(c), 1));
 
@@ -743,7 +745,7 @@ namespace vel
 
 		if (cameraIndex == -1)
 		{
-			VEL3D_LOG_DEBUG("AssetManager::getCamera(): Attempting to get camera that does not exist: {}", name);
+			SPDLOG_DEBUG("AssetManager::getCamera(): Attempting to get camera that does not exist: {}", name);
 			return nullptr;
 		}
 
@@ -762,7 +764,7 @@ namespace vel
 
 		if (c.second == 0)
 		{
-			VEL3D_LOG_DEBUG("Full remove Camera: {}", pCamera->getName());
+			SPDLOG_DEBUG("Full remove Camera: {}", pCamera->getName());
 
 			this->gpu->clearRenderTarget(c.first.get()->getRenderTarget());
 
@@ -771,7 +773,7 @@ namespace vel
 			return;
 		}
 
-		VEL3D_LOG_DEBUG("Decrement Camera usageCount, retain: {}", pCamera->getName());
+		SPDLOG_DEBUG("Decrement Camera usageCount, retain: {}", pCamera->getName());
 	}
 
 
@@ -802,19 +804,19 @@ namespace vel
 
 		if (fbIndex > -1)
 		{
-			VEL3D_LOG_DEBUG("Existing FontBitmap, bypass reload: {}", fontName);
+			SPDLOG_DEBUG("Existing FontBitmap, bypass reload: {}", fontName);
 
 			this->fontBitmaps.at(fbIndex).second++;
 
 			return this->fontBitmaps.at(fbIndex).first.get();
 		}
 
-		VEL3D_LOG_DEBUG("Load new FontBitmap: {}", fontName);
+		SPDLOG_DEBUG("Load new FontBitmap: {}", fontName);
 
 		std::ifstream file(fontPath, std::ios::binary | std::ios::ate);
 		if (!file.is_open())
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadFontBitmap(): Failed to open file: {}", fontPath);
+			SPDLOG_DEBUG("AssetManager::loadFontBitmap(): Failed to open file: {}", fontPath);
 			return nullptr;
 		}
 
@@ -841,7 +843,7 @@ namespace vel
 
 		if (!fontInitialized)
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadFontBitmap(): Failed to initialize font");
+			SPDLOG_DEBUG("AssetManager::loadFontBitmap(): Failed to initialize font");
 			return nullptr;
 		}
 
@@ -851,7 +853,7 @@ namespace vel
 
 		if (!fontPacked)
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadFontBitmap(): Failed to pack font");
+			SPDLOG_DEBUG("AssetManager::loadFontBitmap(): Failed to pack font");
 			return nullptr;
 		}
 
@@ -874,7 +876,7 @@ namespace vel
 
 		if (fbIndex == -1)
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadFontBitmap(): Attempting to get font bitmap that does not exist: {}", name);
+			SPDLOG_DEBUG("AssetManager::loadFontBitmap(): Attempting to get font bitmap that does not exist: {}", name);
 			return nullptr;
 		}
 
@@ -893,7 +895,7 @@ namespace vel
 
 		if (fb.second == 0)
 		{
-			VEL3D_LOG_DEBUG("Full remove FontBitmap: {}", pFontBitmap->fontName);
+			SPDLOG_DEBUG("Full remove FontBitmap: {}", pFontBitmap->fontName);
 
 			this->gpu->clearTexture(&fb.first->texture);
 			
@@ -902,7 +904,7 @@ namespace vel
 			return;
 		}
 
-		VEL3D_LOG_DEBUG("Decrement FontBitmap usageCount, retain: {}", fb.first->fontName);
+		SPDLOG_DEBUG("Decrement FontBitmap usageCount, retain: {}", fb.first->fontName);
 	}
 
 	FontGlyphInfo AssetManager::getFontGlyphInfo(uint32_t character, float offsetX, float offsetY, FontBitmap* fb)
@@ -1067,28 +1069,28 @@ namespace vel
 		auto it = this->skeletons.find(name);
 		if (it != this->skeletons.end()) 
 		{
-			VEL3D_LOG_DEBUG("Existing Skeleton, bypass reload: {}", name);
+			SPDLOG_DEBUG("Existing Skeleton, bypass reload: {}", name);
 
 			it->second.second++;
 
 			return it->second.first.get();
 		}
 		
-		VEL3D_LOG_DEBUG("Load new Skeleton: {}", name);
+		SPDLOG_DEBUG("Load new Skeleton: {}", name);
 
 		std::unique_ptr<ozz::animation::Skeleton> skel = std::make_unique<ozz::animation::Skeleton>();
 		
 		ozz::io::File file(path.c_str(), "rb");
 		if (!file.opened())
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadSkeleton(): failed to load file: {}", path);
+			SPDLOG_DEBUG("AssetManager::loadSkeleton(): failed to load file: {}", path);
 			return nullptr;
 		}
 
 		ozz::io::IArchive archive(&file);
 		if (!archive.TestTag<ozz::animation::Skeleton>())
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadSkeleton(): failed to load skeleton instance from file: {}", path);
+			SPDLOG_DEBUG("AssetManager::loadSkeleton(): failed to load skeleton instance from file: {}", path);
 			return nullptr;
 		}
 
@@ -1107,7 +1109,7 @@ namespace vel
 		if (it != this->skeletons.end())
 			return it->second.first.get();
 		
-		VEL3D_LOG_DEBUG("AssetManager::getSkeleton attempting to get skeleton that does not exist: {}", name);
+		SPDLOG_DEBUG("AssetManager::getSkeleton attempting to get skeleton that does not exist: {}", name);
 		return nullptr;
 	}
 
@@ -1121,12 +1123,12 @@ namespace vel
 
 		if (it->second.second == 0)
 		{
-			VEL3D_LOG_DEBUG("Full remove Skeleton: {}", name);
+			SPDLOG_DEBUG("Full remove Skeleton: {}", name);
 			this->skeletons.erase(name);
 			return;
 		}
 
-		VEL3D_LOG_DEBUG("Decrement Skeleton usageCount, retain: {}", name);
+		SPDLOG_DEBUG("Decrement Skeleton usageCount, retain: {}", name);
 	}
 
 	/***********************************************************************************************
@@ -1137,28 +1139,28 @@ namespace vel
 		auto it = this->animations.find(name);
 		if (it != this->animations.end())
 		{
-			VEL3D_LOG_DEBUG("Existing Animation, bypass reload: {}", name);
+			SPDLOG_DEBUG("Existing Animation, bypass reload: {}", name);
 
 			it->second.second++;
 
 			return it->second.first.get();
 		}
 
-		VEL3D_LOG_DEBUG("Load new Animation: {}", name);
+		SPDLOG_DEBUG("Load new Animation: {}", name);
 
 		std::unique_ptr<ozz::animation::Animation> anim = std::make_unique<ozz::animation::Animation>();
 
 		ozz::io::File file(path.c_str(), "rb");
 		if (!file.opened())
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadAnimation(): failed to load file: {}", path);
+			SPDLOG_DEBUG("AssetManager::loadAnimation(): failed to load file: {}", path);
 			return nullptr;
 		}
 
 		ozz::io::IArchive archive(&file);
 		if (!archive.TestTag<ozz::animation::Animation>())
 		{
-			VEL3D_LOG_DEBUG("AssetManager::loadAnimation(): failed to load animation instance from file: {}", path);
+			SPDLOG_DEBUG("AssetManager::loadAnimation(): failed to load animation instance from file: {}", path);
 			return nullptr;
 		}
 
@@ -1177,7 +1179,7 @@ namespace vel
 		if (it != this->animations.end())
 			return it->second.first.get();
 
-		VEL3D_LOG_DEBUG("AssetManager::getAnimation attempting to get animation that does not exist: {}", name);
+		SPDLOG_DEBUG("AssetManager::getAnimation attempting to get animation that does not exist: {}", name);
 		return nullptr;
 	}
 
@@ -1191,12 +1193,12 @@ namespace vel
 
 		if (it->second.second == 0)
 		{
-			VEL3D_LOG_DEBUG("Full remove Animation: {}", name);
+			SPDLOG_DEBUG("Full remove Animation: {}", name);
 			this->animations.erase(name);
 			return;
 		}
 
-		VEL3D_LOG_DEBUG("Decrement Animation usageCount, retain: {}", name);
+		SPDLOG_DEBUG("Decrement Animation usageCount, retain: {}", name);
 	}
 
 	

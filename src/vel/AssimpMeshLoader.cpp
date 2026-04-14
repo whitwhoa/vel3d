@@ -2,7 +2,8 @@
 
 #include "glm/gtc/type_ptr.hpp"
 
-#include "vel/logger.hpp"
+#include "spdlog/spdlog.h"
+
 #include "vel/functions.h"
 #include "vel/AssimpMeshLoader.h"
 
@@ -46,7 +47,7 @@ namespace vel
 
 		if (!this->impScene || !this->impScene->mRootNode)
 		{
-			VEL3D_LOG_DEBUG("AssimpMeshLoader::preload(): {}", this->aiImporter.GetErrorString());
+			SPDLOG_DEBUG("AssimpMeshLoader::preload(): {}", this->aiImporter.GetErrorString());
 		}
 		else
 		{
@@ -200,7 +201,7 @@ namespace vel
 
 			// ...otherwise loop through all meshes for this node, creating a Mesh for each one
 
-			VEL3D_LOG_DEBUG("Loading new Mesh: {}", nodeName);
+			SPDLOG_DEBUG("Loading new Mesh: {}", nodeName);
 
 
 			// create one single mesh from all of the aiMeshes

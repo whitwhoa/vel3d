@@ -1,6 +1,7 @@
 #include <filesystem>
 
-#include "vel/logger.hpp"
+#include "spdlog/spdlog.h"
+
 #include "vel/AudioDevice.h"
 
 
@@ -19,7 +20,7 @@ namespace vel
 	{
 		if (ma_engine_init(NULL, &this->engine) != MA_SUCCESS)
 		{
-			VEL3D_LOG_DEBUG("AudioDevice::init: Failed to initialize audio engine.");
+			SPDLOG_DEBUG("AudioDevice::init: Failed to initialize audio engine.");
 			return false;
 		}
 
@@ -109,14 +110,14 @@ namespace vel
 		{
 			it->second += 1;
 
-			VEL3D_LOG_DEBUG("Existing BGM, bypass reload: {}", name);
+			SPDLOG_DEBUG("Existing BGM, bypass reload: {}", name);
 		}
 		else
 		{
 			this->bgmSounds[name] = path;
 			this->usages[name] = 1;
 			
-			VEL3D_LOG_DEBUG("Loading new BGM: {}", name);
+			SPDLOG_DEBUG("Loading new BGM: {}", name);
 		}
 
 		return name;
@@ -132,14 +133,14 @@ namespace vel
 		{
 			it->second += 1;
 
-			VEL3D_LOG_DEBUG("Existing SFX, bypass reload: {}", name);
+			SPDLOG_DEBUG("Existing SFX, bypass reload: {}", name);
 		}
 		else
 		{
 			ma_sound* sfx = new ma_sound;
 			if (ma_sound_init_from_file(&this->engine, path.c_str(), MA_SOUND_FLAG_DECODE, &this->sfxVolGroup, NULL, sfx) != MA_SUCCESS)
 			{
-				VEL3D_LOG_DEBUG("AudioDevice::loadSFX: Failed to load SFX: {}", path);
+				SPDLOG_DEBUG("AudioDevice::loadSFX: Failed to load SFX: {}", path);
 
 				delete sfx;
 				return std::nullopt;
@@ -148,7 +149,7 @@ namespace vel
 			this->sfxSounds[name] = sfx;
 			this->usages[name] = 1;
 
-			VEL3D_LOG_DEBUG("Loading new SFX: {}", name);
+			SPDLOG_DEBUG("Loading new SFX: {}", name);
 		}
 
 		return name;
@@ -240,7 +241,7 @@ namespace vel
 		else 
 		{
 			delete clone;
-			VEL3D_LOG_DEBUG("AudioDevice::play2DOneShotSFX: Failed to play non-spatial one-shot sound.");
+			SPDLOG_DEBUG("AudioDevice::play2DOneShotSFX: Failed to play non-spatial one-shot sound.");
 		}
 	}
 
@@ -259,7 +260,7 @@ namespace vel
 		else
 		{
 			delete clone;
-			VEL3D_LOG_DEBUG("AudioDevice::play2DLoopingSFX: Failed to play non-spatial looping sound.");
+			SPDLOG_DEBUG("AudioDevice::play2DLoopingSFX: Failed to play non-spatial looping sound.");
 		}
 	}
 
@@ -288,7 +289,7 @@ namespace vel
 		else 
 		{
 			delete clone;
-			VEL3D_LOG_DEBUG("AudioDevice::play3DSFX: Failed to play positional sound.");
+			SPDLOG_DEBUG("AudioDevice::play3DSFX: Failed to play positional sound.");
 		}
 	}
 
@@ -302,7 +303,7 @@ namespace vel
 		auto& bgmMap = this->currentBGM.at(this->currentGroupKey);
 		if (bgmMap.find(name) != bgmMap.end())
 		{
-			VEL3D_LOG_DEBUG("Skipping duplicate BGM init for: {}", name);
+			SPDLOG_DEBUG("Skipping duplicate BGM init for: {}", name);
 			return;
 		}
 
@@ -318,7 +319,7 @@ namespace vel
 		else
 		{
 			delete bgm;
-			VEL3D_LOG_DEBUG("AudioDevice::playBGM: Failed to load BGM track: " + path);
+			SPDLOG_DEBUG("AudioDevice::playBGM: Failed to load BGM track: " + path);
 		}
 
 	}
@@ -378,7 +379,7 @@ namespace vel
 		auto it = this->usages.find(name);
 		if (it == this->usages.end())
 		{
-			VEL3D_LOG_DEBUG("Attempting to remove sound that does not exist: {}", name);
+			SPDLOG_DEBUG("Attempting to remove sound that does not exist: {}", name);
 			return;
 		}
 
@@ -386,7 +387,7 @@ namespace vel
 
 		if (this->usages[name] == 0)
 		{
-			VEL3D_LOG_DEBUG("Full remove sound template: {}", name);
+			SPDLOG_DEBUG("Full remove sound template: {}", name);
 
 			auto itBGM = this->bgmSounds.find(name);
 			if (itBGM != this->bgmSounds.end())
@@ -403,7 +404,7 @@ namespace vel
 			return;
 		}
 
-		VEL3D_LOG_DEBUG("Decrement sound template usage count, retain: {}", name);
+		SPDLOG_DEBUG("Decrement sound template usage count, retain: {}", name);
 	}
 
 }

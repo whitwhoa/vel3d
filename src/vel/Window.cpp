@@ -1,7 +1,10 @@
 #include <iostream>
 
 
+#include "spdlog/spdlog.h"
+
 #include "glad/gl.h"
+
 #include "GLFW/glfw3.h"
 
 #include "imgui.h"
@@ -10,7 +13,7 @@
 
 #include "vel/Window.h"
 #include "vel/nvapi.hpp"
-#include "vel/logger.hpp"
+
 
 // stutter caused when not in fullscreen mode: https://stackoverflow.com/a/21663076/1609485
 // https://www.reddit.com/r/opengl/comments/8754el/stuttering_with_learnopengl_tutorials/dwbp7ta?utm_source=share&utm_medium=web2x
@@ -69,7 +72,7 @@ namespace vel
 			default:                             severityStr = "unknown"; break;
 		}
 
-		VEL3D_LOG_DEBUG(
+		SPDLOG_DEBUG(
 			"---------------\n"
 			"Debug message ({}): {}\n"
 			"Source: {}\n"
@@ -138,7 +141,7 @@ namespace vel
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 		glfwSetErrorCallback([](int error, const char* description) {
-			VEL3D_LOG_DEBUG("Window::init::glfwSetErrorCallback: {}", description);
+			SPDLOG_DEBUG("Window::init::glfwSetErrorCallback: {}", description);
 		});
 
 		if (this->windowMode)
@@ -157,7 +160,7 @@ namespace vel
 
 		if (this->glfwWindow == NULL)
 		{
-			VEL3D_LOG_DEBUG("Window::init: Failed to create GLFW window");
+			SPDLOG_DEBUG("Window::init: Failed to create GLFW window");
 
 			glfwTerminate();
 
@@ -176,7 +179,7 @@ namespace vel
 			// GLAD manages function pointers for OpenGL so we want to initialize GLAD before we call any OpenGL functions
 			if (!gladLoadGL(glfwGetProcAddress))
 			{
-				VEL3D_LOG_DEBUG("Window::init: Failed to initialize GLAD");
+				SPDLOG_DEBUG("Window::init: Failed to initialize GLAD");
 				return false;
 			}
 			else
@@ -204,11 +207,11 @@ namespace vel
 						glDebugMessageCallback(glDebugOutput, nullptr);
 						glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 
-						VEL3D_LOG_DEBUG("OpenGL debug context should be loaded");
+						SPDLOG_DEBUG("OpenGL debug context should be loaded");
 					}
 					else
 					{
-						VEL3D_LOG_DEBUG("OpenGL debug context unable to load");
+						SPDLOG_DEBUG("OpenGL debug context unable to load");
 					}
 				}
 
@@ -457,9 +460,8 @@ namespace vel
 
 		// Focus
 		glfwSetWindowFocusCallback(this->glfwWindow, [](GLFWwindow* window, int focused) {
-		
-			VEL3D_LOG_DEBUG_IF(focused, "Window Focused!");
-			VEL3D_LOG_DEBUG_IF(!focused, "Window NOT Focused!");
+
+			SPDLOG_DEBUG("Focused State: {}", focused);
 		
 		});
 

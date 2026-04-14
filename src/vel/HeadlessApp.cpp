@@ -1,6 +1,8 @@
 
+#include "spdlog/spdlog.h"
+
 #include "vel/HeadlessApp.h"
-#include "vel/logger.hpp"
+
 
 namespace vel
 {
@@ -20,7 +22,7 @@ namespace vel
 		className.erase(0, 6);
 		scene->setName(className);
 
-		VEL3D_LOG_DEBUG("HeadlessApp::addScene: Adding HeadlessScene: {}", className);
+		SPDLOG_DEBUG("HeadlessApp::addScene: Adding HeadlessScene: {}", className);
 
 		scene->setAssetManager(this->assetManager);
 
@@ -35,7 +37,7 @@ namespace vel
 
 	void HeadlessApp::removeScene(const std::string& name)
 	{
-		VEL3D_LOG_DEBUG("HeadlessApp::removeScene: Removing Scene: {}", name);
+		SPDLOG_DEBUG("HeadlessApp::removeScene: Removing Scene: {}", name);
 
 		size_t i = 0;
 		for (auto& s : this->scenes)
@@ -69,7 +71,7 @@ namespace vel
 
 	void HeadlessApp::swapScene(const std::string& name)
 	{
-		VEL3D_LOG_DEBUG("HeadlessScene::swapScene: Swapping to Scene: {}", name);
+		SPDLOG_DEBUG("HeadlessScene::swapScene: Swapping to Scene: {}", name);
 
 		for (auto& s : this->scenes)
 			if (s->getName() == name)
