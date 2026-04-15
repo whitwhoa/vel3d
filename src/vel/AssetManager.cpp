@@ -348,7 +348,7 @@ namespace vel
 
 		if (meshIndex == -1)
 		{
-			SPDLOG_DEBUG("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
+			SPDLOG_ERROR("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
 			return nullptr;
 		}
 
@@ -379,63 +379,6 @@ namespace vel
 
 		SPDLOG_DEBUG("Decrement Mesh usageCount, retain: {}", pMesh->getName());
 	}
-
-
-	///***********************************************************************************************
-	//* ARMATURES
-	//************************************************************************************************/
-	//int AssetManager::getArmatureIndex(const std::string& name)
-	//{
-	//	for (int i = 0; i < this->armatures.size(); i++)
-	//		if (this->armatures.at(i).first->getName() == name)
-	//			return i;
-
-	//	return -1;
-	//}
-
-	//int AssetManager::getArmatureIndex(const Armature* a)
-	//{
-	//	for (int i = 0; i < this->armatures.size(); i++)
-	//		if (this->armatures.at(i).first.get() == a)
-	//			return i;
-
-	//	return -1;
-	//}
-
-	//Armature* AssetManager::getArmature(const std::string& name)
-	//{
-	//	int armIndex = this->getArmatureIndex(name);
-
-	//	if (armIndex == -1)
-	//	{
-	//		SPDLOG_DEBUG("AssetManager::getArmature(): Attempting to get armature that does not exis: {}", name);
-	//		return nullptr;
-	//	}
-
-	//	return this->armatures.at(armIndex).first.get();
-	//}
-
-	//void AssetManager::removeArmature(const Armature* pArm)
-	//{
-	//	int armIndex = this->getArmatureIndex(pArm);
-
-	//	if (armIndex == -1)
-	//		return;
-
-	//	auto& a = this->armatures.at(armIndex);
-	//	a.second--;
-
-	//	if (a.second == 0)
-	//	{
-	//		SPDLOG_DEBUG("Full remove Armature: {}", pArm->getName());
-
-	//		this->armatures.erase(this->armatures.begin() + armIndex);
-
-	//		return;
-	//	}
-
-	//	SPDLOG_DEBUG("Decrement Armature usageCount, retain: {}", pArm->getName());
-	//}
 
 
 	/***********************************************************************************************
