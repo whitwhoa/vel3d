@@ -4,7 +4,7 @@ file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/vel/*.cpp")
 
 add_library(VEL3D_LIBRARY STATIC ${headers} ${sources})
-add_dependencies(VEL3D_LIBRARY ${libGLFW} GLAD_LIBRARY ${libGLM} ${libAssimp} ${libBullet} ${libJson} ${libStbHeaders} IMGUI_LIBRARY MINIAUDIO_LIBRARY SPDLOG_LIBRARY)
+add_dependencies(VEL3D_LIBRARY ${libGLFW} GLAD_LIBRARY ${libGLM} ${libAssimp} ${libBullet} ${libJson} ${libStbHeaders} IMGUI_LIBRARY MINIAUDIO_LIBRARY SPDLOG_LIBRARY OZZ_BASE_LIBRARY OZZ_ANIMATION_LIBRARY)
 set(VEL3D_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set_target_properties(VEL3D_LIBRARY PROPERTIES 
