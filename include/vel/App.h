@@ -35,9 +35,10 @@ namespace vel
         bool											shouldClose;
         double											fixedLogicTime;
 
-        double											loopTime;
-        double											lastLoopTime;
-        double                                          loopTimeClamp;
+        double											deltaTime;
+        double                                          currentRunTime;
+        double											lastRunTime;
+        double                                          deltaTimeClamp;
 
         double                                          frameTime;
         double                                          lastFrameTime;
@@ -69,7 +70,7 @@ namespace vel
         virtual void									execute();
         void											close();
 
-        double                                          getLoopTime();
+        double                                          getDeltaTime();
 		double											getFrameTime();
         double											getLogicTime();
 

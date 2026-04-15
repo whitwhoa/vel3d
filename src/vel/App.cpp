@@ -47,9 +47,10 @@ namespace vel
 
 		fixedLogicTime(1.0 / this->config.LOGIC_TICK),
 
-		loopTime(0.0),
-		lastLoopTime(0.0),
-		loopTimeClamp(0.25),
+		deltaTime(0.0),
+		currentRunTime(0.0),
+		lastRunTime(0.0),
+		deltaTimeClamp(0.25),
 
 		frameTime(0.0),
 		lastFrameTime(0.0),
@@ -248,9 +249,9 @@ namespace vel
 		return *this->assetManager;
 	}
 
-	double App::getLoopTime()
+	double App::getDeltaTime()
 	{
-		return this->loopTime;
+		return this->deltaTime;
 	}
 
 	double App::getFrameTime()
@@ -349,15 +350,15 @@ namespace vel
 			// --------------------------------------------------------------------
 			// 2) Loop boundary timing
 			// --------------------------------------------------------------------
-			double now1 = this->getRuntimeSec();
-			this->loopTime = now1 - this->lastLoopTime;
-			this->lastLoopTime = now1;
+			this->currentRunTime = this->getRuntimeSec();
+			this->deltaTime = this->currentRunTime - this->lastRunTime;
+			this->lastRunTime = this->currentRunTime;
 
-			// Spiral of death prevention for loopTime
-			if (this->loopTime > this->loopTimeClamp)
-				this->loopTime = this->loopTimeClamp;
+			// Spiral of death prevention for deltaTime
+			if (this->deltaTime > this->deltaTimeClamp)
+				this->deltaTime = this->deltaTimeClamp;
 
-			this->accumulator += this->loopTime;
+			this->accumulator += this->deltaTime;
 
 			// --------------------------------------------------------------------
 			// 3) Input + OS events
@@ -408,7 +409,7 @@ namespace vel
 			// --------------------------------------------------------------------
 			float renderLerp = static_cast<float>(std::clamp((this->accumulator / this->fixedLogicTime), 0.0, 1.0));
 
-			float ft = static_cast<float>(this->loopTime);
+			float dt = static_cast<float>(this->deltaTime);
 			
 			//double t1 = this->getRuntimeSec();
 			this->activeScene->lerpAnimators(renderLerp);
@@ -417,14 +418,14 @@ namespace vel
 
 			this->activeScene->updateBillboards();
 
-			this->activeScene->immediateLoop(ft, renderLerp);
+			this->activeScene->immediateLoop(dt, renderLerp);
 			this->activeScene->updateTextActors();
 
 			// --------------------------------------------------------------------
 			// 6) Render submit
 			// --------------------------------------------------------------------
 			this->activeScene->clearAllRenderTargetBuffers(this->gpu);
-			this->activeScene->draw(ft, renderLerp);
+			this->activeScene->draw(dt, renderLerp);
 			this->window->renderGui();
 
 			// --------------------------------------------------------------------
