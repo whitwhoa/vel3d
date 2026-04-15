@@ -288,6 +288,7 @@ namespace vel
 			}		
 			else
 			{
+				SPDLOG_DEBUG("Existing Mesh, bypass reload: {}", pld);
 				this->meshes.at(meshIndex).second++;
 				out.push_back(this->meshes.at(meshIndex).first.get());
 			}

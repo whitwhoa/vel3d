@@ -161,8 +161,8 @@ namespace vel
 	int SkelAnimator::getBoneIndex(const std::string& name)
 	{
 		const auto& names = this->skeleton->joint_names();
-		for (size_t i = 0; i < names.size(); ++i) 
-			if (std::strcmp(names[i], name.c_str()) == 0) 
+		for (size_t i = 0; i < names.size(); ++i)
+			if (std::strcmp(names[i], name.c_str()) == 0)
 				return static_cast<int>(i);
 
 		return -1;
