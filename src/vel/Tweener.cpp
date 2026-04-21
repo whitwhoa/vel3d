@@ -8,6 +8,18 @@
 
 namespace vel
 {
+	Tweener::Tweener() :
+		fromVec({0.f, 0.f, 0.f}),
+		toVec({0.f, 0.f, 0.f}),
+		distance(glm::distance(fromVec, toVec)),
+		currentVec(fromVec),
+		speed(1.f),
+		lerpVal(0.0f),
+		defaultDirection(TweenerDirection::Forward),
+		direction(TweenerDirection::Forward),
+		completed(false)
+	{}
+
 	/*
 		Smoothly translate from one glm::vec3 to another glm::vec3 at a given speed in units per second.
 		Allow for a direction to be given, which will alter the direction of the tween in realtime, as long

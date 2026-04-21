@@ -7,6 +7,25 @@
 
 namespace vel
 {
+	MultiTweener::MultiTweener() :
+		vecs({}),
+		speed(1.f),
+		speedPerVec(speed* (float)vecs.size()),
+		repeat(false),
+		currentVec({0.f, 0.f, 0.f}),
+		shouldPause(false),
+		cycleComplete(false),
+		foundPause(true),
+		firstCycleStarted(false),
+		shouldPlayForward(true),
+		pauseAtPausePoint(true),
+		useClosestPausePoint(false),
+		currentTweenIndex(0),
+		closestPausePointForward(true),
+		closestPausePointFound(false),
+		directionSwapNeedsCleared(false)
+	{}
+
 	/*
 	Smoothly translate between a vector of glm::vec3 values
 	*/

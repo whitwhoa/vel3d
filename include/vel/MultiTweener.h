@@ -41,6 +41,7 @@ namespace vel
 		bool					directionSwapNeedsCleared;
 
 	public:
+		MultiTweener();
 		MultiTweener(std::vector<glm::vec3> vecs, float speed, bool repeat = false);
 
 		glm::vec3	update(float dt);

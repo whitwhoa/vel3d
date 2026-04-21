@@ -26,6 +26,7 @@ namespace vel
 		bool				completed;
 
 	public:
+		Tweener();
 		Tweener(glm::vec3 from, glm::vec3 to, float speed, TweenerDirection defaultDirection = TweenerDirection::Forward);
 
 		void				setDirection(TweenerDirection d);
