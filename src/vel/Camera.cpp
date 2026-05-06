@@ -113,8 +113,10 @@ namespace vel
 		{
 			// Set up a screen space orthographic projection that maps pixel coordinates.
 			// Here, the top-left corner is (0,0) and bottom-right is (vps.x, vps.y)
-			this->projectionMatrix = glm::ortho(0.0f, vps.x, vps.y, 0.0f, this->nearPlane, this->farPlane); // top left
+			//this->projectionMatrix = glm::ortho(0.0f, vps.x, vps.y, 0.0f, this->nearPlane, this->farPlane); // top left
 			//this->projectionMatrix = glm::ortho(0.0f, vps.x, 0.0f, vps.y, this->nearPlane, this->farPlane); // bottom left
+
+			this->projectionMatrix = glm::ortho(0.f, vps.x, vps.y, 0.f, -1.f, 1.f); // top left
 		}
 		else
 		{
