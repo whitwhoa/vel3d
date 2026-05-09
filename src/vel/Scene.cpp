@@ -210,9 +210,18 @@ namespace vel
 		return fb;
 	}
 
-	Texture* Scene::loadTexture(const std::string& name, const std::string& path, bool freeAfterGPULoad, unsigned int uvWrapping)
+	FontBitmap* Scene::loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath)
 	{
-		Texture* t = this->assetManager->loadTexture(name, path, freeAfterGPULoad, uvWrapping);
+		FontBitmap* fb = this->assetManager->loadFontBitmapVisualHeight(fontName, desiredVisiblePx, fontPath);
+
+		this->fontBitmapsInUse.push_back(fb);
+
+		return fb;
+	}
+
+	Texture* Scene::loadTexture(const std::string& name, const std::string& path, int options)
+	{
+		Texture* t = this->assetManager->loadTexture(name, path, options);
 
 		this->texturesInUse.push_back(t);
 
@@ -773,7 +782,9 @@ namespace vel
 		if (updatedFRT)
 			this->sceneRenderTarget = std::move(updatedFRT);
 
+
 		gpu->setFinalRenderTarget(this->sceneRenderTarget.get());
+
 
 		for (auto& s : this->stages)
 		{
@@ -824,7 +835,12 @@ namespace vel
 		}
 
 		gpu->clearFinalRenderTarget(this->sceneRenderTarget.get(), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-		gpu->clearScreenBuffer(0.0f, 1.0f, 0.0f, 1.0f);
+
+		// calling this here SOMEHOW allowed the cleared color to bleed into the final render whenever the update rate was
+		// uncapped, and the screen window size was small. Moving it into the gpu::drawToScreen() method seems to have
+		// resolved the issue. However, I'm not really satisfied with not knowing 100% why this was happening (hints this
+		// comment). 
+		//gpu->clearScreenBuffer(0.0f, 1.0f, 0.0f, 1.0f); 
 	}
 
 

@@ -438,11 +438,11 @@ namespace vel
 		return td;
 	}
 
-	Texture* AssetManager::loadTexture(const std::string& name, const std::string& path, bool freeAfterGPULoad, unsigned int uvWrapping)
-	{	
+	Texture* AssetManager::loadTexture(const std::string& name, const std::string& path, int options)
+	{
 		int textureIndex = this->getTextureIndex(name);
 
-		if(textureIndex > -1)
+		if (textureIndex > -1)
 		{
 			SPDLOG_DEBUG("Existing Texture, bypass reload: {}", name);
 
@@ -455,8 +455,7 @@ namespace vel
 
 		std::unique_ptr<Texture> texture = std::make_unique<Texture>();
 		texture->name = name;
-		texture->uvWrapping = uvWrapping;
-		texture->freeAfterGPULoad = freeAfterGPULoad;
+		texture->options = options;
 
 		// Determine if path is a directory or file, if directory then load each file in the directory as a texture frame
 		if (std::filesystem::is_directory(path))
@@ -478,7 +477,6 @@ namespace vel
 
 				texture->frames.push_back(td.value());
 			}
-				
 		}
 		else
 		{
@@ -492,15 +490,14 @@ namespace vel
 
 			texture->frames.push_back(td.value());
 		}
-			
 
-		// loop over all frames and if any of them have alpha channel, set alpha channel member of texture to true
-		texture->alphaChannel = false;
+
+		// loop over all frames and if any of them have alpha channel, set HAS_ALPHA of texture to true
 		for (auto& f : texture->frames)
 		{
 			if (f.alphaChannel)
 			{
-				texture->alphaChannel = true;
+				texture->options |= TXT_OPT_HAS_ALPHA;
 				break;
 			}
 		}
@@ -542,7 +539,7 @@ namespace vel
 			this->gpu->clearTexture(t.first.get());
 
 			// texture remained in system ram after gpu load for use within engine, free it now
-			if (!t.first->freeAfterGPULoad)
+			if (t.first->options & TXT_OPT_CPU_AND_GPU)
 				for (auto& td : t.first->frames)
 					stbi_image_free(td.primaryImageData.data);
 						
@@ -742,7 +739,93 @@ namespace vel
 		return -1;
 	}
 
+	float AssetManager::measureFontHeight(const std::string& text, FontBitmap* fb)
+	{
+		if (!fb)
+			return 0.f;
+
+		float offsetX = 0.0f;
+		float offsetY = 0.0f;
+
+		bool hasVisibleGlyph = false;
+
+		float minY = 0.0f;
+		float maxY = 0.0f;
+
+		for (char c : text)
+		{
+			if (c == '\n')
+			{
+				offsetX = 0.0f;
+				continue;
+			}
+
+			uint32_t character = static_cast<uint32_t>(static_cast<unsigned char>(c));
+
+			if (character < fb->firstChar || character >= fb->firstChar + fb->charCount)
+				continue;
+
+			stbtt_aligned_quad quad;
+
+			stbtt_GetPackedQuad(
+				reinterpret_cast<stbtt_packedchar*>(fb->charInfo.get()),
+				fb->textureWidth,
+				fb->textureHeight,
+				character - fb->firstChar,
+				&offsetX,
+				&offsetY,
+				&quad,
+				1
+			);
+
+			// Match existing text mesh convention.
+			const float ymin = -quad.y1;
+			const float ymax = -quad.y0;
+
+			if (!hasVisibleGlyph)
+			{
+				minY = ymin;
+				maxY = ymax;
+				hasVisibleGlyph = true;
+			}
+			else
+			{
+				minY = std::min(minY, ymin);
+				maxY = std::max(maxY, ymax);
+			}
+		}
+
+		if (!hasVisibleGlyph)
+			return 0.0f;
+
+		return maxY - minY;
+	}
+
 	FontBitmap* AssetManager::loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath)
+	{
+		return this->loadFontBitmapRaw(fontName, fontSize, fontPath);
+	}
+
+	FontBitmap* AssetManager::loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath)
+	{
+		const std::string referenceText = "Hg";
+
+		FontBitmap* testFont = this->loadFontBitmapRaw(fontName + "_calibration", desiredVisiblePx, fontPath);
+
+		float measuredHeight = this->measureFontHeight(referenceText, testFont);
+
+		if (measuredHeight <= 0.0f)
+			return testFont;
+
+		float correction = desiredVisiblePx / measuredHeight;
+		int correctedSize = (int)std::round(desiredVisiblePx * correction);
+
+		this->removeFontBitmap(testFont);
+
+		return this->loadFontBitmapRaw(fontName, correctedSize, fontPath);
+	}
+
+	FontBitmap* AssetManager::loadFontBitmapRaw(const std::string& fontName, int stbFontSize, const std::string& fontPath)
 	{
 		int fbIndex = this->getShaderIndex(fontName);
 
@@ -767,7 +850,7 @@ namespace vel
 		const auto size = file.tellg();
 		file.seekg(0, std::ios::beg);
 		auto bytes = std::vector<uint8_t>(size);
-		file.read(reinterpret_cast<char *>(&bytes[0]), size);
+		file.read(reinterpret_cast<char*>(&bytes[0]), size);
 		file.close();
 
 		// Build texture data using read in bytes
@@ -776,7 +859,7 @@ namespace vel
 
 		std::unique_ptr<FontBitmap> fb = std::make_unique<FontBitmap>();
 		fb->fontName = fontName;
-		fb->fontSize = fontSize;
+		fb->fontSize = stbFontSize;
 		fb->fontPath = fontPath;
 		fb->data = std::make_unique<unsigned char[]>(fb->textureWidth * fb->textureHeight);
 		fb->charInfo = std::make_unique<fb_packedchar[]>(fb->charCount);
@@ -969,6 +1052,15 @@ namespace vel
 		m->setIndices(meshIndices);
 
 		AABB maabb = m->getAABB();
+
+		//SPDLOG_DEBUG("Text AABB min: {}, {} max: {}, {} size: {}, {}",
+		//	maabb.getMinEdge().x,
+		//	maabb.getMinEdge().y,
+		//	maabb.getMaxEdge().x,
+		//	maabb.getMaxEdge().y,
+		//	maabb.getMaxEdge().x - maabb.getMinEdge().x,
+		//	maabb.getMaxEdge().y - maabb.getMinEdge().y
+		//);
 
 		// recalculate vertex positions for right alignment (origin of mesh at right edge)
 		if (ta->alignment == TextActorAlignment::RIGHT_ALIGN)

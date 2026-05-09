@@ -74,8 +74,9 @@ namespace vel
 		const InputState*					inputState;
 		AudioDevice*						audioDevice;
 		int									audioGroupKey;
-		Texture*							loadTexture(const std::string& name, const std::string& path, bool freeAfterGPULoad = true, unsigned int uvWrapping = 1);
+		Texture*							loadTexture(const std::string& name, const std::string& path, int options = 0);
 		FontBitmap*							loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath);
+		FontBitmap*							loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath);
 
 		void								loadBGMSound(const std::string& path);
 		bool								loadSFXSound(const std::string& path);

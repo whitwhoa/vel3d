@@ -65,9 +65,7 @@ namespace vel
 		frt->texture.name = name;
 		frt->texture.frames.push_back(td);
 		frt->texture.frames.push_back(td2);
-		frt->texture.alphaChannel = true;
-		frt->texture.freeAfterGPULoad = false;
-		frt->texture.uvWrapping = 0;
+		frt->texture.options = TXT_OPT_HAS_ALPHA | TXT_OPT_CLAMP_UVS | TXT_OPT_CPU_AND_GPU;
 		frt->resolution = glm::ivec2(width, height);
 
 		unsigned int fboId = 0;
@@ -247,6 +245,8 @@ namespace vel
 
 	void GPU::drawToScreen(FinalRenderTarget* frt, glm::vec4 tint)
 	{
+		this->clearScreenBuffer(0.0f, 1.0f, 0.0f, 1.0f);
+
 		this->disableBlend();
 
 		this->useShader(this->postShader);
@@ -299,7 +299,7 @@ namespace vel
 			{
 				this->freeFinalRenderTarget(frt);
 				updatedFRT = this->createFinalRenderTarget(frt->texture.name, width, height);
-			}			
+			}
 		}
 
 		glViewport(0, 0, width, height);
@@ -391,7 +391,8 @@ namespace vel
 	void GPU::updateLightmapTextureUBO(GLuint64 dsaHandle)
 	{
 		glBindBuffer(GL_UNIFORM_BUFFER, this->lightmapTextureUBO);
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GLuint64) * 2, (void*)&dsaHandle);
+		//glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GLuint64) * 2, (void*)&dsaHandle);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GLuint64), (void*)&dsaHandle);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 
@@ -408,7 +409,8 @@ namespace vel
 	void GPU::updateTextureUBO(unsigned int index, GLuint64 dsaHandle)
 	{
 		glBindBuffer(GL_UNIFORM_BUFFER, this->texturesUBO);
-		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(GLuint64) * index * 2, sizeof(GLuint64) * 2, (void*)&dsaHandle);
+		//glBufferSubData(GL_UNIFORM_BUFFER, sizeof(GLuint64) * index * 2, sizeof(GLuint64) * 2, (void*)&dsaHandle);
+		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(GLuint64) * index * 2, sizeof(GLuint64), (void*)&dsaHandle);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 
@@ -590,28 +592,20 @@ namespace vel
 
 		TextureData opaqueTD, depthTD, accumTD, revealTD;
 		rt.opaqueTexture.frames.push_back(opaqueTD);
-		rt.opaqueTexture.alphaChannel = false;
-		rt.opaqueTexture.freeAfterGPULoad = false;
-		rt.opaqueTexture.uvWrapping = 0;
 		rt.opaqueTexture.name = name + "_opaqueTexture";
-
+		rt.opaqueTexture.options = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
+		
 		rt.depthTexture.frames.push_back(depthTD);
-		rt.depthTexture.alphaChannel = false;
-		rt.depthTexture.freeAfterGPULoad = false;
-		rt.depthTexture.uvWrapping = 0;
 		rt.depthTexture.name = name + "_depthTexture";
-
+		rt.depthTexture.options = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
+		
 		rt.accumTexture.frames.push_back(accumTD);
-		rt.accumTexture.alphaChannel = true;
-		rt.accumTexture.freeAfterGPULoad = false;
-		rt.accumTexture.uvWrapping = 0;
 		rt.accumTexture.name = name + "_accumTexture";
-
+		rt.accumTexture.options = TXT_OPT_HAS_ALPHA | TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
+		
 		rt.revealTexture.frames.push_back(revealTD);
-		rt.revealTexture.alphaChannel = true;
-		rt.revealTexture.freeAfterGPULoad = false;
-		rt.revealTexture.uvWrapping = 0;
 		rt.revealTexture.name = name + "_revealTexture";
+		rt.revealTexture.options = TXT_OPT_HAS_ALPHA | TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
 
 		glGenFramebuffers(1, &rt.opaqueFBO);
 		glGenFramebuffers(1, &rt.alphaFBO);
@@ -808,13 +802,11 @@ namespace vel
 	}
 
 	std::unique_ptr<Texture> GPU::generateEmptyTexture(const std::string& name, unsigned int frameCount, 
-		unsigned int width, unsigned int height, bool clamp)
+		unsigned int width, unsigned int height, int options)
 	{
 		std::unique_ptr<Texture> t = std::make_unique<Texture>();
 		t->name = name;
-		t->uvWrapping = (unsigned int)clamp;
-		t->alphaChannel = false;
-		t->freeAfterGPULoad = false;
+		t->options = options;
 
 		for (unsigned int i = 0; i < frameCount; i++)
 		{
@@ -825,7 +817,7 @@ namespace vel
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_HALF_FLOAT, nullptr);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			if (clamp)
+			if (t->options & TXT_OPT_CLAMP_UVS)
 			{
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -869,7 +861,7 @@ namespace vel
 			glGenerateMipmap(GL_TEXTURE_2D);
 
 			// set texture parameters
-			if (t->uvWrapping == 0)
+			if (t->options & TXT_OPT_CLAMP_UVS)
 			{
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -880,16 +872,17 @@ namespace vel
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			}
 			
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-			////glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			////glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-			
-			
+			if (t->options & TXT_OPT_DISABLE_FILTER)
+			{
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+			}
+			else
+			{
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			}
 
 			// obtain texture's DSA handle
 			td.dsaHandle = glGetTextureHandleARB(td.id);
@@ -897,7 +890,7 @@ namespace vel
 			// set texture's DSA handle as resident so it can be accessed in shaders
 			glMakeTextureHandleResidentARB(td.dsaHandle);
 
-			if(t->freeAfterGPULoad)
+			if(!(t->options & TXT_OPT_CPU_AND_GPU))
 				stbi_image_free(td.primaryImageData.data);
 		}	
 	}

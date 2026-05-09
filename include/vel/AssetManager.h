@@ -34,7 +34,6 @@ namespace vel
 
 		std::vector<std::pair<std::unique_ptr<Shader>, int>>		shaders;
 		std::vector<std::pair<std::unique_ptr<Mesh>, int>>			meshes;
-		//std::vector<std::pair<std::unique_ptr<Armature>, int>>		armatures;
 		std::vector<std::pair<std::unique_ptr<Texture>, int>>		textures;
 		std::vector<std::pair<std::unique_ptr<Material>, int>>		materials;
 		std::vector<std::pair<std::unique_ptr<FontBitmap>, int>>	fontBitmaps;
@@ -48,9 +47,6 @@ namespace vel
 
 		int													getMeshIndex(const std::string& name);
 		int													getMeshIndex(const Mesh* m);
-
-		//int													getArmatureIndex(const std::string& name);
-		//int													getArmatureIndex(const Armature* a);
 
 		int													getTextureIndex(const std::string& name);
 		int													getTextureIndex(const Texture* t);
@@ -85,10 +81,7 @@ namespace vel
 		void						removeMesh(const Mesh* pMesh);
 		void						incrementMeshUsage(const Mesh* pMesh);
 
-		//Armature*					getArmature(const std::string& name);
-		//void						removeArmature(const Armature* pArm);
-
-		Texture*					loadTexture(const std::string& name, const std::string& path, bool freeAfterGPULoad = true, unsigned int uvWrapping = 1);
+		Texture*					loadTexture(const std::string& name, const std::string& path, int options = 0);
 		Texture*					getTexture(const std::string& name);
 		void						removeTexture(const Texture* pTexture);
 
@@ -96,7 +89,10 @@ namespace vel
 		Material*					getMaterial(const std::string& name);
 		void						removeMaterial(const Material* pMaterial);
 
-		FontBitmap*					loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath);
+		float						measureFontHeight(const std::string& text, FontBitmap* fb);
+		FontBitmap*					loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath); // alias to raw
+		FontBitmap*					loadFontBitmapRaw(const std::string& fontName, int stbFontSize, const std::string& fontPath);
+		FontBitmap*					loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath);
 		FontBitmap*					getFontBitmap(const std::string& name);
 		void						removeFontBitmap(const FontBitmap* pFontBitmap);
 
