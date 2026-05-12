@@ -4,9 +4,9 @@
 #include <string>
 #include <memory>
 #include <optional>
+#include <cstdint>
 
 #include "glm/glm.hpp"
-#include "glad/gl.h"
 
 #include "vel/Shader.h"
 #include "vel/Camera.h"
@@ -18,7 +18,10 @@
 #include "vel/FontBitmap.h"
 #include "vel/FinalRenderTarget.h"
 
-//typedef uint64_t GLuint64;
+struct __GLsync;
+typedef __GLsync* GLsync;
+
+typedef uint64_t GLuint64;
 
 
 namespace vel
