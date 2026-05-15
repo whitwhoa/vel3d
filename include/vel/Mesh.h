@@ -27,17 +27,19 @@ namespace vel
 		std::vector<MeshBone>				bones;
 		std::optional<GpuMesh>              gpuMesh;
 		std::optional<AABB>					aabb;
+		bool								aabbStale;
 
 
 	public:
 											Mesh(std::string name);
 		void                                setGpuMesh(GpuMesh gm);
-		void								setVertices(std::vector<Vertex>& vertices);
-		void								setIndices(std::vector<unsigned int>& indices);
-		void								setBones(std::vector<MeshBone>& bones);
+		void								setVertices(const std::vector<Vertex>& vertices);
+		void								setIndices(const std::vector<unsigned int>& indices);
+		void								setBones(const std::vector<MeshBone>& bones);
 		std::optional<GpuMesh>&				getGpuMesh();
 		const std::string                   getName() const;
-		std::vector<Vertex>&				getVertices();
+		const std::vector<Vertex>&			getVertices() const;
+		std::vector<Vertex>&				getMutableVertices();
 		std::vector<unsigned int>&			getIndices();
 		const bool                          isRenderable() const;
 		const bool                          hasBones() const;

@@ -9,15 +9,17 @@ namespace vel
 {
 
     Mesh::Mesh(std::string name) :
-        name(name)
+        name(name),
+		aabbStale(true)
     {}
 
 	AABB& Mesh::getAABB()
 	{
-		if (this->aabb.has_value())
+		if (this->aabb.has_value() && !this->aabbStale)
 			return this->aabb.value();
 
 		this->aabb = AABB(this->getVertices());
+		this->aabbStale = false;
 
 		return this->aabb.value();
 	}
@@ -50,17 +52,18 @@ namespace vel
 		return false;
 	}
 
-	void Mesh::setVertices(std::vector<Vertex>& vertices)
+	void Mesh::setVertices(const std::vector<Vertex>& vertices)
 	{
 		this->vertices = vertices;
+		this->aabbStale = true;
 	}
 
-	void Mesh::setIndices(std::vector<unsigned int>& indices)
+	void Mesh::setIndices(const std::vector<unsigned int>& indices)
 	{
 		this->indices = indices;
 	}
 
-	void Mesh::setBones(std::vector<MeshBone>& bones)
+	void Mesh::setBones(const std::vector<MeshBone>& bones)
 	{
 		this->bones = bones;
 	}
@@ -70,10 +73,16 @@ namespace vel
 		this->gpuMesh = gm;
     }
 
-    std::vector<Vertex>& Mesh::getVertices()
+    const std::vector<Vertex>& Mesh::getVertices() const
     {
         return this->vertices;
     }
+
+	std::vector<Vertex>& Mesh::getMutableVertices()
+	{
+		this->aabbStale = true;
+		return this->vertices;
+	}
 
     std::vector<unsigned int>& Mesh::getIndices()
     {

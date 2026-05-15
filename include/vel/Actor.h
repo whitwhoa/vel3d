@@ -120,5 +120,7 @@ namespace vel
 
 		void*											getUserPointer();
 		void											setUserPointer(void* p);
+
+		AABB											getWorldAABB();
 	};
 }

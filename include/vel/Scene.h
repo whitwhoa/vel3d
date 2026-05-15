@@ -101,14 +101,8 @@ namespace vel
 		DiffuseCausticLightmapMaterial*		addDiffuseCausticLightmapMaterial(const std::string& name, int opts = 0);
 
 
-		// old version, retaining signature so we don't break existing codebases
 		TextActor*							addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
-												TextActorAlignment alignment = TextActorAlignment::LEFT_ALIGN, glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-
-		TextActor*							addTextActor(Stage* stage, const std::string& name, FontBitmap* fb, const std::string& theText,
-												glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-												TextActorAlignment alignment = TextActorAlignment::LEFT_ALIGN,
-												TextActorVerticalAlignment vAlignment = TextActorVerticalAlignment::BOTTOM_ALIGN);
+												glm::vec4 color, TextActorOriginType originType = TextActorOriginType::LEFT_BOTTOM);
 
 
 		LineActor*							addLineActor(Stage* stage, const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points,

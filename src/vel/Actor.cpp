@@ -351,4 +351,22 @@ namespace vel
 		return this->animator;
 	}
 
+	AABB Actor::getWorldAABB()
+	{
+		if (this->mesh == nullptr)
+			return AABB(glm::vec3(0.0f), glm::vec3(0.0f));
+
+		const std::vector<glm::vec3>& localCorners = this->mesh->getAABB().getCorners();
+
+		std::vector<glm::vec3> worldCorners;
+		worldCorners.reserve(localCorners.size());
+
+		glm::mat4 worldMatrix = this->getWorldMatrix();
+
+		for (const glm::vec3& corner : localCorners)
+			worldCorners.push_back(glm::vec3(worldMatrix * glm::vec4(corner, 1.0f)));
+
+		return AABB(worldCorners);
+	}
+
 }

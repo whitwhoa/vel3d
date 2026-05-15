@@ -10,7 +10,7 @@ namespace vel
 
 	}
 
-	AABB::AABB(std::vector<glm::vec3>& inputVectors) :
+	AABB::AABB(const std::vector<glm::vec3>& inputVectors) :
 		firstPass(true)
 	{
 		// find min/max edge vectors

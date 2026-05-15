@@ -369,9 +369,7 @@ namespace vel
 		this->shadersInUse.push_back(textMaterialShader);
 
 		std::unique_ptr<TextMaterial> m = std::make_unique<TextMaterial>(name, textMaterialShader);
-
-		if (opts & MTRL_OPT_TRANSLUCENT)
-			m->setHasAlphaChannel(true);
+		m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
@@ -631,28 +629,40 @@ namespace vel
 		return stage->addTextActor(std::move(ta));
 	}
 
-	// Has to be this way, otherwise Scene can't track the generated mesh. Live with it.
-	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText,
-		FontBitmap* fb, TextActorAlignment alignment, glm::vec4 color)
+	//// Has to be this way, otherwise Scene can't track the generated mesh. Live with it.
+	//TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText,
+	//	FontBitmap* fb, TextActorAlignment alignment, glm::vec4 color)
+	//{
+	//	std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
+	//	ta->name = name;
+	//	ta->text = theText;
+	//	ta->fontBitmap = fb;
+	//	ta->alignment = alignment;
+
+	//	return this->_addTextActor(stage, std::move(ta), fb, color);
+	//}
+
+	//TextActor* Scene::addTextActor(Stage* stage, const std::string& name, FontBitmap* fb, const std::string& theText,
+	//	glm::vec4 color, TextActorAlignment alignment, TextActorVerticalAlignment vAlignment)
+	//{
+	//	std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
+	//	ta->name = name;
+	//	ta->text = theText;
+	//	ta->fontBitmap = fb;
+	//	ta->alignment = alignment;
+	//	ta->vAlignment = vAlignment;
+
+	//	return this->_addTextActor(stage, std::move(ta), fb, color);
+	//}
+
+	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
+		glm::vec4 color, TextActorOriginType originType)
 	{
 		std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
 		ta->name = name;
 		ta->text = theText;
 		ta->fontBitmap = fb;
-		ta->alignment = alignment;
-
-		return this->_addTextActor(stage, std::move(ta), fb, color);
-	}
-
-	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, FontBitmap* fb, const std::string& theText,
-		glm::vec4 color, TextActorAlignment alignment, TextActorVerticalAlignment vAlignment)
-	{
-		std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
-		ta->name = name;
-		ta->text = theText;
-		ta->fontBitmap = fb;
-		ta->alignment = alignment;
-		ta->vAlignment = vAlignment;
+		ta->originType = originType;
 
 		return this->_addTextActor(stage, std::move(ta), fb, color);
 	}

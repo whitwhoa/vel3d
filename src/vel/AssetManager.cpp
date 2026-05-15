@@ -1063,31 +1063,32 @@ namespace vel
 		//);
 
 		// recalculate vertex positions for right alignment (origin of mesh at right edge)
-		if (ta->alignment == TextActorAlignment::RIGHT_ALIGN)
+		if (ta->originType == TextActorOriginType::RIGHT_BOTTOM || ta->originType == TextActorOriginType::RIGHT_CENTER || ta->originType == TextActorOriginType::RIGHT_TOP)
 		{
 			float offsetAmount = maabb.getMaxEdge().x;
-			for (auto& v : m->getVertices())
+			for (auto& v : m->getMutableVertices())
 				v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
 		}
 		// recalculate vertex positions for center alignment (origin of mesh at center)
-		else if (ta->alignment == TextActorAlignment::CENTER_ALIGN)
+		else if (ta->originType == TextActorOriginType::CENTER_BOTTOM || ta->originType == TextActorOriginType::CENTER_CENTER || ta->originType == TextActorOriginType::CENTER_TOP)
 		{
 			float offsetAmount = maabb.getMaxEdge().x * 0.5f;
-			for (auto& v : m->getVertices())
+			for (auto& v : m->getMutableVertices())
 				v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
 		}
 		// default alignment is left
 
-		if (ta->vAlignment == TextActorVerticalAlignment::TOP_ALIGN)
+
+		if (ta->originType == TextActorOriginType::LEFT_TOP || ta->originType == TextActorOriginType::CENTER_TOP || ta->originType == TextActorOriginType::RIGHT_TOP)
 		{
 			float offsetAmount = maabb.getMaxEdge().y;
-			for (auto& v : m->getVertices())
+			for (auto& v : m->getMutableVertices())
 				v.position = glm::vec3(v.position.x, (v.position.y - offsetAmount), v.position.z);
 		}
-		else if (ta->vAlignment == TextActorVerticalAlignment::CENTER_ALIGN)
+		else if (ta->originType == TextActorOriginType::LEFT_CENTER || ta->originType == TextActorOriginType::CENTER_CENTER || ta->originType == TextActorOriginType::RIGHT_CENTER)
 		{
 			float offsetAmount = maabb.getMaxEdge().y * 0.5f;
-			for (auto& v : m->getVertices())
+			for (auto& v : m->getMutableVertices())
 				v.position = glm::vec3(v.position.x, (v.position.y - offsetAmount), v.position.z);
 		}
 		// default alignment is bottom
