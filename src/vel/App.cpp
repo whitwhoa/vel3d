@@ -316,6 +316,27 @@ namespace vel
 		}		
 	}
 
+	void App::checkResolution()
+	{
+		if (this->window->getResolutionChanged())
+		{
+			this->window->setResolutionChanged(false);
+			glm::ivec2 res = this->window->getResolution();
+
+			for (auto& s : this->scenes)
+			{
+				s->setResolution(res.x, res.y);
+
+				for (auto& c : s->getCamerasInUse())
+				{
+					if (!c->getFixedResolution())
+						c->setResolution(res.x, res.y);
+				}
+			}
+
+		}
+	}
+
 	std::chrono::steady_clock::time_point& App::getStartTime()
 	{
 		return this->startTime;
@@ -364,8 +385,9 @@ namespace vel
 			// 3) Input + OS events
 			// --------------------------------------------------------------------
 			this->checkWindowSize();
+			this->checkResolution();
 			this->window->updateInputState();
-			this->window->update();
+			this->window->update(); // TODO: remove this when we strip out imgui
 
 			// --------------------------------------------------------------------
 			// 4) Fixed step simulation with bounded catch-up

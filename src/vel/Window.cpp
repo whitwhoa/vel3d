@@ -89,6 +89,7 @@ namespace vel
 		lockResToWin(true),
 		resolution(glm::ivec2(1280, 720)),
 		windowSizeChanged(false),
+		resolutionChanged(false),
 		cursorHidden(true),
 		useImGui(false),
 		vsync(false),
@@ -146,6 +147,9 @@ namespace vel
 
 		if (this->windowMode)
 		{
+			if (!this->lockResToWin)
+				glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
 			this->glfwWindow = glfwCreateWindow(this->windowSize.x, this->windowSize.y, c.APP_NAME.c_str(), NULL, NULL);
 		}
 		else
@@ -482,6 +486,16 @@ namespace vel
 		});
 
     }
+
+	void Window::setResolutionChanged(bool b)
+	{
+		this->resolutionChanged = b;
+	}
+
+	bool Window::getResolutionChanged()
+	{
+		return this->resolutionChanged;
+	}
 
 	bool Window::getWindowSizeChanged()
 	{

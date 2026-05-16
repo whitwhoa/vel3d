@@ -808,6 +808,18 @@ namespace vel
 
 	FontBitmap* AssetManager::loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath)
 	{
+		int fbIndex = this->getFontBitmapIndex(fontName);
+
+		if (fbIndex > -1)
+		{
+			SPDLOG_DEBUG("Existing FontBitmap, bypass reload: {}", fontName);
+
+			this->fontBitmaps.at(fbIndex).second++;
+
+			return this->fontBitmaps.at(fbIndex).first.get();
+		}
+
+
 		const std::string referenceText = "Hg";
 
 		FontBitmap* testFont = this->loadFontBitmapRaw(fontName + "_calibration", desiredVisiblePx, fontPath);
@@ -827,7 +839,7 @@ namespace vel
 
 	FontBitmap* AssetManager::loadFontBitmapRaw(const std::string& fontName, int stbFontSize, const std::string& fontPath)
 	{
-		int fbIndex = this->getShaderIndex(fontName);
+		int fbIndex = this->getFontBitmapIndex(fontName);
 
 		if (fbIndex > -1)
 		{

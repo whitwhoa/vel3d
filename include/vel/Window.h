@@ -21,13 +21,13 @@ namespace vel
 
     class Window
     {
-       
     private:
         bool				windowMode;
         glm::ivec2			windowSize;
         bool                lockResToWin;
         glm::ivec2          resolution;
         bool                windowSizeChanged;
+        bool                resolutionChanged;
         
 		bool				cursorHidden;
 		bool				useImGui;
@@ -81,6 +81,9 @@ namespace vel
 
         bool                getWindowSizeChanged();
         void                setWindowSizeChanged(bool sc);
+
+        void                setResolutionChanged(bool b);
+        bool                getResolutionChanged();
 
 
     };

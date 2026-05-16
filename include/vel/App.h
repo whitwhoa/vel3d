@@ -54,6 +54,7 @@ namespace vel
         void											calculateAverageFrameTime();
 
         void                                            checkWindowSize();
+        void                                            checkResolution();
 
         virtual void                                    update();
     
