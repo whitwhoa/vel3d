@@ -62,6 +62,5 @@ namespace vel
 
 		virtual bool							load() = 0;
 		virtual void							fixedLoop(float deltaTime) = 0;
-		virtual void							postPhysics(float deltaTime) {};
 	};
 }

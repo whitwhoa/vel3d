@@ -134,7 +134,6 @@ namespace vel
 		virtual bool						load() = 0;
 		virtual void						fixedLoop(float deltaTime) = 0;
 		virtual void						immediateLoop(float frameTime, float renderLerpInterval) = 0;
-		virtual void						postPhysics(float deltaTime) {};
 
 		glm::ivec2							getResolution();
 		void								setResolution(int x, int y);

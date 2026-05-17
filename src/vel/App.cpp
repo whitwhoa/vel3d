@@ -386,7 +386,6 @@ namespace vel
 				const float flt = static_cast<float>(this->fixedLogicTime);
 
 				this->activeScene->stepPhysics(flt);
-				this->activeScene->postPhysics(flt);
 
 				this->activeScene->updatePreviousTransforms();
 
