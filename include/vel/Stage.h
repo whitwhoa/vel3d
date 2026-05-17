@@ -43,10 +43,7 @@ namespace vel
 
 		std::vector<Camera*>							cameras; // pointer managed by asset manager since multiple stages can use the same camera
 
-		// FBO:SHADER:VAO:ACTORS - done this way to limit opengl state changes
-		// TODO: We could probably just have two vectors, where one holds the composite key, then we get the index of it, and that's the index we use to
-		// access the actors vector, so we don't have to do the hash lookup multiple times every frame. Probably not worth the effort right now though. Revisit this later
-		// when we have something that we can actually profile the performance of.
+		// FBO:SHADER:VAO:ACTORS - done this way to limit opengl state changes (as bad as you might think the first time you see it)
 		std::map<ActCompositeKey, std::vector<std::unique_ptr<Actor>>> actors;
 
 		std::vector<std::unique_ptr<SkelAnimator>>		animators;	// multiple actors can be associated with the same animator (arms, hands, gun1, gun2, etc for example)
