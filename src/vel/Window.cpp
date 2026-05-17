@@ -7,10 +7,6 @@
 
 #include "GLFW/glfw3.h"
 
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-
 #include "vel/Window.h"
 #include "vel/nvapi.hpp"
 
@@ -91,7 +87,6 @@ namespace vel
 		windowSizeChanged(false),
 		resolutionChanged(false),
 		cursorHidden(true),
-		useImGui(false),
 		vsync(false),
 		glfwWindow(nullptr),
 		scrollX(0.0f),
@@ -100,8 +95,7 @@ namespace vel
 		mouseAccumDY(0.0),
 		lastMouseX(0.0),
 		lastMouseY(0.0),
-		firstMouse(true),
-		imguiFrameOpen(false)
+		firstMouse(true)
     {
 
     }
@@ -119,7 +113,6 @@ namespace vel
 		this->lockResToWin = c.LOCK_RES_TO_WIN;
 		this->resolution = c.LOCK_RES_TO_WIN ? glm::ivec2(c.WINDOW_WIDTH, c.WINDOW_HEIGHT) : glm::ivec2(c.RESOLUTION_X, c.RESOLUTION_Y);
 		this->cursorHidden = c.CURSOR_HIDDEN;
-		this->useImGui = c.USE_IMGUI;
 		this->vsync = c.VSYNC;
 
 		this->inputState.mouseSensitivity = c.MOUSE_SENSITIVITY;
@@ -222,30 +215,6 @@ namespace vel
 				// Set default viewport size
 				glViewport(0, 0, this->windowSize.x, this->windowSize.y);
 
-				if (this->useImGui)
-				{
-					// Setup Dear ImGui context
-					IMGUI_CHECKVERSION();
-					ImGui::CreateContext();
-					ImGuiIO& io = ImGui::GetIO(); (void)io;
-					//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-					//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-					// get pointer to default font
-					this->imguiFonts["default"] = io.Fonts->AddFontDefault();
-
-					// create fonts
-					for (auto& f : c.imguiFonts)
-						this->imguiFonts[f.key] = io.Fonts->AddFontFromFileTTF(f.path.c_str(), f.pixels);
-
-					// Setup Dear ImGui style
-					ImGui::StyleColorsDark();
-					//ImGui::StyleColorsClassic();
-
-					// Setup Platform/Renderer bindings
-					ImGui_ImplGlfw_InitForOpenGL(this->glfwWindow, true);
-					ImGui_ImplOpenGL3_Init("#version 450 core");
-				}
 
 				return true;
 			}
@@ -272,11 +241,6 @@ namespace vel
 		glfwSetInputMode(this->glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		//glfwFocusWindow(this->glfwWindow);
 		//glfwSetInputMode(this->glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-	}
-
-	ImFont* Window::getImguiFont(const std::string& key) const
-	{
-		return this->imguiFonts.at(key);
 	}
 
     void Window::setTitle(const std::string& title)
@@ -522,39 +486,12 @@ namespace vel
 		return this->lockResToWin;
 	}
 
-	bool Window::getImguiFrameOpen()
-	{
-		return this->imguiFrameOpen;
-	}
-
-	void Window::renderGui()
-	{
-		if (this->useImGui)
-		{
-			ImGui::Render();
-			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-			this->imguiFrameOpen = false;
-		}
-	}
-
 	void Window::updateInputState()
 	{
 		glfwPollEvents();
 		setMouse();
 		setScroll();
 	}
-
-    void Window::update() 
-    {
-		if (this->useImGui)
-		{
-			ImGui_ImplOpenGL3_NewFrame();
-			ImGui_ImplGlfw_NewFrame();
-			ImGui::NewFrame();
-			this->imguiFrameOpen = true;
-		}
-    }
-
 
     void Window::swapBuffers() 
     {

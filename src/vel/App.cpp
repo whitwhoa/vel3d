@@ -105,11 +105,6 @@ namespace vel
 		return this->activeScene;
 	}
 
-	void App::forceImguiRender()
-	{
-		this->window->renderGui();
-	}
-
 	void App::showMouseCursor()
 	{
 		this->window->showMouseCursor();
@@ -118,11 +113,6 @@ namespace vel
 	void App::hideMouseCursor()
 	{
 		this->window->hideMouseCursor();
-	}
-
-	ImFont* App::getImguiFont(std::string key) const
-	{
-		return this->window->getImguiFont(key);
 	}
 
 	void App::removeScene(const std::string& name)
@@ -186,10 +176,6 @@ namespace vel
 
     bool App::addScene(std::unique_ptr<Scene> scene, bool makeActive)
     {
-		// TODO: unsure if this is still required???
-		if(this->window != nullptr && this->window->getImguiFrameOpen())
-			this->forceImguiRender();
-
 		std::string className = typeid(*scene).name();// name is "class Test" when we need just "Test", so trim off "class "
 		className.erase(0, 6);
 		scene->setName(className);
@@ -387,7 +373,6 @@ namespace vel
 			this->checkWindowSize();
 			this->checkResolution();
 			this->window->updateInputState();
-			this->window->update(); // TODO: remove this when we strip out imgui
 
 			// --------------------------------------------------------------------
 			// 4) Fixed step simulation with bounded catch-up
@@ -448,7 +433,6 @@ namespace vel
 			// --------------------------------------------------------------------
 			this->activeScene->clearAllRenderTargetBuffers(this->gpu);
 			this->activeScene->draw(dt, renderLerp);
-			this->window->renderGui();
 
 			// --------------------------------------------------------------------
 			// 7) Insert fence after all GPU commands for this frame are queued

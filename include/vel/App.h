@@ -76,11 +76,8 @@ namespace vel
         double											getLogicTime();
 
 
-		ImFont*											getImguiFont(std::string key) const;
 		void											hideMouseCursor();
 		void											showMouseCursor();
-
-		void											forceImguiRender();
 
 		GPU*											getGPU();
 		bool											getPauseBufferClearAndSwap();

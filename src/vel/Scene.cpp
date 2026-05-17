@@ -5,8 +5,6 @@
 
 #include "glm/gtx/string_cast.hpp"
 
-#include "imgui/imgui.h"
-
 #include "nlohmann/json.hpp"
 
 #include "vel/MaterialOptions.h"

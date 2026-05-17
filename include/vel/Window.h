@@ -14,7 +14,6 @@
 
 struct GLFWwindow;
 struct GLFWusercontext;
-struct ImFont;
 
 namespace vel
 {
@@ -30,7 +29,6 @@ namespace vel
         bool                resolutionChanged;
         
 		bool				cursorHidden;
-		bool				useImGui;
 		bool				vsync;
         InputState			inputState;
         GLFWwindow*			glfwWindow;
@@ -42,9 +40,6 @@ namespace vel
         double              lastMouseX;
         double              lastMouseY;
         bool                firstMouse;
-
-		std::map<std::string, ImFont*> imguiFonts;
-		bool				imguiFrameOpen;
 
         void				setMouse();
         void				setScroll();
@@ -59,18 +54,15 @@ namespace vel
         void				setTitle(const std::string& title);
         bool				shouldClose();
         void				setToClose();
-        void				update();
+
 		void				updateInputState();
         const InputState*	getInputState() const;
         void				swapBuffers();
-		void				renderGui();
-        //void				vsync();
 
 
-		ImFont* 			getImguiFont(const std::string& key) const;
 		void				hideMouseCursor();
 		void				showMouseCursor();
-		bool				getImguiFrameOpen();
+
 
         glm::ivec2          getResolution();
         glm::ivec2          getWindowSize();
