@@ -39,7 +39,7 @@ namespace vel
 		AssetManager*									assetManager;
 
 		bool											visible;
-		bool											clearDepthBuffer;
+
 
 		std::vector<Camera*>							cameras; // pointer managed by asset manager since multiple stages can use the same camera
 
@@ -120,8 +120,6 @@ namespace vel
 		void											show();
 		void											hide();
 		const bool										isVisible();
-		void											setClearDepthBuffer(bool b);
-		bool											getClearDepthBuffer();
 		void											updatePreviousTransforms();
 
 		void											updateBillboards();

@@ -387,6 +387,14 @@ namespace vel
 
 				this->activeScene->stepPhysics(flt);
 
+				// looping through every actor just to update it's previous transform is
+				// ridiculous. I did this early on because I just wanted to make progress, but
+				// every time I see this it makes me throw up in my mouth. However, the way everything
+				// is currently designed, the best optimization I could do for this that would require
+				// the least amount of effort would be a separate container for dynamicActors, then
+				// we only loop that, instead of every actor and checking if it's dynamic or not. Still,
+				// not great, but it's like I said, we'll have to live with this unless we redesign core
+				// engine structure.
 				this->activeScene->updatePreviousTransforms();
 
 				//double t1 = this->getRuntimeSec();

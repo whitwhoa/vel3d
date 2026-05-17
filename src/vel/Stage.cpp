@@ -14,8 +14,7 @@ namespace vel
 	Stage::Stage(const std::string& name, AssetManager* am) :
 		name(name),
 		assetManager(am),
-		visible(true),
-		clearDepthBuffer(false)
+		visible(true)
 	{}
 
 	Stage::~Stage()
@@ -31,16 +30,6 @@ namespace vel
 	void Stage::addSkelAnimator(std::unique_ptr<SkelAnimator> sa)
 	{
 		this->animators.push_back(std::move(sa));
-	}
-
-	bool Stage::getClearDepthBuffer()
-	{
-		return this->clearDepthBuffer;
-	}
-
-	void Stage::setClearDepthBuffer(bool b)
-	{
-		this->clearDepthBuffer = b;
 	}
 
 	std::map<ActCompositeKey, std::vector<std::unique_ptr<Actor>>>& Stage::getActors()
