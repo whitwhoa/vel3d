@@ -61,10 +61,6 @@ namespace vel
 		std::vector<FontBitmap*> 			fontBitmapsInUse;
 		std::vector<std::string>			soundsInUse;
 		
-		glm::vec3							cameraPosition;
-		glm::mat4							cameraProjectionMatrix;
-		glm::mat4							cameraViewMatrix;
-		
 		double								frameTime;
 		double								frameRate;
 

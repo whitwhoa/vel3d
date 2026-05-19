@@ -864,11 +864,7 @@ namespace vel
 
 		for (auto& c : this->cameras)
 		{
-			// update stage camera (view/projection matrices), update scene's camera data to this stage's camera data
 			c->update();
-			this->cameraPosition = c->getPosition();
-			this->cameraProjectionMatrix = c->getProjectionMatrix();
-			this->cameraViewMatrix = c->getViewMatrix();
 
 			gpu->updateCameraViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different resolutions
 				
@@ -898,20 +894,14 @@ namespace vel
 					gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
 					gpu->setActiveMaterial(a->getMaterial());
 
-					a->getMaterial()->draw(alpha, gpu, a.get(), this->cameraViewMatrix, this->cameraProjectionMatrix);
-
+					a->getMaterial()->draw(alpha, gpu, a.get(), c->getViewMatrix(), c->getProjectionMatrix());
 				}
 			}
-
-
 
 			actorsFirstPass = false;
 
 			gpu->composeFBOs();
-
-
-
-		} // end for each camera
+		}
 
 
 		// all stage camera's framebuffers are now updated, loop through each stage camera and check if it should display it's contents 
@@ -979,6 +969,4 @@ namespace vel
 		//gpu->clearScreenBuffer(0.0f, 1.0f, 0.0f, 1.0f); 
 	}
 
-
-// END VEL NAMESPACE
-}
+} // END VEL NAMESPACE
