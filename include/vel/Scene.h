@@ -10,7 +10,6 @@
 #include "vel/InputState.h"
 #include "vel/Camera.h"
 #include "vel/Mesh.h"
-#include "vel/Stage.h"
 #include "vel/CollisionWorld.h"
 #include "vel/CollisionDebugDrawer.h"
 #include "vel/FontBitmap.h"
@@ -20,6 +19,7 @@
 #include "vel/LineActor.h"
 #include "vel/AudioDevice.h"
 #include "vel/FinalRenderTarget.h"
+#include "vel/Billboard.h"
 
 #include "vel/Material.h"
 #include "vel/DiffuseMaterial.h"
@@ -45,7 +45,12 @@ namespace vel
 		glm::ivec2							windowSize;
 		glm::ivec2							resolution;
 
-		std::unique_ptr<FinalRenderTarget>	sceneRenderTarget;
+		std::vector<std::unique_ptr<Camera>>	cameras;
+		std::unique_ptr<FinalRenderTarget>		sceneRenderTarget;
+
+		std::vector<std::unique_ptr<TextActor>>	textActors;
+		std::vector<std::unique_ptr<LineActor>>	lineActors;
+		std::vector<std::unique_ptr<Billboard>>	billboards;
 
 		float								animationTime;
 		glm::vec4							screenTint;
@@ -54,10 +59,8 @@ namespace vel
 		std::vector<Texture*> 				texturesInUse;
 		std::vector<Material*> 				materialsInUse;
 		std::vector<FontBitmap*> 			fontBitmapsInUse;
-		std::vector<Camera*>				camerasInUse;
 		std::vector<std::string>			soundsInUse;
 		
-
 		glm::vec3							cameraPosition;
 		glm::mat4							cameraProjectionMatrix;
 		glm::mat4							cameraViewMatrix;
@@ -66,9 +69,20 @@ namespace vel
 		double								frameRate;
 
 		void								freeAssets();
-		TextActor*							_addTextActor(Stage* stage, std::unique_ptr<TextActor> ta, FontBitmap* fb, glm::vec4 color);
 
 		void								setShaderOpts(int opts, std::vector<std::string>& defs, std::string& shaderName);
+
+		int									getTextActorIndex(const std::string& name);
+		int									getTextActorIndex(const TextActor*);
+		void								_removeTextActor(int textActorIndex);
+
+		int									getLineActorIndex(const std::string& name);
+		int									getLineActorIndex(const LineActor*);
+		void								_removeLineActor(int lineActorIndex);
+
+		int									getBillboardIndex(const std::string& name);
+		int									getBillboardIndex(const Billboard* a);
+		void								_removeBillboard(int billboardIndex);
 		
 	protected:
 		const InputState*					inputState;
@@ -101,23 +115,33 @@ namespace vel
 		DiffuseCausticLightmapMaterial*		addDiffuseCausticLightmapMaterial(const std::string& name, int opts = 0);
 
 
-		TextActor*							addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
-												glm::vec4 color, TextActorOriginType originType = TextActorOriginType::LEFT_BOTTOM);
+		TextActor*							addTextActor(const std::string& name, const std::string& theText, FontBitmap* fb, glm::vec4 color, TextActorOriginType originType = TextActorOriginType::LEFT_BOTTOM);
+		TextActor*							getTextActor(const std::string& name);
+		void								removeTextActor(TextActor*);
+		void								removeTextActor(const std::string& name);
 
 
-		LineActor*							addLineActor(Stage* stage, const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points,
-												std::vector<glm::vec4> colors);
+		LineActor*							addLineActor(Stage* stage, const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points, std::vector<glm::vec4> colors);
+		LineActor*							addContinuousLineActor(Stage* stage, const std::string& name, const std::vector<glm::vec2>& points, glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+		LineActor*							getLineActor(const std::string& name);
+		void								removeLineActor(LineActor* la);
+		void								removeLineActor(const std::string& name);
+		
 
-		LineActor*							addContinuousLineActor(Stage* stage, const std::string& name, const std::vector<glm::vec2>& points, 
-												glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
-		Billboard*							addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera,
-												float width = 1.0f, float height = 1.0f);
 
+		Billboard*							addBillboard(const std::string& name, Material* material, Camera* parentCamera, float width = 1.0f, float height = 1.0f);
 		// version of addBillboard that accepts a pointer to an existing mesh instead of creating one (so that for example
 		// if we have 100 enemies that all use the same size billboard, they can all use the same mesh, and we don't have to 
 		// make 100 extra calls into the graphics driver to swap vaos)
-		Billboard*							addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh);
+		Billboard*							addBillboard(const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh);
+		Billboard*							getBillboard(const std::string& name);
+		void								removeBillboard(Billboard* b);
+		void								removeBillboard(const std::string& name);
+
+
+
+		
 
 
 
@@ -126,6 +150,8 @@ namespace vel
 		FontBitmap*							getFontBitmap(const std::string& name);
 		Camera*								getCamera(const std::string& name);
 		Material*							getMaterial(const std::string& name);
+
+		
 		
 
 	public:

@@ -131,33 +131,34 @@ namespace vel
 	Camera* Scene::addCamera(const std::string& name, CameraType type)
 	{
 		std::unique_ptr<Camera> c = std::make_unique<Camera>(name, type);
-
 		c->setResolution(this->resolution.x, this->resolution.y);
 
-		Camera* rawPtrCamera = this->assetManager->addCamera(std::move(c));
+		Camera* cameraPtr = c.get();
+		this->cameras.push_back(std::move(c));
 
-		this->camerasInUse.push_back(rawPtrCamera);
+		cameraPtr->setGpu(this->gpu);
+		cameraPtr->setRenderTarget(this->gpu->createRenderTarget(
+			(cameraPtr->getName() + "_RT"),
+			cameraPtr->getResolution().x,
+			cameraPtr->getResolution().y
+		));
 
-		return rawPtrCamera;
+		return cameraPtr;
 	}
 
 	Camera* Scene::getCamera(const std::string& name)
 	{
-		return this->assetManager->getCamera(name);
-	}
+		for (auto& c : this->cameras)
+			if (c->getName() == name)
+				return c.get();
 
-	std::vector<Camera*>& Scene::getCamerasInUse()
-	{
-		return this->camerasInUse;
+		SPDLOG_WARN("Attempting to get camera that does not exist: {}", name);
+		return nullptr;
 	}
-
 
 	void Scene::freeAssets()
 	{
 		SPDLOG_DEBUG("Freeing assets for scene: {}", this->name);
-        
-		for (auto& pCam : this->camerasInUse)
-			this->assetManager->removeCamera(pCam);
 		
 		for (auto& pMaterial : this->materialsInUse)
 			this->assetManager->removeMaterial(pMaterial);
@@ -185,6 +186,11 @@ namespace vel
 
 		for (auto& a : this->animationsInUse)
 			this->assetManager->removeAnimation(a);
+
+
+		for (auto& c : this->cameras)
+			this->gpu->clearRenderTarget(c->getRenderTarget());
+		this->cameras.clear();
 
 		this->gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
 	}
@@ -549,8 +555,40 @@ namespace vel
 	--------------------------------------------------*/
 	void Scene::lerpAnimators(float alpha)
 	{
-		for (auto& s : this->stages)
-			s->lerpAnimators(alpha);
+		for (auto& a : this->animators)
+			a->renderLerp(alpha);
+	}
+
+
+	//
+	// LineActors
+	//
+
+	int Scene::getLineActorIndex(const std::string& name)
+	{
+		for (int i = 0; i < this->lineActors.size(); i++)
+			if (this->lineActors.at(i)->name == name)
+				return i;
+
+		return -1;
+	}
+
+	int Scene::getLineActorIndex(const LineActor* a)
+	{
+		for (int i = 0; i < this->lineActors.size(); i++)
+			if (this->lineActors.at(i).get() == a)
+				return i;
+
+		return -1;
+	}
+
+	void Scene::_removeLineActor(int lineActorIndex)
+	{
+		LineActor* la = this->lineActors.at(lineActorIndex).get();
+
+		this->_removeActor(this->getActorLocation(la->actor));
+
+		this->lineActors.erase(this->lineActors.begin() + lineActorIndex);
 	}
 
 	//LineActor* Scene::addLineActor(Stage* stage, const std::string& name, std::vector<glm::vec2> points, glm::vec4 color)
@@ -579,12 +617,10 @@ namespace vel
 			pMaterial->setLineColor(i, colors[i]);
 
 		// create actor
-		Actor* pActor = stage->addActor(name, pMesh, pMaterial);
+		la->actor = this->addActor(name, pMesh, pMaterial);
 
-		// add actor pointer to LineActor
-		la->actor = pActor;
-
-		return stage->addLineActor(std::move(la));
+		this->lineActors.push_back(std::move(la));
+		return this->lineActors.back().get();
 	}
 
 	LineActor* Scene::addContinuousLineActor(Stage* stage, const std::string& name, const std::vector<glm::vec2>& points, glm::vec4 color)
@@ -599,15 +635,69 @@ namespace vel
 		RGBALineMaterial* pMaterial = this->addRGBALineMaterial(name + "_material", hasAlpha);
 		pMaterial->setLineColor(0, color);
 
-		Actor* pActor = stage->addActor(name, pMesh, pMaterial);
+		la->actor = this->addActor(name, pMesh, pMaterial);
 
-		la->actor = pActor;
-
-		return stage->addLineActor(std::move(la));
+		this->lineActors.push_back(std::move(la));
+		return this->lineActors.back().get();
 	}
 
-	TextActor* Scene::_addTextActor(Stage* stage, std::unique_ptr<TextActor> ta, FontBitmap* fb, glm::vec4 color)
+	LineActor* Scene::getLineActor(const std::string& name)
 	{
+		return this->lineActors.at(this->getLineActorIndex(name)).get();
+	}
+
+	void Scene::removeLineActor(LineActor* la)
+	{
+		this->_removeLineActor(this->getLineActorIndex(la));
+	}
+
+	void Scene::removeLineActor(const std::string& name)
+	{
+		this->_removeLineActor(this->getLineActorIndex(name));
+	}
+
+
+
+	//
+	// TextActors
+	//
+
+	int Scene::getTextActorIndex(const std::string& name)
+	{
+		for (int i = 0; i < this->textActors.size(); i++)
+			if (this->textActors.at(i)->name == name)
+				return i;
+
+		return -1;
+	}
+
+	int Scene::getTextActorIndex(const TextActor* a)
+	{
+		for (int i = 0; i < this->textActors.size(); i++)
+			if (this->textActors.at(i).get() == a)
+				return i;
+
+		return -1;
+	}
+
+	void Scene::_removeTextActor(int textActorIndex)
+	{
+		TextActor* ta = this->textActors.at(textActorIndex).get();
+
+		this->_removeActor(this->getActorLocation(ta->actor));
+
+		this->textActors.erase(this->textActors.begin() + textActorIndex);
+	}
+
+	TextActor* Scene::addTextActor(const std::string& name, const std::string& theText, FontBitmap* fb,
+		glm::vec4 color, TextActorOriginType originType)
+	{
+		std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
+		ta->name = name;
+		ta->text = theText;
+		ta->fontBitmap = fb;
+		ta->originType = originType;
+
 		// create the mesh using provided FontBitmap and text string
 		Mesh* pTam = this->assetManager->addMesh(std::move(this->assetManager->loadTextActorMesh(ta.get())));
 		this->meshesInUse.push_back(pTam);
@@ -618,55 +708,78 @@ namespace vel
 		taMaterial->setColor(color);
 
 		// create actor
-		Actor* pTextActor = stage->addActor(name, pTam, taMaterial);
+		ta->actor = this->addActor(name, pTam, taMaterial);
 
-		// add actor pointer to TextActor.actor
-		ta->actor = pTextActor;
 
-		// add new text actor to stage and return pointer
-		return stage->addTextActor(std::move(ta));
+		this->textActors.push_back(std::move(ta));
+		return this->textActors.back().get();
 	}
 
-	//// Has to be this way, otherwise Scene can't track the generated mesh. Live with it.
-	//TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText,
-	//	FontBitmap* fb, TextActorAlignment alignment, glm::vec4 color)
-	//{
-	//	std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
-	//	ta->name = name;
-	//	ta->text = theText;
-	//	ta->fontBitmap = fb;
-	//	ta->alignment = alignment;
-
-	//	return this->_addTextActor(stage, std::move(ta), fb, color);
-	//}
-
-	//TextActor* Scene::addTextActor(Stage* stage, const std::string& name, FontBitmap* fb, const std::string& theText,
-	//	glm::vec4 color, TextActorAlignment alignment, TextActorVerticalAlignment vAlignment)
-	//{
-	//	std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
-	//	ta->name = name;
-	//	ta->text = theText;
-	//	ta->fontBitmap = fb;
-	//	ta->alignment = alignment;
-	//	ta->vAlignment = vAlignment;
-
-	//	return this->_addTextActor(stage, std::move(ta), fb, color);
-	//}
-
-	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
-		glm::vec4 color, TextActorOriginType originType)
+	TextActor* Scene::getTextActor(const std::string& name)
 	{
-		std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
-		ta->name = name;
-		ta->text = theText;
-		ta->fontBitmap = fb;
-		ta->originType = originType;
-
-		return this->_addTextActor(stage, std::move(ta), fb, color);
+		return this->textActors.at(this->getTextActorIndex(name)).get();
 	}
 
-	Billboard* Scene::addBillboard(Stage* stage, const std::string& name, vel::Material* material, vel::Camera* parentCamera, 
-		float width, float height)
+	void Scene::removeTextActor(TextActor* ta)
+	{
+		this->_removeTextActor(this->getTextActorIndex(ta));
+	}
+
+	void Scene::removeTextActor(const std::string& name)
+	{
+		this->_removeTextActor(this->getTextActorIndex(name));
+	}
+
+	void Scene::updateTextActors()
+	{
+		for (auto& ta : this->textActors)
+		{
+			if (ta->requiresUpdate)
+			{
+				// update the mesh data associated with text actor
+				std::unique_ptr<Mesh> updatedMesh = std::move(this->assetManager->loadTextActorMesh(ta.get()));
+				ta->actor->getMesh()->setVertices(updatedMesh->getVertices());
+				ta->actor->getMesh()->setIndices(updatedMesh->getIndices());
+
+				this->assetManager->updateMesh(ta->actor->getMesh());
+				ta->requiresUpdate = false;
+			}
+		}
+	}
+
+
+	//
+	// Billboards
+	//
+
+	int Scene::getBillboardIndex(const std::string& name)
+	{
+		for (int i = 0; i < this->billboards.size(); i++)
+			if (this->billboards.at(i)->getActor()->getName() == name)
+				return i;
+
+		return -1;
+	}
+
+	int Scene::getBillboardIndex(const Billboard* a)
+	{
+		for (int i = 0; i < this->billboards.size(); i++)
+			if (this->billboards.at(i).get() == a)
+				return i;
+
+		return -1;
+	}
+
+	void Scene::_removeBillboard(int billboardIndex)
+	{
+		Billboard* b = this->billboards.at(billboardIndex).get();
+
+		this->_removeActor(this->getActorLocation(b->getActor()));
+
+		this->billboards.erase(this->billboards.begin() + billboardIndex);
+	}
+
+	Billboard* Scene::addBillboard(const std::string& name, vel::Material* material, vel::Camera* parentCamera, float width, float height)
 	{
 		// generate mesh, send it to gpu, track it for managment by scene
 		std::unique_ptr<Mesh> tmpM = std::make_unique<Mesh>(name + "_mesh");
@@ -677,105 +790,128 @@ namespace vel
 		this->meshesInUse.push_back(m);
 
 		// create actor
-		Actor* a = stage->addActor(name, m, material);
+		Actor* a = this->addActor(name, m, material);
 		a->setDynamic(true);
 
-		// create the billboard, add to stage, return pointer
-		return stage->addBillboard(std::make_unique<Billboard>(a, parentCamera));
+		// create the billboard, return pointer
+		this->billboards.emplace_back(std::make_unique<Billboard>(a, parentCamera));
+
+		return this->billboards.back().get();
 	}
 
-	Billboard* Scene::addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh)
+	Billboard* Scene::addBillboard(const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh)
 	{
 		this->assetManager->incrementMeshUsage(mesh);
 		this->meshesInUse.push_back(mesh);
 
-		Actor* a = stage->addActor(name, mesh, material);
+		Actor* a = this->addActor(name, mesh, material);
 		a->setDynamic(true);
 
-		return stage->addBillboard(std::make_unique<Billboard>(a, parentCamera));
+		this->billboards.emplace_back(std::make_unique<Billboard>(a, parentCamera));
+
+		return this->billboards.back().get();
 	}
 
-	void Scene::updateTextActors()
+	Billboard* Scene::getBillboard(const std::string& name)
 	{
-		for (auto& s : this->stages)
-			s->updateTextActors();
+		return this->billboards.at(this->getBillboardIndex(name)).get();
 	}
 
-	void Scene::updatePreviousTransforms()
+	void Scene::removeBillboard(Billboard* b)
 	{
-		for (auto& s : this->stages)
-			s->updatePreviousTransforms();
+		this->_removeBillboard(this->getBillboardIndex(b));
+	}
+
+	void Scene::removeBillboard(const std::string& name)
+	{
+		this->_removeBillboard(this->getBillboardIndex(name));
 	}
 
 	void Scene::updateBillboards()
 	{
-		for (auto& s : this->stages)
-			s->updateBillboards();
+		for (auto& b : this->billboards)
+			b->update();
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+	void Scene::updatePreviousTransforms()
+	{
+		for (auto& pair : this->actors)
+			for (auto& actor : pair.second)
+				actor->updatePreviousTransform();
+	}
+
+	
 
 	void Scene::draw(float frameTime, float alpha)
 	{
-		// loop through all stages
-		int i = 0;
-		for (auto& s : this->stages)
+		bool actorsFirstPass = true;
+
+		for (auto& c : this->cameras)
 		{
-			bool actorsFirstPass = true;
+			// update stage camera (view/projection matrices), update scene's camera data to this stage's camera data
+			c->update();
+			this->cameraPosition = c->getPosition();
+			this->cameraProjectionMatrix = c->getProjectionMatrix();
+			this->cameraViewMatrix = c->getViewMatrix();
 
-			if (!s->isVisible())
-				continue;
+			gpu->updateCameraViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different resolutions
+				
+			gpu->setRenderTarget(c->getRenderTarget());
+				
+			gpu->setOpaqueRenderState();
 
-			for (auto c : s->getCameras())
+			bool foundFirstAlpha = false;
+
+			for (auto& pair : this->getActors())
 			{
-				// update stage camera (view/projection matrices), update scene's camera data to this stage's camera data
-				c->update();
-				this->cameraPosition = c->getPosition();
-				this->cameraProjectionMatrix = c->getProjectionMatrix();
-				this->cameraViewMatrix = c->getViewMatrix();
-
-				gpu->updateCameraViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different resolutions
-				
-				gpu->setRenderTarget(c->getRenderTarget());
-				
-				gpu->setOpaqueRenderState();
-
-				bool foundFirstAlpha = false;
-
-				for (auto& pair : s->getActors())
+				for (auto& a : pair.second)
 				{
-					for (auto& a : pair.second)
+					if (!a->getMesh() || !a->isVisible() || !a->getMaterial()->getShader())
+						continue;
+
+					if (a->getMaterial()->getHasAlphaChannel() && !foundFirstAlpha)
 					{
-						if (!a->getMesh() || !a->isVisible() || !a->getMaterial()->getShader())
-							continue;
-
-						if (a->getMaterial()->getHasAlphaChannel() && !foundFirstAlpha)
-						{
-							foundFirstAlpha = true;
-							gpu->setAlphaRenderState();
-						}
-
-						if (actorsFirstPass)
-							a->getMaterial()->preDraw(frameTime);
-
-						gpu->useShader(a->getMaterial()->getShader()); // only alters gpu state if necessary
-						gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
-						gpu->setActiveMaterial(a->getMaterial());
-
-						a->getMaterial()->draw(alpha, gpu, a.get(), this->cameraViewMatrix, this->cameraProjectionMatrix);
-
+						foundFirstAlpha = true;
+						gpu->setAlphaRenderState();
 					}
+
+					if (actorsFirstPass)
+						a->getMaterial()->preDraw(frameTime);
+
+					gpu->useShader(a->getMaterial()->getShader()); // only alters gpu state if necessary
+					gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
+					gpu->setActiveMaterial(a->getMaterial());
+
+					a->getMaterial()->draw(alpha, gpu, a.get(), this->cameraViewMatrix, this->cameraProjectionMatrix);
+
 				}
+			}
 
 
 
-				actorsFirstPass = false;
+			actorsFirstPass = false;
 
-				gpu->composeFBOs();
+			gpu->composeFBOs();
 
 
 
-			} // end for each camera
-
-		} // end for each stage
+		} // end for each camera
 
 
 		// all stage camera's framebuffers are now updated, loop through each stage camera and check if it should display it's contents 
@@ -794,15 +930,10 @@ namespace vel
 		gpu->setFinalRenderTarget(this->sceneRenderTarget.get());
 
 
-		for (auto& s : this->stages)
-		{
-			if (!s->isVisible())
-				continue;
-
-			for (auto c : s->getCameras())
-				if (c->isFinalRenderCam())
-					gpu->drawToFinalRenderTarget(c->getRenderTarget()->opaqueTexture.frames.at(0).dsaHandle);
-		}
+		for (auto& c : this->cameras)
+			if (c->isFinalRenderCam())
+				gpu->drawToFinalRenderTarget(c->getRenderTarget()->opaqueTexture.frames.at(0).dsaHandle);
+		
 
 		// call post process to apply post process shader while drawing into the default framebuffer for display to screen
 		gpu->setDefaultFrameBuffer();
@@ -833,15 +964,12 @@ namespace vel
 
 	void Scene::clearAllRenderTargetBuffers(GPU* gpu)
 	{
-		for (auto& s : this->stages)
+		for (auto& c : this->cameras)
 		{
-			for (auto c : s->getCameras())
-			{
-				gpu->setRenderTarget(c->getRenderTarget());
-				gpu->clearRenderTargetBuffers(0.0f, 0.0f, 0.0f, 0.0f);
-			}
+			gpu->setRenderTarget(c->getRenderTarget());
+			gpu->clearRenderTargetBuffers(0.0f, 0.0f, 0.0f, 0.0f);
 		}
-
+		
 		gpu->clearFinalRenderTarget(this->sceneRenderTarget.get(), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
 		// calling this here SOMEHOW allowed the cleared color to bleed into the final render whenever the update rate was

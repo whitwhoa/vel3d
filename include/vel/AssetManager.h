@@ -37,7 +37,7 @@ namespace vel
 		std::vector<std::pair<std::unique_ptr<Texture>, int>>		textures;
 		std::vector<std::pair<std::unique_ptr<Material>, int>>		materials;
 		std::vector<std::pair<std::unique_ptr<FontBitmap>, int>>	fontBitmaps;
-		std::vector<std::pair<std::unique_ptr<Camera>, int>>		cameras;
+		
 		std::unordered_map<std::string, std::pair<std::unique_ptr<ozz::animation::Skeleton>, int>> skeletons;
 		std::unordered_map<std::string, std::pair<std::unique_ptr<ozz::animation::Animation>, int>> animations;
 
@@ -58,9 +58,6 @@ namespace vel
 		FontGlyphInfo										getFontGlyphInfo(uint32_t character, float offsetX, float offsetY, FontBitmap* fb);
 		int													getFontBitmapIndex(const std::string& name);
 		int													getFontBitmapIndex(const FontBitmap* m);
-
-		int													getCameraIndex(const std::string& name);
-		int													getCameraIndex(const Camera* m);
 		
 
 	public:
@@ -95,10 +92,6 @@ namespace vel
 		FontBitmap*					loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath);
 		FontBitmap*					getFontBitmap(const std::string& name);
 		void						removeFontBitmap(const FontBitmap* pFontBitmap);
-
-		Camera*						addCamera(std::unique_ptr<Camera> c);
-		Camera*						getCamera(const std::string& name);
-		void						removeCamera(const Camera* pCamera);
 
 		std::unique_ptr<Mesh>		loadTextActorMesh(const TextActor* ta);
 
