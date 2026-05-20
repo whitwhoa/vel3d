@@ -15,7 +15,7 @@
 
 namespace vel
 {
-	class	Stage;
+	class	Scene;
 	class	CollisionWorld;
 	class	Material;
 
@@ -23,13 +23,14 @@ namespace vel
 	class Actor
 	{
 	private:
-		//static unsigned int copyCount;
-		//static unsigned int getNextCopyCount();
+
+		const Scene*									parentScene;
 
 		std::string										name;
 		bool											visible;
 		bool											dynamic;
 
+		uint32_t										lastTransformUpdateTick;
 		Transform										transform;
 		Transform										previousTransform;
 
@@ -58,6 +59,8 @@ namespace vel
 
 		void											_removeParentActor();
 		void											_removeChildActor(Actor* child);
+
+		void											_markTransformDirty();
 		
 
 	public:
@@ -69,7 +72,8 @@ namespace vel
 
 
 
-		void											setDynamic(bool dynamic);
+		void											setDynamic(bool dynamic, const Scene* s);
+		const Scene*									getParentScene() const;
 
 		void											setName(std::string newName);
 		const std::string								getName() const;
@@ -103,11 +107,10 @@ namespace vel
 		void											addChildActor(Actor* a);
 		std::vector<Actor*>&							getChildActors();
 
-		Transform&										getTransform();
+		//Transform&										getTransform();
 		const Transform&								getTransform() const;
-
 		const Transform&								getPreviousTransform() const;
-		void											updatePreviousTransform();
+		//void											updatePreviousTransform();
 
 		glm::mat4										getWorldMatrix();
 		glm::mat4										getWorldRenderMatrix(float alpha); // contains logic for interpolation
@@ -122,5 +125,18 @@ namespace vel
 		void											setUserPointer(void* p);
 
 		AABB											getWorldAABB();
+
+		void				setTranslation(glm::vec3 t);
+		void				setRotation(float angle, glm::vec3 axis);
+		void				setRotation(glm::quat r);
+		void				appendRotation(float angle, glm::vec3 axis);
+		void				setScale(glm::vec3 s);
+
+		const glm::vec3&	getTranslation() const;
+		const glm::quat&	getRotation() const;
+		const glm::vec3&	getScale() const;
+		glm::mat4			getMatrix() const;
+		
+
 	};
 }

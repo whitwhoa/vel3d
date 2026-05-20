@@ -25,8 +25,8 @@ namespace vel
 		const glm::vec3&	getTranslation() const;
 		const glm::quat&	getRotation() const;
 		const glm::vec3&	getScale() const;
-		const glm::mat4		getMatrix() const;
-		void				print();
+		glm::mat4			getMatrix() const; // updated this to return const T& vs const T on 20260520. Not sure if it will break anything
+
 
 		glm::vec3			getRotationEulers();
 

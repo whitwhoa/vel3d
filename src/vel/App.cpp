@@ -292,14 +292,9 @@ namespace vel
 			{
 				s->setWindowSize(ws.x, ws.y);
 				s->setResolution(ws.x, ws.y);
-
-				for (auto& c : s->getCamerasInUse())
-				{
-					if(!c->getFixedResolution())
-						c->setResolution(ws.x, ws.y);
-				}
+				s->updateAllCameraResolutions(ws.x, ws.y);
 			}
-		}		
+		}
 	}
 
 	void App::checkResolution()
@@ -312,14 +307,8 @@ namespace vel
 			for (auto& s : this->scenes)
 			{
 				s->setResolution(res.x, res.y);
-
-				for (auto& c : s->getCamerasInUse())
-				{
-					if (!c->getFixedResolution())
-						c->setResolution(res.x, res.y);
-				}
+				s->updateAllCameraResolutions(res.x, res.y);
 			}
-
 		}
 	}
 
@@ -387,16 +376,6 @@ namespace vel
 
 				this->activeScene->stepPhysics(flt);
 
-				// looping through every actor just to update it's previous transform is
-				// ridiculous. I did this early on because I just wanted to make progress, but
-				// every time I see this it makes me throw up in my mouth. However, the way everything
-				// is currently designed, the best optimization I could do for this that would require
-				// the least amount of effort would be a separate container for dynamicActors, then
-				// we only loop that, instead of every actor and checking if it's dynamic or not. Still,
-				// not great, but it's like I said, we'll have to live with this unless we redesign core
-				// engine structure.
-				this->activeScene->updatePreviousTransforms();
-
 				//double t1 = this->getRuntimeSec();
 				this->activeScene->updateAnimators(flt);
 				//double t2 = this->getRuntimeSec();
@@ -433,6 +412,7 @@ namespace vel
 			this->activeScene->updateBillboards();
 
 			this->activeScene->immediateLoop(dt, renderLerp);
+
 			this->activeScene->updateTextActors();
 
 			// --------------------------------------------------------------------

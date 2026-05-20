@@ -156,6 +156,13 @@ namespace vel
 		return nullptr;
 	}
 
+	void Scene::updateAllCameraResolutions(int x, int y)
+	{
+		for (auto& c : this->cameras)
+			if (!c->getFixedResolution())
+				c->setResolution(x, y);
+	}
+
 	void Scene::freeAssets()
 	{
 		SPDLOG_DEBUG("Freeing assets for scene: {}", this->name);
@@ -791,7 +798,7 @@ namespace vel
 
 		// create actor
 		Actor* a = this->addActor(name, m, material);
-		a->setDynamic(true);
+		a->setDynamic(true, this);
 
 		// create the billboard, return pointer
 		this->billboards.emplace_back(std::make_unique<Billboard>(a, parentCamera));
@@ -805,7 +812,7 @@ namespace vel
 		this->meshesInUse.push_back(mesh);
 
 		Actor* a = this->addActor(name, mesh, material);
-		a->setDynamic(true);
+		a->setDynamic(true, this);
 
 		this->billboards.emplace_back(std::make_unique<Billboard>(a, parentCamera));
 
@@ -846,15 +853,6 @@ namespace vel
 
 
 
-
-	
-
-	void Scene::updatePreviousTransforms()
-	{
-		for (auto& pair : this->actors)
-			for (auto& actor : pair.second)
-				actor->updatePreviousTransform();
-	}
 
 	
 

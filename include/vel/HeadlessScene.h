@@ -80,7 +80,7 @@ namespace vel
 		const std::string&						getName();
 
 		void									setTick(uint32_t t);
-		uint32_t								getTick();
+		const uint32_t							getTick() const;
 
 		void									setAssetManager(AssetManager* am);
 

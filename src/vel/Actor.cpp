@@ -5,37 +5,33 @@
 #include "vel/functions.h"
 #include "vel/EmptyMaterial.h"
 #include "vel/Actor.h"
+#include "vel/Scene.h"
 
 
 namespace vel
 {
-	//unsigned int Actor::copyCount = 0;
-
-	//unsigned int Actor::getNextCopyCount()
-	//{
-	//	return ++copyCount;
-	//}
-
 	Actor::Actor(const std::string& name) :
+		parentScene(nullptr),
 		name(name),
 		visible(true),
 		dynamic(false),
+		lastTransformUpdateTick(0),
 		transform(Transform()),
 		previousTransform(Transform()),
 		parentActor(nullptr),
 		parentActorBone(-1),
 		animator(nullptr),
 		mesh(nullptr),
-		//material(nullptr),
 		material(std::make_unique<EmptyMaterial>("EMPTY", nullptr)),
 		userPointer(nullptr)
 	{}
 
-	Actor::Actor(const Actor& a) : 
-		//name(a.getName() + "_" + std::to_string(Actor::getNextCopyCount())),
+	Actor::Actor(const Actor& a) :
+		parentScene(a.getParentScene()),
 		name(a.getName()),
 		visible(a.isVisible()),
 		dynamic(a.isDynamic()),
+		lastTransformUpdateTick(0),
 		transform(a.getTransform()),
 		previousTransform(a.getPreviousTransform()),
 		parentActor(nullptr),
@@ -52,7 +48,6 @@ namespace vel
 		if (this == &a)
 			return *this; // handle self-assignment
 
-		//this->name = a.getName() + "_" + std::to_string(Actor::getNextCopyCount());
 		this->name = a.getName();
 		this->visible = a.isVisible();
 		this->dynamic = a.isDynamic();
@@ -61,6 +56,74 @@ namespace vel
 		this->material = a.getMaterial()->clone();
 
 		return *this;
+	}
+
+	void Actor::_markTransformDirty()
+	{
+		if (!this->dynamic || !this->parentScene)
+			return;
+
+		if (this->lastTransformUpdateTick != this->parentScene->getTick())
+		{
+			this->previousTransform = this->transform;
+			this->lastTransformUpdateTick = this->parentScene->getTick();
+		}
+	}
+
+	void Actor::setTranslation(glm::vec3 t)
+	{
+		this->_markTransformDirty();
+		this->transform.setTranslation(t);
+	}
+
+	void Actor::setRotation(float angle, glm::vec3 axis)
+	{
+		this->_markTransformDirty();
+		this->transform.setRotation(angle, axis);
+	}
+
+	void Actor::setRotation(glm::quat r)
+	{
+		this->_markTransformDirty();
+		this->transform.setRotation(r);
+	}
+
+	void Actor::appendRotation(float angle, glm::vec3 axis)
+	{
+		this->_markTransformDirty();
+		this->transform.appendRotation(angle, axis);
+	}
+
+	void Actor::setScale(glm::vec3 s)
+	{
+		this->_markTransformDirty();
+		this->transform.setScale(s);
+	}
+
+	const glm::vec3& Actor::getTranslation() const
+	{
+		return this->transform.getTranslation();
+	}
+
+	const glm::quat& Actor::getRotation() const
+	{
+		return this->transform.getRotation();
+	}
+
+	const glm::vec3& Actor::getScale() const
+	{
+		return this->transform.getScale();
+	}
+
+	glm::mat4 Actor::getMatrix() const
+	{
+		return this->transform.getMatrix();
+	}
+
+
+	const Scene* Actor::getParentScene() const
+	{
+		return this->parentScene;
 	}
 
 	void* Actor::getUserPointer()
@@ -198,9 +261,10 @@ namespace vel
 		return Transform::interpolateScales(this->previousTransform, this->transform, alpha);
 	}
 
-	void Actor::setDynamic(bool dynamic)
+	void Actor::setDynamic(bool dynamic, const Scene* s)
 	{
 		this->dynamic = dynamic;
+		this->parentScene = s;
 	}
 
 	const bool Actor::isDynamic() const
@@ -208,11 +272,11 @@ namespace vel
 		return this->dynamic;
 	}
 
-	void Actor::updatePreviousTransform()
-	{
-		if (this->isDynamic())
-			this->previousTransform = this->getTransform();
-	}
+	//void Actor::updatePreviousTransform()
+	//{
+	//	if (this->isDynamic())
+	//		this->previousTransform = this->getTransform();
+	//}
 
 	void Actor::setParentActor(Actor* a)
 	{
@@ -278,10 +342,10 @@ namespace vel
 		return this->activeBones;
 	}
 
-	Transform& Actor::getTransform()
-	{
-		return this->transform;
-	}
+	//Transform& Actor::getTransform()
+	//{
+	//	return this->transform;
+	//}
 
 	const Transform& Actor::getTransform() const
 	{

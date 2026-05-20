@@ -143,7 +143,7 @@ namespace vel
 		this->tick = t;
 	}
 
-	uint32_t HeadlessScene::getTick()
+	const uint32_t HeadlessScene::getTick() const
 	{
 		return this->tick;
 	}

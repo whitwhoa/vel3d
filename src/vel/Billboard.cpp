@@ -74,7 +74,7 @@ namespace vel
 
 		// Convert to quaternion and apply to the actor's transform
 		const glm::quat q = glm::quat_cast(R);
-		billboardActor->getTransform().setRotation(q);
+		billboardActor->setRotation(q);
 	}
 
 }
