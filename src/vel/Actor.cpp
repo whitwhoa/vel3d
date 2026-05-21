@@ -11,8 +11,8 @@
 namespace vel
 {
 	Actor::Actor(const std::string& name) :
-		parentScene(nullptr),
 		name(name),
+		updateTick(nullptr),
 		visible(true),
 		dynamic(false),
 		lastTransformUpdateTick(0),
@@ -27,8 +27,8 @@ namespace vel
 	{}
 
 	Actor::Actor(const Actor& a) :
-		parentScene(a.getParentScene()),
 		name(a.getName()),
+		updateTick(a.getUpdateTick()),
 		visible(a.isVisible()),
 		dynamic(a.isDynamic()),
 		lastTransformUpdateTick(0),
@@ -60,13 +60,13 @@ namespace vel
 
 	void Actor::_markTransformDirty()
 	{
-		if (!this->dynamic || !this->parentScene)
+		if (!this->dynamic || !this->updateTick)
 			return;
 
-		if (this->lastTransformUpdateTick != this->parentScene->getTick())
+		if (this->lastTransformUpdateTick != *this->updateTick)
 		{
 			this->previousTransform = this->transform;
-			this->lastTransformUpdateTick = this->parentScene->getTick();
+			this->lastTransformUpdateTick = *this->updateTick;
 		}
 	}
 
@@ -120,10 +120,14 @@ namespace vel
 		return this->transform.getMatrix();
 	}
 
-
-	const Scene* Actor::getParentScene() const
+	void Actor::setUpdateTick(const uint32_t* t)
 	{
-		return this->parentScene;
+		this->updateTick = t;
+	}
+
+	const uint32_t* Actor::getUpdateTick() const
+	{
+		return this->updateTick;
 	}
 
 	void* Actor::getUserPointer()
@@ -261,10 +265,9 @@ namespace vel
 		return Transform::interpolateScales(this->previousTransform, this->transform, alpha);
 	}
 
-	void Actor::setDynamic(bool dynamic, const Scene* s)
+	void Actor::setDynamic(bool dynamic)
 	{
 		this->dynamic = dynamic;
-		this->parentScene = s;
 	}
 
 	const bool Actor::isDynamic() const

@@ -15,119 +15,6 @@ namespace vel
 
 	HeadlessScene::~HeadlessScene() {}
 
-	std::optional<std::pair<ActCompositeKey, unsigned int>>	HeadlessScene::getActorLocation(const std::string& name)
-	{
-		for (const auto& pair : this->actors)
-		{
-			unsigned int i = 0;
-			for (const auto& actor : pair.second)
-			{
-				if (actor->getName() == name)
-				{
-					return std::pair<ActCompositeKey, unsigned int>(pair.first, i);
-				}
-
-				i++;
-			}
-		}
-
-		return std::nullopt;
-	}
-
-	std::optional<std::pair<ActCompositeKey, unsigned int>>	HeadlessScene::getActorLocation(const Actor* a)
-	{
-		for (const auto& pair : this->actors)
-		{
-			unsigned int i = 0;
-			for (const auto& actor : pair.second)
-			{
-				if (actor.get() == a)
-				{
-					return std::pair<ActCompositeKey, unsigned int>(pair.first, i);
-				}
-
-				i++;
-			}
-		}
-
-		return std::nullopt;
-	}
-
-	void HeadlessScene::_removeActor(std::optional<std::pair<ActCompositeKey, unsigned int>> actorLocation)
-	{
-		if (!actorLocation.has_value())
-			return;
-
-		auto al = actorLocation.value();
-
-		this->actors[al.first].erase(this->actors[al.first].begin() + al.second);
-	}
-
-	void HeadlessScene::removeActor(const Actor* a)
-	{
-		this->_removeActor(this->getActorLocation(a));
-	}
-
-	void HeadlessScene::removeActor(const std::string& name)
-	{
-		this->_removeActor(this->getActorLocation(name));
-	}
-
-	Actor* HeadlessScene::addActor(const Actor& actorIn)
-	{
-		// ogl uses 0 to indicate error, so we'll never have an index of 0, so we use that for empty
-		unsigned int fboToUse = actorIn.getMaterial()->getHasAlphaChannel() ? 2 : 1; // always either opaque or has alpha
-		unsigned int shaderProgramId = actorIn.getMaterial()->getShader() == nullptr ? 0 : actorIn.getMaterial()->getShader()->id;
-		unsigned int vaoToUse = !actorIn.getMesh()->getGpuMesh().has_value() ? 0 : actorIn.getMesh()->getGpuMesh()->VAO;
-
-		std::unique_ptr<Actor> a = std::make_unique<Actor>(actorIn);
-
-		Actor* ptrA = a.get(); // save raw pointer for return after move
-
-		ActCompositeKey key = { fboToUse, shaderProgramId, vaoToUse };
-
-		this->actors[key].push_back(std::move(a));
-
-		return ptrA;
-	}
-
-	Actor* HeadlessScene::addActor(const std::string& name, Mesh* mesh, Material* material)
-	{
-		// ogl uses 0 to indicate error, so we'll never have an index of 0, so we use that for empty
-		unsigned int fboToUse = 1; // always either opaque or has alpha
-		if (material != nullptr)
-			fboToUse = material->getHasAlphaChannel() ? 2 : 1;
-
-		unsigned int shaderProgramId = material == nullptr ? 0 : material->getShader()->id;
-		unsigned int vaoToUse = mesh == nullptr ? 0 : mesh->getGpuMesh()->VAO;
-
-		std::unique_ptr<Actor> a = std::make_unique<Actor>(name);
-		a->setMesh(mesh);
-
-		if (material) // actor default to EmptyMaterial if none provided
-			a->setMaterial(material);
-
-		Actor* ptrA = a.get(); // save raw pointer for return after move
-
-		ActCompositeKey key = { fboToUse, shaderProgramId, vaoToUse };
-
-		this->actors[key].push_back(std::move(a));
-
-		return ptrA;
-	}
-
-	Actor* HeadlessScene::getActor(const std::string& name)
-	{
-		for (const auto& pair : this->actors)
-			for (const auto& actor : pair.second)
-				if (actor->getName() == name)
-					return actor.get();
-
-		return nullptr;
-	}
-
-
-
 	void HeadlessScene::setName(const std::string& n)
 	{
 		this->name = n;
@@ -148,25 +35,14 @@ namespace vel
 		return this->tick;
 	}
 
+	const uint32_t* HeadlessScene::getTickPointer() const
+	{
+		return &this->tick;
+	}
+
 	void HeadlessScene::setAssetManager(AssetManager* am)
 	{
 		this->assetManager = am;
-	}
-
-	std::map<ActCompositeKey, std::vector<std::unique_ptr<Actor>>>& HeadlessScene::getActors()
-	{
-		return this->actors;
-	}
-
-	void HeadlessScene::addSkelAnimator(std::unique_ptr<SkelAnimator> sa)
-	{
-		this->animators.push_back(std::move(sa));
-	}
-
-	void HeadlessScene::updateAnimators(float delta)
-	{
-		for (auto& a : this->animators)
-			a->update(delta);
 	}
 
 	void HeadlessScene::stepPhysics(float delta)
@@ -246,6 +122,31 @@ namespace vel
 	CollisionWorld* HeadlessScene::getCollisionWorld(const std::string& name)
 	{
 		return this->collisionWorlds.at(this->getCollisionWorldIndex(name));
+	}
+
+	void HeadlessScene::updateAnimators(float delta)
+	{
+		for (auto& s : this->stages)
+			s->updateAnimators(delta);
+	}
+
+	Stage* HeadlessScene::addStage(const std::string& name)
+	{
+		std::unique_ptr<Stage> s = std::make_unique<Stage>(name, this->assetManager, this->getTickPointer());
+		this->stages.push_back(std::move(s));
+
+		return this->stages.back().get();
+	}
+
+	Stage* HeadlessScene::getStage(const std::string& name)
+	{
+		for (int i = 0; i < this->stages.size(); i++)
+			if (this->stages.at(i)->getName() == name)
+				return this->stages.at(i).get();
+
+		SPDLOG_DEBUG("HeadlessScene::getStage: Attempting to retrive stage that does not exist: {}" + name);
+
+		return nullptr;
 	}
 
 }

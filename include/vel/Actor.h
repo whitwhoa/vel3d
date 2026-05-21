@@ -15,7 +15,6 @@
 
 namespace vel
 {
-	class	Scene;
 	class	CollisionWorld;
 	class	Material;
 
@@ -23,10 +22,8 @@ namespace vel
 	class Actor
 	{
 	private:
-
-		const Scene*									parentScene;
-
 		std::string										name;
+		const uint32_t*									updateTick;
 		bool											visible;
 		bool											dynamic;
 
@@ -72,8 +69,9 @@ namespace vel
 
 
 
-		void											setDynamic(bool dynamic, const Scene* s);
-		const Scene*									getParentScene() const;
+		void											setDynamic(bool dynamic);
+		void											setUpdateTick(const uint32_t* t);
+		const uint32_t*									getUpdateTick() const;
 
 		void											setName(std::string newName);
 		const std::string								getName() const;
