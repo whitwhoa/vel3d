@@ -15,6 +15,7 @@ namespace vel
 		updateTick(nullptr),
 		visible(true),
 		dynamic(false),
+		lerpable(false),
 		lastTransformUpdateTick(0),
 		transform(Transform()),
 		previousTransform(Transform()),
@@ -31,6 +32,7 @@ namespace vel
 		updateTick(a.getUpdateTick()),
 		visible(a.isVisible()),
 		dynamic(a.isDynamic()),
+		lerpable(a.isLerpable()),
 		lastTransformUpdateTick(0),
 		transform(a.getTransform()),
 		previousTransform(a.getPreviousTransform()),
@@ -51,6 +53,7 @@ namespace vel
 		this->name = a.getName();
 		this->visible = a.isVisible();
 		this->dynamic = a.isDynamic();
+		this->lerpable = a.isLerpable();
 		this->transform = a.getTransform();
 		this->mesh = a.getMesh();
 		this->material = a.getMaterial()->clone();
@@ -60,7 +63,7 @@ namespace vel
 
 	void Actor::_markTransformDirty()
 	{
-		if (!this->dynamic || !this->updateTick)
+		if (!this->dynamic || (this->dynamic && !this->lerpable) || !this->updateTick)
 			return;
 
 		if (this->lastTransformUpdateTick != *this->updateTick)
@@ -231,7 +234,7 @@ namespace vel
 	glm::mat4 Actor::getWorldRenderMatrix(float alpha)
 	{
 		// actor is not dynamic (does not move) so interpolation is not required, simply return it's world matrix
-		if (!this->isDynamic())
+		if (!this->dynamic || (this->dynamic && !this->lerpable))
 			return this->getWorldMatrix();
 
 		glm::mat4 selfMat = Transform::interpolateTransforms(this->previousTransform, this->transform, alpha);
@@ -265,21 +268,21 @@ namespace vel
 		return Transform::interpolateScales(this->previousTransform, this->transform, alpha);
 	}
 
-	void Actor::setDynamic(bool dynamic)
+	void Actor::setDynamic(bool dynamic, bool lerpable)
 	{
 		this->dynamic = dynamic;
+		this->lerpable = lerpable;
 	}
 
-	const bool Actor::isDynamic() const
+	bool Actor::isDynamic() const
 	{
 		return this->dynamic;
 	}
 
-	//void Actor::updatePreviousTransform()
-	//{
-	//	if (this->isDynamic())
-	//		this->previousTransform = this->getTransform();
-	//}
+	bool Actor::isLerpable() const
+	{
+		return this->lerpable;
+	}
 
 	void Actor::setParentActor(Actor* a)
 	{
@@ -345,11 +348,6 @@ namespace vel
 		return this->activeBones;
 	}
 
-	//Transform& Actor::getTransform()
-	//{
-	//	return this->transform;
-	//}
-
 	const Transform& Actor::getTransform() const
 	{
 		return this->transform;
@@ -360,7 +358,7 @@ namespace vel
 		return this->previousTransform;
 	}
 
-	const bool Actor::isVisible() const
+	bool Actor::isVisible() const
 	{
 		return this->visible;
 	}
@@ -378,7 +376,7 @@ namespace vel
 		return this->name;
 	}
 
-	const bool Actor::isAnimated() const
+	bool Actor::isAnimated() const
 	{
 		if (this->animator)
 			return true;

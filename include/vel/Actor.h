@@ -26,6 +26,7 @@ namespace vel
 		const uint32_t*									updateTick;
 		bool											visible;
 		bool											dynamic;
+		bool											lerpable;
 
 		uint32_t										lastTransformUpdateTick;
 		Transform										transform;
@@ -69,7 +70,7 @@ namespace vel
 
 
 
-		void											setDynamic(bool dynamic);
+		void											setDynamic(bool dynamic, bool lerpable = true);
 		void											setUpdateTick(const uint32_t* t);
 		const uint32_t*									getUpdateTick() const;
 
@@ -91,9 +92,10 @@ namespace vel
 
 
 		void											setVisible(bool v);
-		const bool										isVisible() const;
-		const bool										isAnimated() const;
-		const bool										isDynamic() const;
+		bool											isVisible() const;
+		bool											isAnimated() const;
+		bool											isDynamic() const;
+		bool											isLerpable() const;
 		
 
 		const std::vector<std::pair<unsigned int, unsigned int>>& getActiveBones() const;
