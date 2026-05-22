@@ -573,7 +573,7 @@ namespace vel
 		this->meshesInUse.push_back(pTam);
 
 		// create material
-		Material* taMaterial = this->addTextMaterial(name + "_material");
+		Material* taMaterial = this->addTextMaterial(name + "_material", MTRL_OPT_TRANSLUCENT);
 		taMaterial->addTexture(&fb->texture);
 		taMaterial->setColor(color);
 
