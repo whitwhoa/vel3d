@@ -75,30 +75,70 @@ namespace vel
 
 	void Actor::setTranslation(glm::vec3 t)
 	{
+		if (*this->updateTick == 0)
+		{
+			this->transform.setTranslation(t);
+			this->previousTransform = this->transform;
+
+			return;
+		}
+
 		this->_markTransformDirty();
 		this->transform.setTranslation(t);
 	}
 
 	void Actor::setRotation(float angle, glm::vec3 axis)
 	{
+		if (*this->updateTick == 0)
+		{
+			this->transform.setRotation(angle, axis);
+			this->previousTransform = this->transform;
+
+			return;
+		}
+
 		this->_markTransformDirty();
 		this->transform.setRotation(angle, axis);
 	}
 
 	void Actor::setRotation(glm::quat r)
 	{
+		if (*this->updateTick == 0)
+		{
+			this->transform.setRotation(r);
+			this->previousTransform = this->transform;
+
+			return;
+		}
+
 		this->_markTransformDirty();
 		this->transform.setRotation(r);
 	}
 
 	void Actor::appendRotation(float angle, glm::vec3 axis)
 	{
+		if (*this->updateTick == 0)
+		{
+			this->transform.appendRotation(angle, axis);
+			this->previousTransform = this->transform;
+
+			return;
+		}
+
 		this->_markTransformDirty();
 		this->transform.appendRotation(angle, axis);
 	}
 
 	void Actor::setScale(glm::vec3 s)
 	{
+		if (*this->updateTick == 0)
+		{
+			this->transform.setScale(s);
+			this->previousTransform = this->transform;
+
+			return;
+		}
+
 		this->_markTransformDirty();
 		this->transform.setScale(s);
 	}
