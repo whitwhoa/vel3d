@@ -380,7 +380,9 @@ namespace vel
 		this->shadersInUse.push_back(textMaterialShader);
 
 		std::unique_ptr<TextMaterial> m = std::make_unique<TextMaterial>(name, textMaterialShader);
-		m->setHasAlphaChannel(true);
+
+		if (opts & MTRL_OPT_TRANSLUCENT)
+			m->setHasAlphaChannel(true);
 
 		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
