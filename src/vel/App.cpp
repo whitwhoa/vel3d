@@ -204,7 +204,7 @@ namespace vel
 				this->audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
 		}
 
-		return ptrScene->load();
+		return ptrScene->internalLoad();
     }
 
     void App::close()
@@ -381,7 +381,7 @@ namespace vel
 				//SPDLOG_TRACE("{:.15f}", t2 - t1);
 
 				//double t1 = this->getRuntimeSec();
-				this->activeScene->fixedLoop(flt);
+				this->activeScene->internalFixedLoop(flt);
 				//double t2 = this->getRuntimeSec();
 				//SPDLOG_TRACE("{:.15f}", t2 - t1);
 				
@@ -410,7 +410,7 @@ namespace vel
 
 			this->activeScene->updateBillboards();
 
-			this->activeScene->immediateLoop(dt, renderLerp);
+			this->activeScene->internalImmediateLoop(dt, renderLerp);
 
 			this->activeScene->updateTextActors();
 

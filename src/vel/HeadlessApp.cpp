@@ -29,7 +29,7 @@ namespace vel
 		this->scenes.push_back(std::move(scene));
 
 		HeadlessScene* ptrScene = this->scenes.back().get();
-		ptrScene->load();
+		ptrScene->internalLoad();
 
 		if (makeActive)
 			this->activeScene = ptrScene;
@@ -89,7 +89,7 @@ namespace vel
 
 		this->activeScene->stepPhysics(dt);
 		this->activeScene->updateAnimators(dt);
-		this->activeScene->fixedLoop(dt);
+		this->activeScene->internalFixedLoop(dt);
 	}
 
 

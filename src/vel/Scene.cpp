@@ -40,6 +40,11 @@ namespace vel
 		this->freeAssets();
 	}
 
+	void Scene::internalImmediateLoop(float frameTime, float renderLerpInterval)
+	{
+		this->immediateLoop(frameTime, renderLerpInterval);
+	}
+
 	void Scene::setFrameTime(double ft)
 	{
 		this->frameTime = ft;

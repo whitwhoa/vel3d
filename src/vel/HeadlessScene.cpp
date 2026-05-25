@@ -15,6 +15,16 @@ namespace vel
 
 	HeadlessScene::~HeadlessScene() {}
 
+	bool HeadlessScene::internalLoad()
+	{
+		return this->load();
+	}
+
+	void HeadlessScene::internalFixedLoop(float deltaTime)
+	{
+		this->fixedLoop(deltaTime);
+	}
+
 	void HeadlessScene::setName(const std::string& n)
 	{
 		this->name = n;

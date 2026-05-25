@@ -127,8 +127,7 @@ namespace vel
 	public:
 		Scene(const std::string& dataDir, GPU* gpu);
 		~Scene();
-		virtual bool						load() = 0;
-		virtual void						fixedLoop(float deltaTime) = 0;
+		virtual void						internalImmediateLoop(float frameTime, float renderLerpInterval);
 		virtual void						immediateLoop(float frameTime, float renderLerpInterval) = 0;
 
 		glm::ivec2							getResolution();

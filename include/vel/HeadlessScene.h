@@ -49,7 +49,9 @@ namespace vel
 		HeadlessScene(const std::string& dataDir);
 		~HeadlessScene();
 
+		virtual bool							internalLoad();
 		virtual bool							load() = 0;
+		virtual void							internalFixedLoop(float deltaTime);
 		virtual void							fixedLoop(float deltaTime) = 0;
 
 		void									setName(const std::string& n);
