@@ -976,45 +976,87 @@ namespace vel
 
 		AABB maabb = m->getAABB();
 
-		//SPDLOG_DEBUG("Text AABB min: {}, {} max: {}, {} size: {}, {}",
-		//	maabb.getMinEdge().x,
-		//	maabb.getMinEdge().y,
-		//	maabb.getMaxEdge().x,
-		//	maabb.getMaxEdge().y,
-		//	maabb.getMaxEdge().x - maabb.getMinEdge().x,
-		//	maabb.getMaxEdge().y - maabb.getMinEdge().y
-		//);
+		////SPDLOG_DEBUG("Text AABB min: {}, {} max: {}, {} size: {}, {}",
+		////	maabb.getMinEdge().x,
+		////	maabb.getMinEdge().y,
+		////	maabb.getMaxEdge().x,
+		////	maabb.getMaxEdge().y,
+		////	maabb.getMaxEdge().x - maabb.getMinEdge().x,
+		////	maabb.getMaxEdge().y - maabb.getMinEdge().y
+		////);
 
-		// recalculate vertex positions for right alignment (origin of mesh at right edge)
-		if (ta->originType == TextActorOriginType::RIGHT_BOTTOM || ta->originType == TextActorOriginType::RIGHT_CENTER || ta->originType == TextActorOriginType::RIGHT_TOP)
-		{
-			float offsetAmount = maabb.getMaxEdge().x;
-			for (auto& v : m->getMutableVertices())
-				v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
-		}
-		// recalculate vertex positions for center alignment (origin of mesh at center)
-		else if (ta->originType == TextActorOriginType::CENTER_BOTTOM || ta->originType == TextActorOriginType::CENTER_CENTER || ta->originType == TextActorOriginType::CENTER_TOP)
-		{
-			float offsetAmount = maabb.getMaxEdge().x * 0.5f;
-			for (auto& v : m->getMutableVertices())
-				v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
-		}
-		// default alignment is left
+		//// recalculate vertex positions for right alignment (origin of mesh at right edge)
+		//if (ta->originType == TextActorOriginType::RIGHT_BOTTOM || ta->originType == TextActorOriginType::RIGHT_CENTER || ta->originType == TextActorOriginType::RIGHT_TOP)
+		//{
+		//	float offsetAmount = maabb.getMaxEdge().x;
+		//	for (auto& v : m->getMutableVertices())
+		//		v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
+		//}
+		//// recalculate vertex positions for center alignment (origin of mesh at center)
+		//else if (ta->originType == TextActorOriginType::CENTER_BOTTOM || ta->originType == TextActorOriginType::CENTER_CENTER || ta->originType == TextActorOriginType::CENTER_TOP)
+		//{
+		//	float offsetAmount = maabb.getMaxEdge().x * 0.5f;
+		//	for (auto& v : m->getMutableVertices())
+		//		v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
+		//}
+		//// default alignment is left
 
 
-		if (ta->originType == TextActorOriginType::LEFT_TOP || ta->originType == TextActorOriginType::CENTER_TOP || ta->originType == TextActorOriginType::RIGHT_TOP)
+		//if (ta->originType == TextActorOriginType::LEFT_TOP || ta->originType == TextActorOriginType::CENTER_TOP || ta->originType == TextActorOriginType::RIGHT_TOP)
+		//{
+		//	float offsetAmount = maabb.getMaxEdge().y;
+		//	for (auto& v : m->getMutableVertices())
+		//		v.position = glm::vec3(v.position.x, (v.position.y - offsetAmount), v.position.z);
+		//}
+		//else if (ta->originType == TextActorOriginType::LEFT_CENTER || ta->originType == TextActorOriginType::CENTER_CENTER || ta->originType == TextActorOriginType::RIGHT_CENTER)
+		//{
+		//	float offsetAmount = maabb.getMaxEdge().y * 0.5f;
+		//	for (auto& v : m->getMutableVertices())
+		//		v.position = glm::vec3(v.position.x, (v.position.y - offsetAmount), v.position.z);
+		//}
+		//// default alignment is bottom
+
+		float minX = maabb.getMinEdge().x;
+		float maxX = maabb.getMaxEdge().x;
+		float minY = maabb.getMinEdge().y;
+		float maxY = maabb.getMaxEdge().y;
+
+		float xOffset = 0.0f;
+		float yOffset = 0.0f;
+
+		// horizontal
+		if (ta->originType == TextActorOriginType::RIGHT_BOTTOM ||
+			ta->originType == TextActorOriginType::RIGHT_CENTER ||
+			ta->originType == TextActorOriginType::RIGHT_TOP)
 		{
-			float offsetAmount = maabb.getMaxEdge().y;
-			for (auto& v : m->getMutableVertices())
-				v.position = glm::vec3(v.position.x, (v.position.y - offsetAmount), v.position.z);
+			xOffset = maxX;
 		}
-		else if (ta->originType == TextActorOriginType::LEFT_CENTER || ta->originType == TextActorOriginType::CENTER_CENTER || ta->originType == TextActorOriginType::RIGHT_CENTER)
+		else if (ta->originType == TextActorOriginType::CENTER_BOTTOM ||
+			ta->originType == TextActorOriginType::CENTER_CENTER ||
+			ta->originType == TextActorOriginType::CENTER_TOP)
 		{
-			float offsetAmount = maabb.getMaxEdge().y * 0.5f;
-			for (auto& v : m->getMutableVertices())
-				v.position = glm::vec3(v.position.x, (v.position.y - offsetAmount), v.position.z);
+			xOffset = (minX + maxX) * 0.5f;
 		}
-		// default alignment is bottom
+
+		// vertical
+		if (ta->originType == TextActorOriginType::LEFT_TOP ||
+			ta->originType == TextActorOriginType::CENTER_TOP ||
+			ta->originType == TextActorOriginType::RIGHT_TOP)
+		{
+			yOffset = maxY;
+		}
+		else if (ta->originType == TextActorOriginType::LEFT_CENTER ||
+			ta->originType == TextActorOriginType::CENTER_CENTER ||
+			ta->originType == TextActorOriginType::RIGHT_CENTER)
+		{
+			yOffset = (minY + maxY) * 0.5f;
+		}
+
+		for (auto& v : m->getMutableVertices())
+		{
+			v.position.x -= xOffset;
+			v.position.y -= yOffset;
+		}
 
 
 		return m;
