@@ -290,21 +290,21 @@ namespace vel
 		this->_removeTextActor(this->_getTextActorIndex(name));
 	}
 
+	void Stage::updateTextActor(TextActor* ta)
+	{
+		std::unique_ptr<Mesh> updatedMesh = std::move(this->assetManager->loadTextActorMesh(ta));
+		ta->actor->getMesh()->setVertices(updatedMesh->getVertices());
+		ta->actor->getMesh()->setIndices(updatedMesh->getIndices());
+
+		this->assetManager->updateMesh(ta->actor->getMesh());
+		ta->requiresUpdate = false;
+	}
+
 	void Stage::updateTextActors()
 	{
 		for (auto& ta : this->textActors)
-		{
 			if (ta->requiresUpdate)
-			{
-				// update the mesh data associated with text actor
-				std::unique_ptr<Mesh> updatedMesh = std::move(this->assetManager->loadTextActorMesh(ta.get()));
-				ta->actor->getMesh()->setVertices(updatedMesh->getVertices());
-				ta->actor->getMesh()->setIndices(updatedMesh->getIndices());
-
-				this->assetManager->updateMesh(ta->actor->getMesh());
-				ta->requiresUpdate = false;
-			}
-		}
+				this->updateTextActor(ta.get());
 	}
 
 

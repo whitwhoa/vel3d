@@ -107,5 +107,7 @@ namespace vel
 		void			removeBillboard(const std::string& name);
 		void			updateBillboards();
 
+		void			updateTextActor(TextActor* ta);
+
 	};
 }
