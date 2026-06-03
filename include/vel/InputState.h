@@ -9,8 +9,7 @@ namespace vel
 		bool	mouseRightButton = false;
         float	mouseDX = 0.0f;
         float	mouseDY = 0.0f;
-        float	scrollX = 0.0f;
-        float	scrollY = 0.0f;
+        int		scroll = 0;
 		bool	keySpace = false;
 		bool	keyApostrophe = false;
 		bool	keyComma = false;

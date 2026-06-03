@@ -89,8 +89,7 @@ namespace vel
 		cursorHidden(true),
 		vsync(false),
 		glfwWindow(nullptr),
-		scrollX(0.0f),
-		scrollY(0.0f),
+		scroll(0),
 		mouseAccumDX(0.0),
 		mouseAccumDY(0.0),
 		lastMouseX(0.0),
@@ -418,8 +417,7 @@ namespace vel
             // get this from window
             void* data = glfwGetWindowUserPointer(window);
             Window* w = static_cast<Window*>(data);
-            w->scrollX += xoffset;
-            w->scrollY += yoffset;
+            w->scroll = yoffset;
 
 			//std::cout << std::to_string(w->scrollY) << std::endl;
 
@@ -524,8 +522,8 @@ namespace vel
 
     void Window::setScroll() 
     {
-        this->inputState.scrollX = (float)this->scrollX;
-        this->inputState.scrollY = (float)this->scrollY;
+        this->inputState.scroll = this->scroll;
+		this->scroll = 0;
     }
 
     void Window::setToClose() 

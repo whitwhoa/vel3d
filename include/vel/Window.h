@@ -32,8 +32,7 @@ namespace vel
 		bool				vsync;
         InputState			inputState;
         GLFWwindow*			glfwWindow;
-        float				scrollX;
-        float				scrollY;
+        int 				scroll;
 
         double              mouseAccumDX;
         double              mouseAccumDY;
