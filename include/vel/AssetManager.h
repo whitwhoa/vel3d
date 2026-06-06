@@ -93,7 +93,7 @@ namespace vel
 		FontBitmap*					getFontBitmap(const std::string& name);
 		void						removeFontBitmap(const FontBitmap* pFontBitmap);
 
-		std::unique_ptr<Mesh>		loadTextActorMesh(const TextActor* ta);
+		std::unique_ptr<Mesh>		loadTextActorMesh(TextActor* ta);
 
 		ozz::animation::Skeleton*	loadSkeleton(const std::string& name, const std::string& path);
 		ozz::animation::Skeleton*	getSkeleton(const std::string& name);

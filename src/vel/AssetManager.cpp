@@ -883,10 +883,11 @@ namespace vel
 		return info;
 	}
 
-	std::unique_ptr<Mesh> AssetManager::loadTextActorMesh(const TextActor* ta)
+	std::unique_ptr<Mesh> AssetManager::loadTextActorMesh(TextActor* ta)
 	{
 		std::vector<Vertex> meshVertices = {};
 		std::vector<unsigned int> meshIndices = {};
+		ta->caretPositions.clear();
 
 		unsigned int lastIndex = 0;
 
@@ -895,6 +896,8 @@ namespace vel
 
 		float offsetX = 0.0f;
 		float offsetY = 0.0f;
+
+		ta->caretPositions.push_back({ offsetX, -offsetY });
 
 		for (auto c : ta->text)
 		{
@@ -905,11 +908,14 @@ namespace vel
 				lineMinY = 0.0f;
 				lineMaxY = 0.0f;
 
+				ta->caretPositions.push_back({ offsetX, -offsetY });
+
 				continue;
 			}
 
 			const auto glyphInfo = this->getFontGlyphInfo(c, offsetX, offsetY, ta->fontBitmap);
 			offsetX = glyphInfo.offsetX;
+			offsetY = glyphInfo.offsetY;
 
 			Vertex v1;
 			v1.position = glyphInfo.positions[0];
@@ -968,6 +974,8 @@ namespace vel
 			meshIndices.push_back(lastIndex + 2); // 2
 
 			lastIndex += 4;
+
+			ta->caretPositions.push_back({ offsetX, -offsetY });
 		}
 
 		std::unique_ptr<Mesh> m = std::make_unique<Mesh>(ta->name + "_mesh");
@@ -975,46 +983,6 @@ namespace vel
 		m->setIndices(meshIndices);
 
 		AABB maabb = m->getAABB();
-
-		////SPDLOG_DEBUG("Text AABB min: {}, {} max: {}, {} size: {}, {}",
-		////	maabb.getMinEdge().x,
-		////	maabb.getMinEdge().y,
-		////	maabb.getMaxEdge().x,
-		////	maabb.getMaxEdge().y,
-		////	maabb.getMaxEdge().x - maabb.getMinEdge().x,
-		////	maabb.getMaxEdge().y - maabb.getMinEdge().y
-		////);
-
-		//// recalculate vertex positions for right alignment (origin of mesh at right edge)
-		//if (ta->originType == TextActorOriginType::RIGHT_BOTTOM || ta->originType == TextActorOriginType::RIGHT_CENTER || ta->originType == TextActorOriginType::RIGHT_TOP)
-		//{
-		//	float offsetAmount = maabb.getMaxEdge().x;
-		//	for (auto& v : m->getMutableVertices())
-		//		v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
-		//}
-		//// recalculate vertex positions for center alignment (origin of mesh at center)
-		//else if (ta->originType == TextActorOriginType::CENTER_BOTTOM || ta->originType == TextActorOriginType::CENTER_CENTER || ta->originType == TextActorOriginType::CENTER_TOP)
-		//{
-		//	float offsetAmount = maabb.getMaxEdge().x * 0.5f;
-		//	for (auto& v : m->getMutableVertices())
-		//		v.position = glm::vec3((v.position.x - offsetAmount), v.position.y, v.position.z);
-		//}
-		//// default alignment is left
-
-
-		//if (ta->originType == TextActorOriginType::LEFT_TOP || ta->originType == TextActorOriginType::CENTER_TOP || ta->originType == TextActorOriginType::RIGHT_TOP)
-		//{
-		//	float offsetAmount = maabb.getMaxEdge().y;
-		//	for (auto& v : m->getMutableVertices())
-		//		v.position = glm::vec3(v.position.x, (v.position.y - offsetAmount), v.position.z);
-		//}
-		//else if (ta->originType == TextActorOriginType::LEFT_CENTER || ta->originType == TextActorOriginType::CENTER_CENTER || ta->originType == TextActorOriginType::RIGHT_CENTER)
-		//{
-		//	float offsetAmount = maabb.getMaxEdge().y * 0.5f;
-		//	for (auto& v : m->getMutableVertices())
-		//		v.position = glm::vec3(v.position.x, (v.position.y - offsetAmount), v.position.z);
-		//}
-		//// default alignment is bottom
 
 		float minX = maabb.getMinEdge().x;
 		float maxX = maabb.getMaxEdge().x;
@@ -1058,6 +1026,11 @@ namespace vel
 			v.position.y -= yOffset;
 		}
 
+		for (auto& p : ta->caretPositions)
+		{
+			p.x -= xOffset;
+			p.y -= yOffset;
+		}
 
 		return m;
 	}
