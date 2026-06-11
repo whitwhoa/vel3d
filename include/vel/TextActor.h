@@ -37,19 +37,13 @@ namespace vel
 			this->requiresUpdate = true;
 		}
 
-		void addCharacter(std::size_t& caretIndex, char c)
+		void addCharacter(int caretIndex, char c)
 		{
-			if (caretIndex > this->text.size())
-				caretIndex = this->text.size();
-
 			this->text.insert(this->text.begin() + caretIndex, c);
-
-			caretIndex++;
-
 			this->requiresUpdate = true;
 		}
 
-		void backspaceCharacter(std::size_t& caretIndex)
+		void backspaceCharacter(int caretIndex)
 		{
 			if (caretIndex == 0 || this->text.empty())
 				return;
@@ -59,12 +53,10 @@ namespace vel
 
 			this->text.erase(caretIndex - 1, 1);
 
-			caretIndex--;
-
 			this->requiresUpdate = true;
 		}
 
-		void deleteCharacter(std::size_t& caretIndex)
+		void deleteCharacter(int caretIndex)
 		{
 			if (this->text.empty())
 				return;
