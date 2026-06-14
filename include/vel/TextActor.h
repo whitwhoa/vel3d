@@ -52,6 +52,7 @@ namespace vel
 				caretIndex = this->text.size();
 
 			this->text.erase(caretIndex - 1, 1);
+			this->caretPositions.erase(this->caretPositions.begin() + caretIndex);
 
 			this->requiresUpdate = true;
 		}
@@ -65,6 +66,7 @@ namespace vel
 				return;
 
 			this->text.erase(caretIndex, 1);
+			this->caretPositions.erase(this->caretPositions.begin() + caretIndex + 1);
 
 			this->requiresUpdate = true;
 		}
