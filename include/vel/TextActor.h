@@ -37,9 +37,9 @@ namespace vel
 			this->requiresUpdate = true;
 		}
 
-		void addCharacter(int caretIndex, char c)
+		void addCharacter(int caretIndex, const char* c)
 		{
-			this->text.insert(this->text.begin() + caretIndex, c);
+			this->text.insert(this->text.begin() + caretIndex, *c);
 			this->requiresUpdate = true;
 		}
 

@@ -162,7 +162,7 @@ namespace vel
             return !this->keys.test(key);
         }
 
-        bool justPressed(VEL_KEY key) const
+        bool pressed(VEL_KEY key) const
         {
             return this->keys.test(key) &&
                 !this->prevKeys.test(key);
@@ -174,7 +174,7 @@ namespace vel
                 this->prevKeys.test(key);
         }
 
-        bool justReleased(VEL_KEY key) const
+        bool released(VEL_KEY key) const
         {
             return !this->keys.test(key) &&
                 this->prevKeys.test(key);
