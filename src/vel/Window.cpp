@@ -292,123 +292,19 @@ namespace vel
 		});
 
 		// Keys
-		glfwSetKeyCallback(this->glfwWindow, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-
+		glfwSetKeyCallback(this->glfwWindow, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+		{
 			void* data = glfwGetWindowUserPointer(window);
 			Window* w = static_cast<Window*>(data);
 
-			bool pressed = (action == GLFW_PRESS || action == GLFW_REPEAT);
+			vel::VEL_KEY velKey;
+			if (!glfwKeyToVelKey(key, velKey))
+				return;
 
-			switch (key)
-			{
-			case GLFW_KEY_SPACE: w->inputState.keySpace = pressed; break;
-			case GLFW_KEY_APOSTROPHE: w->inputState.keyApostrophe = pressed; break;
-			case GLFW_KEY_COMMA: w->inputState.keyComma = pressed; break;
-			case GLFW_KEY_MINUS: w->inputState.keyMinus = pressed; break;
-			case GLFW_KEY_PERIOD: w->inputState.keyPeriod = pressed; break;
-			case GLFW_KEY_SLASH: w->inputState.keySlash = pressed; break;
-			case GLFW_KEY_0: w->inputState.key0 = pressed; break;
-			case GLFW_KEY_1: w->inputState.key1 = pressed; break;
-			case GLFW_KEY_2: w->inputState.key2 = pressed; break;
-			case GLFW_KEY_3: w->inputState.key3 = pressed; break;
-			case GLFW_KEY_4: w->inputState.key4 = pressed; break;
-			case GLFW_KEY_5: w->inputState.key5 = pressed; break;
-			case GLFW_KEY_6: w->inputState.key6 = pressed; break;
-			case GLFW_KEY_7: w->inputState.key7 = pressed; break;
-			case GLFW_KEY_8: w->inputState.key8 = pressed; break;
-			case GLFW_KEY_9: w->inputState.key9 = pressed; break;
-			case GLFW_KEY_SEMICOLON: w->inputState.keySemicolon = pressed; break;
-			case GLFW_KEY_EQUAL: w->inputState.keyEqual = pressed; break;
-			case GLFW_KEY_A: w->inputState.keyA = pressed; break;
-			case GLFW_KEY_B: w->inputState.keyB = pressed; break;
-			case GLFW_KEY_C: w->inputState.keyC = pressed; break;
-			case GLFW_KEY_D: w->inputState.keyD = pressed; break;
-			case GLFW_KEY_E: w->inputState.keyE = pressed; break;
-			case GLFW_KEY_F: w->inputState.keyF = pressed; break;
-			case GLFW_KEY_G: w->inputState.keyG = pressed; break;
-			case GLFW_KEY_H: w->inputState.keyH = pressed; break;
-			case GLFW_KEY_I: w->inputState.keyI = pressed; break;
-			case GLFW_KEY_J: w->inputState.keyJ = pressed; break;
-			case GLFW_KEY_K: w->inputState.keyK = pressed; break;
-			case GLFW_KEY_L: w->inputState.keyL = pressed; break;
-			case GLFW_KEY_M: w->inputState.keyM = pressed; break;
-			case GLFW_KEY_N: w->inputState.keyN = pressed; break;
-			case GLFW_KEY_O: w->inputState.keyO = pressed; break;
-			case GLFW_KEY_P: w->inputState.keyP = pressed; break;
-			case GLFW_KEY_Q: w->inputState.keyQ = pressed; break;
-			case GLFW_KEY_R: w->inputState.keyR = pressed; break;
-			case GLFW_KEY_S: w->inputState.keyS = pressed; break;
-			case GLFW_KEY_T: w->inputState.keyT = pressed; break;
-			case GLFW_KEY_U: w->inputState.keyU = pressed; break;
-			case GLFW_KEY_V: w->inputState.keyV = pressed; break;
-			case GLFW_KEY_W: w->inputState.keyW = pressed; break;
-			case GLFW_KEY_X: w->inputState.keyX = pressed; break;
-			case GLFW_KEY_Y: w->inputState.keyY = pressed; break;
-			case GLFW_KEY_Z: w->inputState.keyZ = pressed; break;
-			case GLFW_KEY_LEFT_BRACKET: w->inputState.keyLeftBracket = pressed; break;
-			case GLFW_KEY_RIGHT_BRACKET: w->inputState.keyRightBracket = pressed; break;
-			case GLFW_KEY_BACKSLASH: w->inputState.keyBackslash = pressed; break;
-			case GLFW_KEY_GRAVE_ACCENT: w->inputState.keyGraveAccent = pressed; break;
-			case GLFW_KEY_ESCAPE: w->inputState.keyEscape = pressed; break;
-			case GLFW_KEY_ENTER: w->inputState.keyEnter = pressed; break;
-			case GLFW_KEY_TAB: w->inputState.keyTab = pressed; break;
-			case GLFW_KEY_BACKSPACE: w->inputState.keyBackspace = pressed; break;
-			case GLFW_KEY_INSERT: w->inputState.keyInsert = pressed; break;
-			case GLFW_KEY_DELETE: w->inputState.keyDelete = pressed; break;
-			case GLFW_KEY_RIGHT: w->inputState.keyRight = pressed; break;
-			case GLFW_KEY_LEFT: w->inputState.keyLeft = pressed; break;
-			case GLFW_KEY_DOWN: w->inputState.keyDown = pressed; break;
-			case GLFW_KEY_UP: w->inputState.keyUp = pressed; break;
-			case GLFW_KEY_PAGE_UP: w->inputState.keyPageUp = pressed; break;
-			case GLFW_KEY_PAGE_DOWN: w->inputState.keyPageDown = pressed; break;
-			case GLFW_KEY_HOME: w->inputState.keyHome = pressed; break;
-			case GLFW_KEY_END: w->inputState.keyEnd = pressed; break;
-			case GLFW_KEY_CAPS_LOCK: w->inputState.keyCapsLock = pressed; break;
-			case GLFW_KEY_SCROLL_LOCK: w->inputState.keyScrollLock = pressed; break;
-			case GLFW_KEY_NUM_LOCK: w->inputState.keyNumLock = pressed; break;
-			case GLFW_KEY_PRINT_SCREEN: w->inputState.keyPrintScreen = pressed; break;
-			case GLFW_KEY_PAUSE: w->inputState.keyPause = pressed; break;
-			case GLFW_KEY_F1: w->inputState.keyF1 = pressed; break;
-			case GLFW_KEY_F2: w->inputState.keyF2 = pressed; break;
-			case GLFW_KEY_F3: w->inputState.keyF3 = pressed; break;
-			case GLFW_KEY_F4: w->inputState.keyF4 = pressed; break;
-			case GLFW_KEY_F5: w->inputState.keyF5 = pressed; break;
-			case GLFW_KEY_F6: w->inputState.keyF6 = pressed; break;
-			case GLFW_KEY_F7: w->inputState.keyF7 = pressed; break;
-			case GLFW_KEY_F8: w->inputState.keyF8 = pressed; break;
-			case GLFW_KEY_F9: w->inputState.keyF9 = pressed; break;
-			case GLFW_KEY_F10: w->inputState.keyF10 = pressed; break;
-			case GLFW_KEY_F11: w->inputState.keyF11 = pressed; break;
-			case GLFW_KEY_F12: w->inputState.keyF12 = pressed; break;
-			case GLFW_KEY_KP_0: w->inputState.keypad0 = pressed; break;
-			case GLFW_KEY_KP_1: w->inputState.keypad1 = pressed; break;
-			case GLFW_KEY_KP_2: w->inputState.keypad2 = pressed; break;
-			case GLFW_KEY_KP_3: w->inputState.keypad3 = pressed; break;
-			case GLFW_KEY_KP_4: w->inputState.keypad4 = pressed; break;
-			case GLFW_KEY_KP_5: w->inputState.keypad5 = pressed; break;
-			case GLFW_KEY_KP_6: w->inputState.keypad6 = pressed; break;
-			case GLFW_KEY_KP_7: w->inputState.keypad7 = pressed; break;
-			case GLFW_KEY_KP_8: w->inputState.keypad8 = pressed; break;
-			case GLFW_KEY_KP_9: w->inputState.keypad9 = pressed; break;
-			case GLFW_KEY_KP_DECIMAL: w->inputState.keypadDecimal = pressed; break;
-			case GLFW_KEY_KP_DIVIDE: w->inputState.keypadDivide = pressed; break;
-			case GLFW_KEY_KP_MULTIPLY: w->inputState.keypadMultiply = pressed; break;
-			case GLFW_KEY_KP_SUBTRACT: w->inputState.keypadSubtract = pressed; break;
-			case GLFW_KEY_KP_ADD: w->inputState.keypadAdd = pressed; break;
-			case GLFW_KEY_KP_ENTER: w->inputState.keypadEnter = pressed; break;
-			case GLFW_KEY_KP_EQUAL: w->inputState.keypadEqual = pressed; break;
-			case GLFW_KEY_LEFT_SHIFT: w->inputState.keyLeftShift = pressed; break;
-			case GLFW_KEY_LEFT_CONTROL: w->inputState.keyLeftControl = pressed; break;
-			case GLFW_KEY_LEFT_ALT: w->inputState.keyLeftAlt = pressed; break;
-			case GLFW_KEY_LEFT_SUPER: w->inputState.keyLeftSuper = pressed; break;
-			case GLFW_KEY_RIGHT_SHIFT: w->inputState.keyRightShift = pressed; break;
-			case GLFW_KEY_RIGHT_CONTROL: w->inputState.keyRightControl = pressed; break;
-			case GLFW_KEY_RIGHT_ALT: w->inputState.keyRightAlt = pressed; break;
-			case GLFW_KEY_RIGHT_SUPER: w->inputState.keyRightSuper = pressed; break;
-			case GLFW_KEY_MENU: w->inputState.keyMenu = pressed; break;
-			default: break;
-			}
-			
+			if (action == GLFW_PRESS || action == GLFW_REPEAT)
+				w->inputState.setKey(velKey, true);
+			else if (action == GLFW_RELEASE)
+				w->inputState.setKey(velKey, false);
 		});
 
         // Scroll
@@ -485,6 +381,8 @@ namespace vel
 
 	void Window::updateInputState()
 	{
+		this->inputState.updatePrevKeys();
+
 		glfwPollEvents();
 		setMouse();
 		setScroll();
@@ -536,5 +434,133 @@ namespace vel
         return &this->inputState;
     }
 
+	bool Window::glfwKeyToVelKey(int glfwKey, VEL_KEY& out)
+	{
+		switch (glfwKey)
+		{
+		case GLFW_KEY_SPACE: out = VEL_KEY_SPACE; return true;
+		case GLFW_KEY_APOSTROPHE: out = VEL_KEY_APOSTROPHE; return true;
+		case GLFW_KEY_COMMA: out = VEL_KEY_COMMA; return true;
+		case GLFW_KEY_MINUS: out = VEL_KEY_MINUS; return true;
+		case GLFW_KEY_PERIOD: out = VEL_KEY_PERIOD; return true;
+		case GLFW_KEY_SLASH: out = VEL_KEY_SLASH; return true;
+
+		case GLFW_KEY_0: out = VEL_KEY_0; return true;
+		case GLFW_KEY_1: out = VEL_KEY_1; return true;
+		case GLFW_KEY_2: out = VEL_KEY_2; return true;
+		case GLFW_KEY_3: out = VEL_KEY_3; return true;
+		case GLFW_KEY_4: out = VEL_KEY_4; return true;
+		case GLFW_KEY_5: out = VEL_KEY_5; return true;
+		case GLFW_KEY_6: out = VEL_KEY_6; return true;
+		case GLFW_KEY_7: out = VEL_KEY_7; return true;
+		case GLFW_KEY_8: out = VEL_KEY_8; return true;
+		case GLFW_KEY_9: out = VEL_KEY_9; return true;
+
+		case GLFW_KEY_SEMICOLON: out = VEL_KEY_SEMICOLON; return true;
+		case GLFW_KEY_EQUAL: out = VEL_KEY_EQUAL; return true;
+
+		case GLFW_KEY_A: out = VEL_KEY_A; return true;
+		case GLFW_KEY_B: out = VEL_KEY_B; return true;
+		case GLFW_KEY_C: out = VEL_KEY_C; return true;
+		case GLFW_KEY_D: out = VEL_KEY_D; return true;
+		case GLFW_KEY_E: out = VEL_KEY_E; return true;
+		case GLFW_KEY_F: out = VEL_KEY_F; return true;
+		case GLFW_KEY_G: out = VEL_KEY_G; return true;
+		case GLFW_KEY_H: out = VEL_KEY_H; return true;
+		case GLFW_KEY_I: out = VEL_KEY_I; return true;
+		case GLFW_KEY_J: out = VEL_KEY_J; return true;
+		case GLFW_KEY_K: out = VEL_KEY_K; return true;
+		case GLFW_KEY_L: out = VEL_KEY_L; return true;
+		case GLFW_KEY_M: out = VEL_KEY_M; return true;
+		case GLFW_KEY_N: out = VEL_KEY_N; return true;
+		case GLFW_KEY_O: out = VEL_KEY_O; return true;
+		case GLFW_KEY_P: out = VEL_KEY_P; return true;
+		case GLFW_KEY_Q: out = VEL_KEY_Q; return true;
+		case GLFW_KEY_R: out = VEL_KEY_R; return true;
+		case GLFW_KEY_S: out = VEL_KEY_S; return true;
+		case GLFW_KEY_T: out = VEL_KEY_T; return true;
+		case GLFW_KEY_U: out = VEL_KEY_U; return true;
+		case GLFW_KEY_V: out = VEL_KEY_V; return true;
+		case GLFW_KEY_W: out = VEL_KEY_W; return true;
+		case GLFW_KEY_X: out = VEL_KEY_X; return true;
+		case GLFW_KEY_Y: out = VEL_KEY_Y; return true;
+		case GLFW_KEY_Z: out = VEL_KEY_Z; return true;
+
+		case GLFW_KEY_LEFT_BRACKET: out = VEL_KEY_LEFT_BRACKET; return true;
+		case GLFW_KEY_RIGHT_BRACKET: out = VEL_KEY_RIGHT_BRACKET; return true;
+		case GLFW_KEY_BACKSLASH: out = VEL_KEY_BACKSLASH; return true;
+		case GLFW_KEY_GRAVE_ACCENT: out = VEL_KEY_GRAVE_ACCENT; return true;
+
+		case GLFW_KEY_ESCAPE: out = VEL_KEY_ESCAPE; return true;
+		case GLFW_KEY_ENTER: out = VEL_KEY_ENTER; return true;
+		case GLFW_KEY_TAB: out = VEL_KEY_TAB; return true;
+		case GLFW_KEY_BACKSPACE: out = VEL_KEY_BACKSPACE; return true;
+		case GLFW_KEY_INSERT: out = VEL_KEY_INSERT; return true;
+		case GLFW_KEY_DELETE: out = VEL_KEY_DELETE; return true;
+
+		case GLFW_KEY_RIGHT: out = VEL_KEY_RIGHT; return true;
+		case GLFW_KEY_LEFT: out = VEL_KEY_LEFT; return true;
+		case GLFW_KEY_DOWN: out = VEL_KEY_DOWN; return true;
+		case GLFW_KEY_UP: out = VEL_KEY_UP; return true;
+
+		case GLFW_KEY_PAGE_UP: out = VEL_KEY_PAGE_UP; return true;
+		case GLFW_KEY_PAGE_DOWN: out = VEL_KEY_PAGE_DOWN; return true;
+		case GLFW_KEY_HOME: out = VEL_KEY_HOME; return true;
+		case GLFW_KEY_END: out = VEL_KEY_END; return true;
+
+		case GLFW_KEY_CAPS_LOCK: out = VEL_KEY_CAPS_LOCK; return true;
+		case GLFW_KEY_SCROLL_LOCK: out = VEL_KEY_SCROLL_LOCK; return true;
+		case GLFW_KEY_NUM_LOCK: out = VEL_KEY_NUM_LOCK; return true;
+		case GLFW_KEY_PRINT_SCREEN: out = VEL_KEY_PRINT_SCREEN; return true;
+		case GLFW_KEY_PAUSE: out = VEL_KEY_PAUSE; return true;
+
+		case GLFW_KEY_F1: out = VEL_KEY_F1; return true;
+		case GLFW_KEY_F2: out = VEL_KEY_F2; return true;
+		case GLFW_KEY_F3: out = VEL_KEY_F3; return true;
+		case GLFW_KEY_F4: out = VEL_KEY_F4; return true;
+		case GLFW_KEY_F5: out = VEL_KEY_F5; return true;
+		case GLFW_KEY_F6: out = VEL_KEY_F6; return true;
+		case GLFW_KEY_F7: out = VEL_KEY_F7; return true;
+		case GLFW_KEY_F8: out = VEL_KEY_F8; return true;
+		case GLFW_KEY_F9: out = VEL_KEY_F9; return true;
+		case GLFW_KEY_F10: out = VEL_KEY_F10; return true;
+		case GLFW_KEY_F11: out = VEL_KEY_F11; return true;
+		case GLFW_KEY_F12: out = VEL_KEY_F12; return true;
+
+		case GLFW_KEY_KP_0: out = VEL_KEY_KP_0; return true;
+		case GLFW_KEY_KP_1: out = VEL_KEY_KP_1; return true;
+		case GLFW_KEY_KP_2: out = VEL_KEY_KP_2; return true;
+		case GLFW_KEY_KP_3: out = VEL_KEY_KP_3; return true;
+		case GLFW_KEY_KP_4: out = VEL_KEY_KP_4; return true;
+		case GLFW_KEY_KP_5: out = VEL_KEY_KP_5; return true;
+		case GLFW_KEY_KP_6: out = VEL_KEY_KP_6; return true;
+		case GLFW_KEY_KP_7: out = VEL_KEY_KP_7; return true;
+		case GLFW_KEY_KP_8: out = VEL_KEY_KP_8; return true;
+		case GLFW_KEY_KP_9: out = VEL_KEY_KP_9; return true;
+
+		case GLFW_KEY_KP_DECIMAL: out = VEL_KEY_KP_DECIMAL; return true;
+		case GLFW_KEY_KP_DIVIDE: out = VEL_KEY_KP_DIVIDE; return true;
+		case GLFW_KEY_KP_MULTIPLY: out = VEL_KEY_KP_MULTIPLY; return true;
+		case GLFW_KEY_KP_SUBTRACT: out = VEL_KEY_KP_SUBTRACT; return true;
+		case GLFW_KEY_KP_ADD: out = VEL_KEY_KP_ADD; return true;
+		case GLFW_KEY_KP_ENTER: out = VEL_KEY_KP_ENTER; return true;
+		case GLFW_KEY_KP_EQUAL: out = VEL_KEY_KP_EQUAL; return true;
+
+		case GLFW_KEY_LEFT_SHIFT: out = VEL_KEY_LEFT_SHIFT; return true;
+		case GLFW_KEY_LEFT_CONTROL: out = VEL_KEY_LEFT_CONTROL; return true;
+		case GLFW_KEY_LEFT_ALT: out = VEL_KEY_LEFT_ALT; return true;
+		case GLFW_KEY_LEFT_SUPER: out = VEL_KEY_LEFT_SUPER; return true;
+
+		case GLFW_KEY_RIGHT_SHIFT: out = VEL_KEY_RIGHT_SHIFT; return true;
+		case GLFW_KEY_RIGHT_CONTROL: out = VEL_KEY_RIGHT_CONTROL; return true;
+		case GLFW_KEY_RIGHT_ALT: out = VEL_KEY_RIGHT_ALT; return true;
+		case GLFW_KEY_RIGHT_SUPER: out = VEL_KEY_RIGHT_SUPER; return true;
+
+		case GLFW_KEY_MENU: out = VEL_KEY_MENU; return true;
+
+		default:
+			return false;
+		}
+	}
 
 }

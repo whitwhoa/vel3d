@@ -76,6 +76,8 @@ namespace vel
         void                setResolutionChanged(bool b);
         bool                getResolutionChanged();
 
+        static bool         glfwKeyToVelKey(int glfwKey, VEL_KEY& out);
+
 
     };
     
