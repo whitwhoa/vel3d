@@ -179,5 +179,11 @@ namespace vel
             return !this->keys.test(key) &&
                 this->prevKeys.test(key);
         }
+
+        bool noKeyPressed() const
+        {
+            return this->keys.none();
+        }
+
     };
 }
