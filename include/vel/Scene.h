@@ -27,6 +27,7 @@
 #include "vel/DiffuseAnimatedMaterial.h"
 #include "vel/DiffuseAnimatedLightmapMaterial.h"
 #include "vel/DiffuseSkinnedMaterial.h"
+#include "vel/AlphaMaskMaterial.h"
 #include "vel/TextMaterial.h"
 #include "vel/DiffuseAmbientCubeMaterial.h"
 #include "vel/DiffuseAmbientCubeSkinnedMaterial.h"
@@ -35,6 +36,7 @@
 #include "vel/RGBALightmapMaterial.h"
 #include "vel/DiffuseCausticMaterial.h"
 #include "vel/DiffuseCausticLightmapMaterial.h"
+
 
 namespace vel
 {
@@ -89,6 +91,7 @@ namespace vel
 		DiffuseAnimatedMaterial*			addDiffuseAnimatedMaterial(const std::string& name, int opts = 0);
 		DiffuseAnimatedLightmapMaterial*	addDiffuseAnimatedLightmapMaterial(const std::string& name, int opts = 0);
 		DiffuseSkinnedMaterial*				addDiffuseSkinnedMaterial(const std::string& name, int opts = 0);
+		AlphaMaskMaterial*					addAlphaMaskMaterial(const std::string& name);
 		TextMaterial*						addTextMaterial(const std::string& name, int opts = 0);
 		DiffuseAmbientCubeMaterial*			addDiffuseAmbientCubeMaterial(const std::string& name, int opts = 0);
 		DiffuseAmbientCubeSkinnedMaterial*	addDiffuseAmbientCubeSkinnedMaterial(const std::string& name, int opts = 0);

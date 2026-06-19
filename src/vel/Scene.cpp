@@ -374,6 +374,29 @@ namespace vel
 		return static_cast<DiffuseSkinnedMaterial*>(pMaterial);
 	}
 
+	AlphaMaskMaterial* Scene::addAlphaMaskMaterial(const std::string& name)
+	{
+		std::vector<std::string> defs = AlphaMaskMaterial::shaderDefs;
+		std::string shaderName = "alphaMaskMaterialShader";
+
+		int opts = MTRL_OPT_TRANSLUCENT;
+
+		this->setShaderOpts(opts, defs, shaderName);
+
+		Shader* alphaMaskMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(alphaMaskMaterialShader);
+
+		std::unique_ptr<AlphaMaskMaterial> m = std::make_unique<AlphaMaskMaterial>(name, alphaMaskMaterialShader);
+
+		if (opts & MTRL_OPT_TRANSLUCENT)
+			m->setHasAlphaChannel(true);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<AlphaMaskMaterial*>(pMaterial);
+	}
+
 	TextMaterial* Scene::addTextMaterial(const std::string& name, int opts)
 	{
 		std::vector<std::string> defs = TextMaterial::shaderDefs;
