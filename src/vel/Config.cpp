@@ -19,7 +19,7 @@ namespace vel
         WINDOW_HEIGHT = 720;
         RESOLUTION_X = 1280;
         RESOLUTION_Y = 720;
-        MAX_RENDER_FPS = 10000.0; // why double?
+        MAX_RENDER_FPS = 10000.0;
         MOUSE_SENSITIVITY = 0.05;
         VSYNC = false;
         LOCK_RES_TO_WIN = true;
