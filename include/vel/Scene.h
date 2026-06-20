@@ -109,7 +109,7 @@ namespace vel
 		Material*							getMaterial(const std::string& name);
 
 		TextActor* addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
-			glm::vec4 color, TextActorOriginType originType = TextActorOriginType::LEFT_BOTTOM);
+			glm::vec4 color, PlaneOrigin originType = PlaneOrigin::LEFT_BOTTOM);
 
 		LineActor* addLineActor(Stage* stage, const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points,
 			std::vector<glm::vec4> colors);

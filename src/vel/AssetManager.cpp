@@ -993,29 +993,29 @@ namespace vel
 		float yOffset = 0.0f;
 
 		// horizontal
-		if (ta->originType == TextActorOriginType::RIGHT_BOTTOM ||
-			ta->originType == TextActorOriginType::RIGHT_CENTER ||
-			ta->originType == TextActorOriginType::RIGHT_TOP)
+		if (ta->originType == PlaneOrigin::RIGHT_BOTTOM ||
+			ta->originType == PlaneOrigin::RIGHT_CENTER ||
+			ta->originType == PlaneOrigin::RIGHT_TOP)
 		{
 			xOffset = maxX;
 		}
-		else if (ta->originType == TextActorOriginType::CENTER_BOTTOM ||
-			ta->originType == TextActorOriginType::CENTER_CENTER ||
-			ta->originType == TextActorOriginType::CENTER_TOP)
+		else if (ta->originType == PlaneOrigin::CENTER_BOTTOM ||
+			ta->originType == PlaneOrigin::CENTER_CENTER ||
+			ta->originType == PlaneOrigin::CENTER_TOP)
 		{
 			xOffset = (minX + maxX) * 0.5f;
 		}
 
 		// vertical
-		if (ta->originType == TextActorOriginType::LEFT_TOP ||
-			ta->originType == TextActorOriginType::CENTER_TOP ||
-			ta->originType == TextActorOriginType::RIGHT_TOP)
+		if (ta->originType == PlaneOrigin::LEFT_TOP ||
+			ta->originType == PlaneOrigin::CENTER_TOP ||
+			ta->originType == PlaneOrigin::RIGHT_TOP)
 		{
 			yOffset = maxY;
 		}
-		else if (ta->originType == TextActorOriginType::LEFT_CENTER ||
-			ta->originType == TextActorOriginType::CENTER_CENTER ||
-			ta->originType == TextActorOriginType::RIGHT_CENTER)
+		else if (ta->originType == PlaneOrigin::LEFT_CENTER ||
+			ta->originType == PlaneOrigin::CENTER_CENTER ||
+			ta->originType == PlaneOrigin::RIGHT_CENTER)
 		{
 			yOffset = (minY + maxY) * 0.5f;
 		}

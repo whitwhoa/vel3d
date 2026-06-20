@@ -588,7 +588,7 @@ namespace vel
 	}
 
 	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
-		glm::vec4 color, TextActorOriginType originType)
+		glm::vec4 color, PlaneOrigin originType)
 	{
 		std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
 		ta->name = name;
