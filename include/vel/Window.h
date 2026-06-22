@@ -52,7 +52,6 @@ namespace vel
 
         void				setTitle(const std::string& title);
         bool				shouldClose();
-        void				setToClose();
 
 		void				updateInputState();
         const InputState*	getInputState() const;

@@ -107,18 +107,18 @@ namespace vel
 
 	bool Window::init(const Config& c)
 	{
-		this->windowMode = c.WINDOW_MODE;
-		this->windowSize = glm::ivec2(c.WINDOW_WIDTH, c.WINDOW_HEIGHT);
-		this->lockResToWin = c.LOCK_RES_TO_WIN;
-		this->resolution = c.LOCK_RES_TO_WIN ? glm::ivec2(c.WINDOW_WIDTH, c.WINDOW_HEIGHT) : glm::ivec2(c.RESOLUTION_X, c.RESOLUTION_Y);
-		this->cursorHidden = c.CURSOR_HIDDEN;
-		this->vsync = c.VSYNC;
+		this->windowMode = c.windowMode;
+		this->windowSize = glm::ivec2(c.windowWidth, c.windowHeight);
+		this->lockResToWin = c.lockResToWin;
+		this->resolution = c.lockResToWin ? glm::ivec2(c.windowWidth, c.windowHeight) : glm::ivec2(c.resolutionWidth, c.resolutionHeight);
+		this->cursorHidden = c.cursorHidden;
+		this->vsync = c.vsync;
 
-		this->inputState.mouseSensitivity = c.MOUSE_SENSITIVITY;
+		this->inputState.mouseSensitivity = c.mouseSensitivity;
 
 
 #ifdef WINDOWS_BUILD
-		initNvidiaApplicationProfile(c.APP_EXE_NAME, c.APP_NAME);
+		initNvidiaApplicationProfile(c.appExeName, c.appName);
 #endif
 
 		// Initialize GLFW
@@ -130,7 +130,7 @@ namespace vel
 		//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		//glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
 
-		if (c.OPENGL_DEBUG_CONTEXT)
+		if (c.openglDebugContext)
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 		glfwSetErrorCallback([](int error, const char* description) {
@@ -142,7 +142,7 @@ namespace vel
 			if (!this->lockResToWin)
 				glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-			this->glfwWindow = glfwCreateWindow(this->windowSize.x, this->windowSize.y, c.APP_NAME.c_str(), NULL, NULL);
+			this->glfwWindow = glfwCreateWindow(this->windowSize.x, this->windowSize.y, c.appName.c_str(), NULL, NULL);
 		}
 		else
 		{
@@ -151,7 +151,7 @@ namespace vel
 
 			this->windowSize = glm::ivec2(mode->width, mode->height);
 
-			this->glfwWindow = glfwCreateWindow(mode->width, mode->height, c.APP_NAME.c_str(), monitor, NULL);
+			this->glfwWindow = glfwCreateWindow(mode->width, mode->height, c.appName.c_str(), monitor, NULL);
 		}
 
 		if (this->glfwWindow == NULL)
@@ -193,7 +193,7 @@ namespace vel
 					glfwSetInputMode(this->glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 				}
 
-				if (c.OPENGL_DEBUG_CONTEXT)
+				if (c.openglDebugContext)
 				{
 					int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
 					if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
@@ -422,11 +422,6 @@ namespace vel
     {
         this->inputState.scroll = this->scroll;
 		this->scroll = 0;
-    }
-
-    void Window::setToClose() 
-    {
-        glfwSetWindowShouldClose(this->glfwWindow, true);
     }
 
     const InputState* Window::getInputState() const

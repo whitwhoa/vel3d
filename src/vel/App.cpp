@@ -45,7 +45,7 @@ namespace vel
 		currentSimTick(0),
 		shouldClose(false),
 
-		fixedLogicTime(1.0 / this->config.LOGIC_TICK),
+		fixedLogicTime(1.0 / this->config.logicTick),
 
 		deltaTime(0.0),
 		currentRunTime(0.0),
@@ -74,7 +74,7 @@ namespace vel
 		this->assetManager->loadShader("post", "post.vert", "", "post.frag"); // join all frame buffer textures together before post-processing
 		this->assetManager->loadShader("composite", "composite.vert", "", "composite.frag"); // used for rendering texture to screen buffer
 
-		Texture* ptrDefaultWhite = this->assetManager->loadTexture("defaultWhite", this->config.DATA_DIR + "/textures/defaults/default.jpg");
+		Texture* ptrDefaultWhite = this->assetManager->loadTexture("defaultWhite", this->config.dataDir + "/textures/defaults/default.jpg");
 
 		this->gpu->setScreenShader(this->assetManager->getShader("screen"));
 		this->gpu->setPostShader(this->assetManager->getShader("post"));
@@ -209,8 +209,7 @@ namespace vel
 
     void App::close()
     {
-        this->shouldClose = true;
-        this->window->setToClose();        
+        this->shouldClose = true;      
     }
 
 	const double App::getRuntimeSec() const
@@ -282,7 +281,7 @@ namespace vel
 
 	void App::checkWindowSize()
 	{
-		if (this->config.LOCK_RES_TO_WIN && this->window->getWindowSizeChanged())
+		if (this->config.lockResToWin && this->window->getWindowSizeChanged())
 		{
 			this->window->setWindowSizeChanged(false);
 			glm::ivec2 ws = this->window->getWindowSize();
@@ -324,13 +323,16 @@ namespace vel
 		const double maxDebtClamp = this->fixedLogicTime * 4.0; // drop excessive debt
 
 		// Frame cap state
-		const double renderCapHz = static_cast<double>(this->config.MAX_RENDER_FPS); // <= 0 = uncapped
+		const double renderCapHz = static_cast<double>(this->config.maxFps); // <= 0 = uncapped
 		const double targetFrameSec = (renderCapHz > 0.0) ? (1.0 / renderCapHz) : 0.0;
 		double capNextTimeSec = this->getRuntimeSec(); // Next time we are allowed to start a new frame
 
 		while (true)
 		{
-			if (this->shouldClose || this->window->shouldClose())
+			if (this->window->shouldClose())
+				this->close();
+
+			if (this->shouldClose)
 				break;
 
 			if (this->activeScene == nullptr)
