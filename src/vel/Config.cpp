@@ -10,26 +10,30 @@
 
 namespace vel
 {
-    Config::Config(const std::string& dataDir) :       
-        DATA_DIR(dataDir)
+    Config::Config(const std::string& dataDir) :  
+        path(dataDir + "/config.ini"),
+        DATA_DIR(dataDir),
+        APP_EXE_NAME("MyApp.exe"),
+        APP_NAME("MyApp"),
+        LOGIC_TICK(60.0),
+        MAX_RENDER_FPS(10000.0),
+        MOUSE_SENSITIVITY(0.05),
+        WINDOW_WIDTH(1280),
+        WINDOW_HEIGHT(720),
+        RESOLUTION_X(1280),
+        RESOLUTION_Y(720),
+        WINDOW_MODE(true),
+        VSYNC(false),
+        FXAA(false),
+        CURSOR_HIDDEN(false),
+        LOCK_RES_TO_WIN(true),
+        OPENGL_DEBUG_CONTEXT(false)
 	{
-        // Defaults
-        WINDOW_MODE = true;
-        WINDOW_WIDTH = 1280;
-        WINDOW_HEIGHT = 720;
-        RESOLUTION_X = 1280;
-        RESOLUTION_Y = 720;
-        MAX_RENDER_FPS = 10000.0;
-        MOUSE_SENSITIVITY = 0.05;
-        VSYNC = false;
-        LOCK_RES_TO_WIN = true;
-        FXAA = false;
-
-        // User Config Parameters if config.ini file exists
-        std::optional<std::map<std::string, std::string>> ucpOpt = this->loadFromFile(dataDir + "/config.ini");
+        // User Config Parameters, if config.ini file exists
+        std::optional<std::unordered_map<std::string, std::string>> ucpOpt = this->loadFromFile();
         if (ucpOpt)
         {
-            std::map<std::string, std::string> ucp = ucpOpt.value();
+            std::unordered_map<std::string, std::string> ucp = ucpOpt.value();
 
             if(ucp.count("windowMode") > 0)
                 WINDOW_MODE = ucp["windowMode"] == "0" ? false : true;
@@ -55,19 +59,19 @@ namespace vel
 
     };
 
-    std::optional<std::map<std::string, std::string>> Config::loadFromFile(const std::string& path)
+    std::optional<std::unordered_map<std::string, std::string>> Config::loadFromFile()
     {
         std::ifstream conf;
 
-        conf.open(path);
+        conf.open(this->path);
 
         if (!conf.is_open()) 
         {
-            SPDLOG_DEBUG("Config::loadFromFile: Failed to load config.ini file at path: {}", path);
+            SPDLOG_DEBUG("Config::loadFromFile: Failed to load config.ini file at path: {}", this->path);
             return std::nullopt;
         }
 
-        std::map<std::string, std::string> returnMap;
+        std::unordered_map<std::string, std::string> returnMap;
 
         std::string line;
         while (std::getline(conf, line))

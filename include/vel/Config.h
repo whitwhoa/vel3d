@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <optional>
 
@@ -11,35 +11,27 @@ namespace vel
     class Config
     {
     private:
-        std::optional<std::map<std::string, std::string>> loadFromFile(const std::string& path);
-
+        std::optional<std::unordered_map<std::string, std::string>> loadFromFile();
+		std::string path;
 
     public:
 											Config(const std::string& dataDir = "data");
-        // Application defined
+
 		std::string							DATA_DIR;
-		double								LOGIC_TICK = 60.0;
-		bool								CURSOR_HIDDEN = false;
-        bool                                OPENGL_DEBUG_CONTEXT = false;
-		std::string							APP_EXE_NAME = "MyApp.exe";
-		std::string							APP_NAME = "MyApp";
-		
-        
-
-        // User defined via config.ini
-		bool								WINDOW_MODE;
-        int									WINDOW_WIDTH;
-        int									WINDOW_HEIGHT;
-
-		int									RESOLUTION_X;
-		int									RESOLUTION_Y;
-
+		std::string							APP_EXE_NAME;
+		std::string							APP_NAME;
+		double								LOGIC_TICK;
 		double								MAX_RENDER_FPS;
 		double								MOUSE_SENSITIVITY;
+		int									WINDOW_WIDTH;
+		int									WINDOW_HEIGHT;
+		int									RESOLUTION_X;
+		int									RESOLUTION_Y;
+		bool								WINDOW_MODE;
 		bool								VSYNC;
-
-		bool								LOCK_RES_TO_WIN;
-
 		bool								FXAA;
+		bool								CURSOR_HIDDEN;
+		bool								LOCK_RES_TO_WIN;
+		bool                                OPENGL_DEBUG_CONTEXT;		
     };
 }
