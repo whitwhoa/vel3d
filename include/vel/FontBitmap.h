@@ -25,13 +25,13 @@ namespace vel
 	{
 		std::string		fontName;
 		std::string		fontPath;
-		uint32_t		fontSize = 40;
-		uint32_t		textureWidth = 1024;
-		uint32_t		textureHeight = 1024;
+		uint32_t		fontSize = 20;
+		uint32_t		textureWidth = 512;
+		uint32_t		textureHeight = 512;
 		uint32_t		oversampleX = 2;
 		uint32_t		oversampleY = 2;
 		uint32_t		firstChar = ' ';
-		uint32_t		charCount = '~' - ' ';
+		uint32_t		charCount = '~' - ' ' + 1;
 
 		//fb_packedchar* charInfo; // cast as stbtt_packedchar
 		//unsigned char* data;

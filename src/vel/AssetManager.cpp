@@ -787,29 +787,38 @@ namespace vel
 		fb->data = std::make_unique<unsigned char[]>(fb->textureWidth * fb->textureHeight);
 		fb->charInfo = std::make_unique<fb_packedchar[]>(fb->charCount);
 
+		int maxAtlasSize = 4096;
+		bool fontPacked = false;
 
-		stbtt_pack_context context;
-		bool fontInitialized = stbtt_PackBegin(&context, fb->data.get(), fb->textureWidth, fb->textureHeight, 0, 1, nullptr);
-
-		if (!fontInitialized)
+		while (fb->textureWidth <= maxAtlasSize)
 		{
-			SPDLOG_DEBUG("AssetManager::loadFontBitmap(): Failed to initialize font");
-			return nullptr;
+			stbtt_pack_context context;
+			bool fontInitialized = stbtt_PackBegin(&context, fb->data.get(), fb->textureWidth, fb->textureHeight, 0, 1, nullptr);
+
+			if (!fontInitialized)
+			{
+				SPDLOG_DEBUG("AssetManager::loadFontBitmap(): Failed to initialize font");
+				return nullptr;
+			}
+
+			stbtt_PackSetOversampling(&context, fb->oversampleX, fb->oversampleY);
+			fontPacked = stbtt_PackFontRange(&context, fontData.data(), 0, fb->fontSize, fb->firstChar, fb->charCount, (stbtt_packedchar*)fb->charInfo.get());
+
+			stbtt_PackEnd(&context);
+
+			if (fontPacked)
+				break;			
+
+			fb->textureWidth *= 2;
+			fb->textureHeight *= 2;
+			fb->data = std::make_unique<unsigned char[]>(fb->textureWidth * fb->textureHeight);
 		}
-
-
-		stbtt_PackSetOversampling(&context, fb->oversampleX, fb->oversampleY);
-		bool fontPacked = stbtt_PackFontRange(&context, fontData.data(), 0, fb->fontSize, fb->firstChar, fb->charCount, (stbtt_packedchar*)fb->charInfo.get());
-
+		
 		if (!fontPacked)
 		{
 			SPDLOG_DEBUG("AssetManager::loadFontBitmap(): Failed to pack font");
 			return nullptr;
 		}
-
-
-		stbtt_PackEnd(&context);
-
 
 		this->fontBitmaps.push_back(std::pair<std::unique_ptr<FontBitmap>, int>(std::move(fb), 1));
 
