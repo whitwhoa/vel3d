@@ -36,6 +36,7 @@
 #include "vel/RGBALightmapMaterial.h"
 #include "vel/DiffuseCausticMaterial.h"
 #include "vel/DiffuseCausticLightmapMaterial.h"
+#include "vel/DiffuseSingleSelectableMaterial.h"
 
 
 namespace vel
@@ -100,6 +101,7 @@ namespace vel
 		RGBALightmapMaterial*				addRGBALightmapMaterial(const std::string& name, int opts = 0);
 		DiffuseCausticMaterial*				addDiffuseCausticMaterial(const std::string& name, int opts = 0);
 		DiffuseCausticLightmapMaterial*		addDiffuseCausticLightmapMaterial(const std::string& name, int opts = 0);
+		DiffuseSingleSelectableMaterial*	addDiffuseSingleSelectableMaterial(const std::string& name, int opts = 0);
 
 
 		Shader*								getShader(const std::string& name);

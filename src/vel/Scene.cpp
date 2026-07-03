@@ -565,6 +565,27 @@ namespace vel
 		return static_cast<DiffuseCausticLightmapMaterial*>(pMaterial);
 	}
 
+	DiffuseSingleSelectableMaterial* Scene::addDiffuseSingleSelectableMaterial(const std::string& name, int opts)
+	{
+		std::vector<std::string> defs = DiffuseSingleSelectableMaterial::shaderDefs;
+		std::string shaderName = "diffuseSingleSelectableMaterialShader";
+
+		this->setShaderOpts(opts, defs, shaderName);
+
+		Shader* theShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(theShader);
+
+		std::unique_ptr<DiffuseSingleSelectableMaterial> m = std::make_unique<DiffuseSingleSelectableMaterial>(name, theShader);
+
+		if (opts & MTRL_OPT_TRANSLUCENT)
+			m->setHasAlphaChannel(true);
+
+		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<DiffuseSingleSelectableMaterial*>(pMaterial);
+	}
+
 
 
 	Shader* Scene::getShader(const std::string& name)

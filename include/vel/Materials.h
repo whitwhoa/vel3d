@@ -17,3 +17,4 @@
 #include "vel/RGBALightmapMaterial.h"
 #include "vel/DiffuseCausticMaterial.h"
 #include "vel/DiffuseCausticLightmapMaterial.h"
+#include "vel/DiffuseSingleSelectableMaterial.h"
