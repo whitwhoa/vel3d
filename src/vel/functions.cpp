@@ -1,3 +1,7 @@
+#include <string>
+#include <iomanip>
+#include <array>
+#include <cstdint>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -224,6 +228,42 @@ namespace vel
 
 		// Note: This pitch is in [-pi/2, pi/2], which matches typical FPS pitch limits.
 		// IE: [-90, +90]
+	}
+
+	std::string generateUUID()
+	{
+		static thread_local std::mt19937_64 rng{ std::random_device{}() };
+
+		std::array<uint8_t, 16> bytes{};
+
+		for (size_t i = 0; i < bytes.size(); i += 8)
+		{
+			uint64_t value = rng();
+
+			for (size_t j = 0; j < 8 && (i + j) < bytes.size(); ++j)
+			{
+				bytes[i + j] = static_cast<uint8_t>((value >> (j * 8)) & 0xFF);
+			}
+		}
+
+		// UUID version 4
+		bytes[6] = static_cast<uint8_t>((bytes[6] & 0x0F) | 0x40);
+
+		// UUID variant: 10xxxxxx
+		bytes[8] = static_cast<uint8_t>((bytes[8] & 0x3F) | 0x80);
+
+		std::ostringstream oss;
+		oss << std::hex << std::setfill('0');
+
+		for (size_t i = 0; i < bytes.size(); ++i)
+		{
+			oss << std::setw(2) << static_cast<int>(bytes[i]);
+
+			if (i == 3 || i == 5 || i == 7 || i == 9)
+				oss << '-';
+		}
+
+		return oss.str();
 	}
 
 }
