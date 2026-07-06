@@ -140,12 +140,34 @@ namespace vel
 			s->updateAnimators(delta);
 	}
 
-	Stage* HeadlessScene::addStage(const std::string& name)
+	//Stage* HeadlessScene::addStage(const std::string& name, int pos)
+	//{
+	//	std::unique_ptr<Stage> s = std::make_unique<Stage>(name, this->assetManager, this->getTickPointer());
+	//	this->stages.push_back(std::move(s));
+
+	//	return this->stages.back().get();
+	//}
+
+	Stage* HeadlessScene::addStage(const std::string& name, int pos)
 	{
 		std::unique_ptr<Stage> s = std::make_unique<Stage>(name, this->assetManager, this->getTickPointer());
-		this->stages.push_back(std::move(s));
+		Stage* stage = s.get();
 
-		return this->stages.back().get();
+		if (pos == -1 || pos >= static_cast<int>(this->stages.size()))
+		{
+			this->stages.push_back(std::move(s));
+		}
+		else if (pos >= 0)
+		{
+			this->stages.insert(this->stages.begin() + pos, std::move(s));
+		}
+		else
+		{
+			SPDLOG_ERROR("HeadlessScene::addStage(): invalid stage position {}", pos);
+			return nullptr;
+		}
+
+		return stage;
 	}
 
 	Stage* HeadlessScene::getStage(const std::string& name)

@@ -67,7 +67,7 @@ namespace vel
 
 		void									updateAnimators(float delta);
 
-		Stage*									addStage(const std::string& name);
+		Stage*									addStage(const std::string& name, int pos = -1);
 		Stage*									getStage(const std::string& name);
 
 		
