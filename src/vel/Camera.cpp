@@ -129,11 +129,22 @@ namespace vel
 
 	}
 
+	//void Camera::updateViewMatrix()
+	//{
+	//	if (type == CameraType::SCREEN_SPACE)
+	//	{
+	//		this->viewMatrix = glm::mat4(1.0f);
+	//		return;
+	//	}
+
+	//	this->viewMatrix = glm::lookAt(this->position, this->lookAt, this->up);
+	//}
+
 	void Camera::updateViewMatrix()
 	{
 		if (type == CameraType::SCREEN_SPACE)
 		{
-			this->viewMatrix = glm::mat4(1.0f);
+			this->viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-this->position.x, -this->position.y, 0.0f));
 			return;
 		}
 
