@@ -1014,6 +1014,10 @@ namespace vel
 		{
 			xOffset = (minX + maxX) * 0.5f;
 		}
+		else // LEFT
+		{
+			xOffset = minX;
+		}
 
 		// vertical
 		if (ta->originType == PlaneOrigin::LEFT_TOP ||
@@ -1027,6 +1031,10 @@ namespace vel
 			ta->originType == PlaneOrigin::RIGHT_CENTER)
 		{
 			yOffset = (minY + maxY) * 0.5f;
+		}
+		else // BOTTOM
+		{
+			yOffset = minY;
 		}
 
 		for (auto& v : m->getMutableVertices())
