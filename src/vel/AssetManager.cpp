@@ -1014,10 +1014,10 @@ namespace vel
 		{
 			xOffset = (minX + maxX) * 0.5f;
 		}
-		else // LEFT
-		{
-			xOffset = minX;
-		}
+		//else // LEFT
+		//{
+		//	xOffset = minX;
+		//}
 
 		// vertical
 		if (ta->originType == PlaneOrigin::LEFT_TOP ||
