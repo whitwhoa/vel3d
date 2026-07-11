@@ -849,7 +849,7 @@ namespace vel
 
 		// calling this here SOMEHOW allowed the cleared color to bleed into the final render whenever the update rate was
 		// uncapped, and the screen window size was small. Moving it into the gpu::drawToScreen() method seems to have
-		// resolved the issue. However, I'm not really satisfied with not knowing 100% why this was happening (hints this
+		// resolved the issue. However, I'm not really satisfied with not knowing 100% why this was happening (hince this
 		// comment). 
 		//gpu->clearScreenBuffer(0.0f, 1.0f, 0.0f, 1.0f); 
 	}
