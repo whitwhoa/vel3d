@@ -178,11 +178,25 @@ namespace vel
 		this->bindFrameBuffer(this->activeRenderTarget->alphaFBO);
 	}
 
+	//void GPU::setCompositeRenderState()
+	//{
+	//	glDepthFunc(GL_ALWAYS);
+	//	glEnable(GL_BLEND);
+	//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	//	this->bindFrameBuffer(this->activeRenderTarget->opaqueFBO);
+	//}
+
+	// Changed above to this when troubleshooting why the edges of text that have alpha
+	// were ignoring the element behind them when blending, and blending with the contents
+	// of the final render target
 	void GPU::setCompositeRenderState()
 	{
 		glDepthFunc(GL_ALWAYS);
+		glDepthMask(GL_FALSE);
 		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 		this->bindFrameBuffer(this->activeRenderTarget->opaqueFBO);
 	}
