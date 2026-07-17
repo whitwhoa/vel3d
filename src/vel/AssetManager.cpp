@@ -1032,10 +1032,10 @@ namespace vel
 		{
 			yOffset = (minY + maxY) * 0.5f;
 		}
-		else // BOTTOM
-		{
-			yOffset = minY;
-		}
+		//else // BOTTOM
+		//{
+		//	yOffset = minY;
+		//}
 
 		for (auto& v : m->getMutableVertices())
 		{
