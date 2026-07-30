@@ -576,7 +576,7 @@ namespace vel
 
 	Material* AssetManager::addMaterial(std::unique_ptr<Material> m)
 	{
-		int materialIndex = this->getMaterialIndex(m.get());
+		int materialIndex = this->getMaterialIndex(m->getName());
 
 		if (materialIndex > -1)
 		{
@@ -605,6 +605,16 @@ namespace vel
 		}
 
 		return this->materials.at(materialIndex).first.get();
+	}
+
+	int AssetManager::getMaterialUsageCount(const std::string& name)
+	{
+		int materialIndex = this->getMaterialIndex(name);
+
+		if (materialIndex == -1)
+			return 0;
+
+		return this->materials.at(materialIndex).second;
 	}
 
 	void AssetManager::removeMaterial(const Material* pMaterial)

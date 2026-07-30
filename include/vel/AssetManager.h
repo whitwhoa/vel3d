@@ -85,6 +85,7 @@ namespace vel
 		Material*					addMaterial(std::unique_ptr<Material> m);
 		Material*					getMaterial(const std::string& name);
 		void						removeMaterial(const Material* pMaterial);
+		int							getMaterialUsageCount(const std::string& name);
 
 		float						measureFontHeight(const std::string& text, FontBitmap* fb);
 		FontBitmap*					loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath); // alias to raw
