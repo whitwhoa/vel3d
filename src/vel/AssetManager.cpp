@@ -1042,8 +1042,11 @@ namespace vel
 		{
 			yOffset = (minY + maxY) * 0.5f;
 		}
-		//else // BOTTOM
+		// DEFAULT is baseline, NOT absolute bottom
+		//else 
 		//{
+		//// This would be absolute bottom, and text would hop around without 
+		//// adjusting for the origin offset from baseline
 		//	yOffset = minY;
 		//}
 
