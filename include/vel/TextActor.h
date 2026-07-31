@@ -14,9 +14,11 @@ namespace vel
 		std::string 				text;
 		FontBitmap*					fontBitmap;
 		PlaneOrigin					originType;
-		Actor*						actor = nullptr;
+		Actor*						actor = nullptr; //getWorldAABB() = exact visible geometry
 		std::vector<glm::vec2>		caretPositions;
 		bool						requiresUpdate = false;
+		float						logicalWidth = 0.f; // stable layout width, including spaces
+		float						logicalHeight = 0.f; // stable layout height
 		
 
 		void updateText(const std::string& updatedText)

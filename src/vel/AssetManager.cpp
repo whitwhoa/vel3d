@@ -786,9 +786,11 @@ namespace vel
 		file.read(reinterpret_cast<char*>(&bytes[0]), size);
 		file.close();
 
-		// Build texture data using read in bytes
-		auto fontData = bytes;
 
+		//
+		// Build texture data
+		//
+		auto fontData = bytes;
 
 		std::unique_ptr<FontBitmap> fb = std::make_unique<FontBitmap>();
 		fb->fontName = fontName;
@@ -797,6 +799,39 @@ namespace vel
 		fb->data = std::make_unique<unsigned char[]>(fb->textureWidth * fb->textureHeight);
 		fb->charInfo = std::make_unique<fb_packedchar[]>(fb->charCount);
 
+
+		//
+		// Gather font statistics
+		//
+		stbtt_fontinfo fontInfo;
+
+		int fontOffset = stbtt_GetFontOffsetForIndex(fontData.data(), 0);
+
+		if (fontOffset < 0 || !stbtt_InitFont(&fontInfo, fontData.data(), fontOffset))
+		{
+			SPDLOG_DEBUG("AssetManager::loadFontBitmapRaw(): Failed to initialize font metrics: {}", fontPath);
+			return nullptr;
+		}
+
+		int ascent;
+		int descent;
+		int lineGap;
+
+		stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
+
+		float fontScale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(stbFontSize));
+
+		fb->ascent = static_cast<float>(ascent) * fontScale;
+		fb->descent = static_cast<float>(descent) * fontScale;
+		fb->lineGap = static_cast<float>(lineGap) * fontScale;
+
+		fb->fontHeight = fb->ascent - fb->descent;
+		fb->lineHeight = fb->fontHeight + fb->lineGap;
+
+
+		//
+		// Pack Atlas
+		//
 		int maxAtlasSize = 4096;
 		bool fontPacked = false;
 
@@ -909,9 +944,7 @@ namespace vel
 		ta->caretPositions.clear();
 
 		unsigned int lastIndex = 0;
-
-		float lineMinY = 0.0f;
-		float lineMaxY = 0.0f;
+		unsigned int lineCount = 1;
 
 		float offsetX = 0.0f;
 		float offsetY = 0.0f;
@@ -922,10 +955,12 @@ namespace vel
 		{
 			if (c == '\n')
 			{
+				if (offsetX > ta->logicalWidth)
+					ta->logicalWidth = offsetX;
+
+				++lineCount;
 				offsetX = 0.0f;
-				offsetY += fabsf(lineMinY - lineMaxY);
-				lineMinY = 0.0f;
-				lineMaxY = 0.0f;
+				offsetY += ta->fontBitmap->lineHeight;
 
 				ta->caretPositions.push_back({ offsetX, -offsetY });
 
@@ -942,11 +977,6 @@ namespace vel
 			v1.textureCoordinates = glyphInfo.uvs[0];
 			v1.materialUBOIndex = 0;
 			meshVertices.push_back(v1);
-			if (v1.position.y < lineMinY)
-				lineMinY = v1.position.y;
-			if (v1.position.y > lineMaxY)
-				lineMaxY = v1.position.y;
-
 
 			Vertex v2;
 			v2.position = glyphInfo.positions[1];
@@ -954,11 +984,6 @@ namespace vel
 			v2.textureCoordinates = glyphInfo.uvs[1];
 			v2.materialUBOIndex = 0;
 			meshVertices.push_back(v2);
-			if (v2.position.y < lineMinY)
-				lineMinY = v2.position.y;
-			if (v2.position.y > lineMaxY)
-				lineMaxY = v2.position.y;
-
 
 			Vertex v3;
 			v3.position = glyphInfo.positions[2];
@@ -966,11 +991,6 @@ namespace vel
 			v3.textureCoordinates = glyphInfo.uvs[2];
 			v3.materialUBOIndex = 0;
 			meshVertices.push_back(v3);
-			if (v3.position.y < lineMinY)
-				lineMinY = v3.position.y;
-			if (v3.position.y > lineMaxY)
-				lineMaxY = v3.position.y;
-
 
 			Vertex v4;
 			v4.position = glyphInfo.positions[3];
@@ -978,11 +998,6 @@ namespace vel
 			v4.textureCoordinates = glyphInfo.uvs[3];
 			v4.materialUBOIndex = 0;
 			meshVertices.push_back(v4);
-			if (v4.position.y < lineMinY)
-				lineMinY = v4.position.y;
-			if (v4.position.y > lineMaxY)
-				lineMaxY = v4.position.y;
-
 
 			// Add indices with correct winding
 			meshIndices.push_back(lastIndex + 1); // 1
@@ -1005,13 +1020,13 @@ namespace vel
 
 		float minX = maabb.getMinEdge().x;
 		float maxX = maabb.getMaxEdge().x;
-		float minY = maabb.getMinEdge().y;
-		float maxY = maabb.getMaxEdge().y;
+		float logicalMaxY = ta->fontBitmap->ascent;
+		float logicalMinY = ta->fontBitmap->descent - static_cast<float>(lineCount - 1) * ta->fontBitmap->lineHeight;
 
 		float xOffset = 0.0f;
 		float yOffset = 0.0f;
 
-		// horizontal
+		// Horizontal alignment can remain based on actual geometry.
 		if (ta->originType == PlaneOrigin::RIGHT_BOTTOM ||
 			ta->originType == PlaneOrigin::RIGHT_CENTER ||
 			ta->originType == PlaneOrigin::RIGHT_TOP)
@@ -1024,31 +1039,24 @@ namespace vel
 		{
 			xOffset = (minX + maxX) * 0.5f;
 		}
-		//else // LEFT
-		//{
-		//	xOffset = minX;
-		//}
 
-		// vertical
+		// Vertical alignment uses stable font metrics.
 		if (ta->originType == PlaneOrigin::LEFT_TOP ||
 			ta->originType == PlaneOrigin::CENTER_TOP ||
 			ta->originType == PlaneOrigin::RIGHT_TOP)
 		{
-			yOffset = maxY;
+			yOffset = logicalMaxY;
 		}
 		else if (ta->originType == PlaneOrigin::LEFT_CENTER ||
 			ta->originType == PlaneOrigin::CENTER_CENTER ||
 			ta->originType == PlaneOrigin::RIGHT_CENTER)
 		{
-			yOffset = (minY + maxY) * 0.5f;
+			yOffset = (logicalMinY + logicalMaxY) * 0.5f;
 		}
-		// DEFAULT is baseline, NOT absolute bottom
-		//else 
-		//{
-		//// This would be absolute bottom, and text would hop around without 
-		//// adjusting for the origin offset from baseline
-		//	yOffset = minY;
-		//}
+		else // BOTTOM
+		{
+			yOffset = logicalMinY;
+		}
 
 		for (auto& v : m->getMutableVertices())
 		{
@@ -1061,6 +1069,11 @@ namespace vel
 			p.x -= xOffset;
 			p.y -= yOffset;
 		}
+
+		ta->logicalHeight = logicalMaxY - logicalMinY;
+		if (offsetX > ta->logicalWidth)
+			ta->logicalWidth = offsetX;
+		//ta->logicalWidth = maabb.getSize().x;
 
 		return m;
 	}

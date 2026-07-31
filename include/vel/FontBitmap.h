@@ -33,6 +33,12 @@ namespace vel
 		uint32_t		firstChar = ' ';
 		uint32_t		charCount = '~' - ' ' + 1;
 
+		float ascent = 0.0f;
+		float descent = 0.0f;
+		float lineGap = 0.0f;
+		float fontHeight = 0.0f; // complete ascent-to-descent height
+		float lineHeight = 0.0f; // distance from one baseline to the next
+
 		//fb_packedchar* charInfo; // cast as stbtt_packedchar
 		//unsigned char* data;
 
