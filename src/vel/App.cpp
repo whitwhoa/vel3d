@@ -420,7 +420,10 @@ namespace vel
 			// 6) Render submit
 			// --------------------------------------------------------------------
 			this->activeScene->clearAllRenderTargetBuffers(this->gpu);
+			double t1 = this->getRuntimeSec();
 			this->activeScene->draw(dt, renderLerp);
+			double t2 = this->getRuntimeSec();
+			SPDLOG_TRACE("{:.15f}", t2 - t1);
 
 			// --------------------------------------------------------------------
 			// 7) Insert fence after all GPU commands for this frame are queued
