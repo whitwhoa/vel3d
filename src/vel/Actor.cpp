@@ -158,7 +158,7 @@ namespace vel
 		return this->transform.getScale();
 	}
 
-	glm::mat4 Actor::getMatrix() const
+	glm::mat4 Actor::getMatrix()
 	{
 		return this->transform.getMatrix();
 	}

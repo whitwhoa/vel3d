@@ -392,11 +392,13 @@ namespace vel
 		this->activeMaterial = nullptr;
 	}
 
+
 	void GPU::initLightMapTextureUBO()
 	{
 		glGenBuffers(1, &this->lightmapTextureUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, this->lightmapTextureUBO);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(GLuint64) * 2, NULL, GL_STATIC_DRAW);
+		//glBufferData(GL_UNIFORM_BUFFER, sizeof(GLuint64) * 2, NULL, GL_STATIC_DRAW);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(GLuint64) * 2, NULL, GL_DYNAMIC_DRAW);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 2, this->lightmapTextureUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
@@ -409,12 +411,14 @@ namespace vel
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 
+
 	void GPU::initTextureUBO()
 	{
 		const int MAX_SUPPORTED_TEXTURES = 250;
 		glGenBuffers(1, &this->texturesUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, this->texturesUBO);
-		glBufferData(GL_UNIFORM_BUFFER, MAX_SUPPORTED_TEXTURES * sizeof(GLuint64) * 2, NULL, GL_STATIC_DRAW);
+		//glBufferData(GL_UNIFORM_BUFFER, MAX_SUPPORTED_TEXTURES * sizeof(GLuint64) * 2, NULL, GL_STATIC_DRAW);
+		glBufferData(GL_UNIFORM_BUFFER, MAX_SUPPORTED_TEXTURES * sizeof(GLuint64) * 2, NULL, GL_DYNAMIC_DRAW);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, this->texturesUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
@@ -428,13 +432,13 @@ namespace vel
 	}
 
 
-
 	void GPU::initBoneUBO()
 	{
 		const int MAX_SUPPORTED_BONES = 200;
 		glGenBuffers(1, &this->bonesUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, this->bonesUBO);
-		glBufferData(GL_UNIFORM_BUFFER, MAX_SUPPORTED_BONES * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+		//glBufferData(GL_UNIFORM_BUFFER, MAX_SUPPORTED_BONES * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+		glBufferData(GL_UNIFORM_BUFFER, MAX_SUPPORTED_BONES * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 1, this->bonesUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
@@ -451,6 +455,7 @@ namespace vel
 
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
+
 
 	void GPU::clearShader(Shader* s)
 	{
