@@ -6,12 +6,12 @@
 #include <optional>
 #include <chrono>
 
-#include "vel/Config.h"
-#include "vel/Window.h"
-#include "vel/GPU.h"
-#include "vel/Scene.h"
-#include "vel/AssetManager.h"
-#include "vel/AudioDevice.h"
+#include <vel/Config.h>
+#include <vel/Window.h>
+#include <vel/Render/GPU.h>
+#include <vel/AssetManager.h>
+#include <vel/AudioDevice.h>
+#include <vel/Scene/Scene.h>
 
 
 struct GLFWusercontext;

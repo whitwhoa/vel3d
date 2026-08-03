@@ -4,19 +4,18 @@
 #include <unordered_map>
 #include <optional>
 
-#include "ozz/animation/runtime/animation.h"
-#include "ozz/animation/runtime/skeleton.h"
+#include <ozz/animation/runtime/animation.h>
+#include <ozz/animation/runtime/skeleton.h>
 
-#include "vel/Shader.h"
-#include "vel/Mesh.h"
-#include "vel/Texture.h"
-#include "vel/Material.h"
-#include "vel/MaterialAnimator.h"
-#include "vel/FontBitmap.h"
-#include "vel/FontGlyphInfo.h"
-#include "vel/GPU.h"
-#include "vel/TextActor.h"
-#include "vel/MeshLoaderInterface.h"
+#include <vel/Render/GPU.h>
+#include <vel/Render/Shader.h>
+#include <vel/Scene/Stage/Actor/TextActor.h>
+#include <vel/Scene/Stage/Actor/Mesh/Mesh.h>
+#include <vel/Scene/Stage/Actor/Mesh/MeshLoaderInterface.h>
+#include <vel/Scene/Stage/Actor/Material/Material.h>
+#include <vel/Scene/Stage/Actor/Material/MaterialAnimator.h>
+#include <vel/Scene/Stage/Actor/Font/FontBitmap.h>
+#include <vel/Scene/Stage/Actor/Font/FontGlyphInfo.h>
 
 
 namespace vel

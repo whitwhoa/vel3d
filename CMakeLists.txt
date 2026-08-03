@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16.0)
 
 file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/vel/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/vel/*.hpp")
-file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/vel/*.cpp")
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 add_library(VEL3D_LIBRARY STATIC ${headers} ${sources})
 add_dependencies(VEL3D_LIBRARY ${libGLFW} GLAD_LIBRARY ${libGLM} ${libAssimp} ${libBullet} ${libJson} ${libStbHeaders} MINIAUDIO_LIBRARY SPDLOG_LIBRARY OZZ_BASE_LIBRARY OZZ_ANIMATION_LIBRARY)
@@ -29,6 +29,20 @@ target_include_directories(VEL3D_LIBRARY PUBLIC
 	${SPDLOG_INCLUDE_DIR}
 	${OZZ_INCLUDE_DIR}
 )
+
+
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/include/vel"
+    PREFIX "Header Files"
+    FILES ${headers}
+)
+
+source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    PREFIX "Source Files"
+    FILES ${sources}
+)
+
 
 if(USE_NVIDIA_API)
 	target_include_directories(VEL3D_LIBRARY PUBLIC ${NVAPI_INCLUDE_DIR})

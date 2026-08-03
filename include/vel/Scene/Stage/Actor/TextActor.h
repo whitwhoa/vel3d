@@ -1,0 +1,64 @@
+#pragma once
+
+#include <string>
+
+#include <vel/Scene/Stage/Actor/Font/FontBitmap.h>
+#include <vel/Scene/Stage/Actor/Actor.h>
+#include <vel/Scene/Stage/Actor/Mesh/PlaneOrigin.h>
+
+namespace vel 
+{
+	struct TextActor 
+	{
+		std::string					name;
+		std::string 				text;
+		FontBitmap*					fontBitmap;
+		PlaneOrigin					originType;
+		Actor*						actor = nullptr; //getWorldAABB() = exact visible geometry
+		std::vector<glm::vec2>		caretPositions;
+		bool						requiresUpdate = false;
+		float						logicalWidth = 0.f; // stable layout width, including spaces
+		float						logicalHeight = 0.f; // stable layout height
+		
+
+		void updateText(const std::string& updatedText)
+		{
+			this->text = updatedText;
+			this->requiresUpdate = true;
+		}
+
+		void addCharacter(int caretIndex, const char* c)
+		{
+			this->text.insert(this->text.begin() + caretIndex, *c);
+			this->requiresUpdate = true;
+		}
+
+		void backspaceCharacter(int caretIndex)
+		{
+			if (caretIndex == 0 || this->text.empty())
+				return;
+
+			if (caretIndex > this->text.size())
+				caretIndex = this->text.size();
+
+			this->text.erase(caretIndex - 1, 1);
+			this->caretPositions.erase(this->caretPositions.begin() + caretIndex);
+
+			this->requiresUpdate = true;
+		}
+
+		void deleteCharacter(int caretIndex)
+		{
+			if (this->text.empty())
+				return;
+
+			if (caretIndex >= this->text.size())
+				return;
+
+			this->text.erase(caretIndex, 1);
+			this->caretPositions.erase(this->caretPositions.begin() + caretIndex + 1);
+
+			this->requiresUpdate = true;
+		}
+	};
+}

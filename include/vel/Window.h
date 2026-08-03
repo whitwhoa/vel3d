@@ -5,11 +5,11 @@
 #include <map>
 
 
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
 
 
-#include "vel/InputState.h"
-#include "vel/Config.h"
+#include <vel/InputState.h>
+#include <vel/Config.h>
 
 
 struct GLFWwindow;

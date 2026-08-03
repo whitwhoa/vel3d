@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include "vel/AssetManager.h"
-#include "vel/HeadlessScene.h"
+#include <vel/AssetManager.h>
+#include <vel/Scene/HeadlessScene.h>
 
 namespace vel
 {

@@ -3,12 +3,12 @@
 #ifdef WINDOWS_BUILD
 
 #pragma once
-
-#include "nvapi/nvapi.h"
-#include "nvapi/NvApiDriverSettings.h"
 #include <string>
 
-#include "spdlog/spdlog.h"
+#include <nvapi/nvapi.h>
+#include <nvapi/NvApiDriverSettings.h>
+
+#include <spdlog/spdlog.h>
 
 namespace vel
 {

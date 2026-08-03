@@ -6,8 +6,8 @@
 #include <string>
 #include <optional>
 
-#include "miniaudio/miniaudio.h"
-#include "glm/glm.hpp"
+#include <miniaudio/miniaudio.h>
+#include <glm/glm.hpp>
 
 /*
 	I've been pretty strict with usage of smart pointers up to this point. The way I'm going to work with this library, at least
