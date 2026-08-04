@@ -120,7 +120,7 @@ namespace vel
 		// Initialize GLFW
 		glfwInit();
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		//glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); //for borderless windowed
 		//glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -150,9 +150,9 @@ namespace vel
 			this->glfwWindow = glfwCreateWindow(mode->width, mode->height, c.appName.c_str(), monitor, NULL);
 		}
 
-		if (this->glfwWindow == NULL)
+		if (!this->glfwWindow)
 		{
-			SPDLOG_DEBUG("Window::init: Failed to create GLFW window");
+			SPDLOG_ERROR("Failed to create window! Does device support OpenGL 4.6?");
 
 			glfwTerminate();
 
