@@ -21,35 +21,22 @@ namespace vel
     class App
     {
     protected:
-        Config											config;
-        Window*							                window;
-		GPU*	                						gpu;
-		AssetManager*               				    assetManager;
-        AudioDevice*                                    audioDevice;
-
         std::vector<std::unique_ptr<Scene>>				scenes;
 		Scene*											activeScene;
 		
-        std::chrono::steady_clock::time_point	        startTime;
-        int												currentSimTick;
         bool											shouldClose;
         double											fixedLogicTime;
 
-        double											deltaTime;
-        double                                          currentRunTime;
         double											lastRunTime;
         double                                          deltaTimeClamp;
 
-        double                                          frameTime;
         double                                          lastFrameTime;
 
         double											accumulator;
         std::vector<double>								averageFrameTimeArray;
         double											lastFrameTimeCalculation;
-
         double											averageFrameTime;
-        double											averageFrameRate;
-		bool											pauseBufferClearAndSwap;
+
 
         void											calculateAverageFrameTime();
 
@@ -60,39 +47,18 @@ namespace vel
     
 
     public:
-        App(Config conf, Window* w, GPU* gpu, AssetManager* am);
+        App();
         ~App();
 
-        void                                            setAudioDevice(AudioDevice* ad);
-
         bool											addScene(std::unique_ptr<Scene> scene, bool makeActive = false);
-        const double									getRuntimeSec() const;
-        const InputState*								getInputState() const;
         virtual void									execute();
         void											close();
-
-        double                                          getDeltaTime();
-		double											getFrameTime();
-        double											getLogicTime();
-
-
-		void											hideMouseCursor();
-		void											showMouseCursor();
-
-		GPU*											getGPU();
-		bool											getPauseBufferClearAndSwap();
-		void											setPauseBufferClearAndSwap(bool in);
-
-		AssetManager&									getAssetManager();
 
 		void											removeScene(const std::string& name);
 		void											swapScene(const std::string& name);
 		bool											sceneExists(const std::string& name);
         Scene*                                          getScene(const std::string& name);
-
 		Scene*											getActiveScene();
-
-        std::chrono::steady_clock::time_point&          getStartTime();
         
 
 		

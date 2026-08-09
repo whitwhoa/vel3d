@@ -24,12 +24,11 @@ namespace vel
 	{
 	private:
 		std::string				name;
-		CameraType              type;
-		GPU*					gpu;
-		float                   fovScale;
 		glm::ivec2				resolution;
-		bool					resolutionFixed;
 		glm::ivec2				previousResolution;
+		RenderTarget			renderTarget;
+		CameraType              type;
+		float                   fovScale;
 		float                   nearPlane;
 		float                   farPlane;
 		glm::vec3			    position;
@@ -37,14 +36,12 @@ namespace vel
 		glm::vec3			    up;
 		glm::mat4			    viewMatrix;
 		glm::mat4			    projectionMatrix;
+		bool					finalRenderCam;
+		bool					resolutionFixed;
+		
 
 		void                    updateViewMatrix();
 		void                    updateProjectionMatrix();
-
-		bool					finalRenderCam;
-
-		// defined as optional so that we can set at a later stage in the pipeline as opposed to during initialization
-		std::optional<RenderTarget> renderTarget;
 
 	public:
 		Camera(const std::string& name, CameraType type);
@@ -68,14 +65,10 @@ namespace vel
 		void					setFixedResolution(bool b); // if resolution fixed, then it's not updated when window size is altered dynamically by user
 		bool					getFixedResolution();
 
-
 		void					setFinalRenderCam(bool b); // whether or not this camera is used to draw to screen buffer
 		bool					isFinalRenderCam();
 
-		void					setGpu(GPU* gpu);
-
-		void					setRenderTarget(RenderTarget rt);
-		RenderTarget*			getRenderTarget();
+		RenderTarget&			getRenderTarget();
 
 		float					getFovScale();
 	};

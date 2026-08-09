@@ -33,6 +33,7 @@ namespace vel
 		bool			cursorHidden;
 		bool			lockResToWin;
 		bool            openglDebugContext;
+		bool			headless;
         
 		
 		Config(const std::string& dataDir = "data");

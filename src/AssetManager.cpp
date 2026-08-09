@@ -29,9 +29,9 @@ using namespace std::chrono_literals;
 namespace vel
 {
 
-	AssetManager::AssetManager(const std::string& dataDir, std::unique_ptr<MeshLoaderInterface> ml, GPU* gpu) :
+	AssetManager::AssetManager(const std::string& dataDir, GPU* gpu) :
 		dataDir(dataDir),
-		meshLoader(std::move(ml)),
+		meshLoader(std::make_unique<vel::AssimpMeshLoader>()),
 		gpu(gpu)
 	{}
 	AssetManager::~AssetManager(){}

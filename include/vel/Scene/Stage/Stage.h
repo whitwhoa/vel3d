@@ -28,8 +28,6 @@ namespace vel
 	{
 	private:
 		const std::string								name;
-		AssetManager*									assetManager;
-		const uint32_t*									logicTickPtr;
 		bool											visible;
 
 		// multiple stages can use the same camera, so lifetime of cameras is managed by Scene
@@ -64,7 +62,7 @@ namespace vel
 
 
 	public:
-		Stage::Stage(const std::string& name, AssetManager* assetManager, const uint32_t* logicTickPtr);
+		Stage::Stage(const std::string& name);
 		~Stage();
 
 		const std::string&	getName() const;

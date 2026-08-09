@@ -19,6 +19,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <vel/Runtime.h>
 #include <vel/App.h>
 
 
@@ -26,33 +27,16 @@ using namespace std::chrono_literals;
 
 namespace vel
 {
-    App::App(Config conf, Window* w, GPU* gpu, AssetManager* am) :
-        config(conf),
-		window(w),
-		gpu(gpu),
-		assetManager(am),
-		audioDevice(nullptr),
-
+    App::App() :
 		activeScene(nullptr),
-        startTime(std::chrono::steady_clock::now()),
-		currentSimTick(0),
 		shouldClose(false),
-
-		fixedLogicTime(1.0 / this->config.logicTick),
-
-		deltaTime(0.0),
-		currentRunTime(0.0),
+		fixedLogicTime(1.0 / Runtime::_config.logicTick),
 		lastRunTime(0.0),
 		deltaTimeClamp(0.25),
-
-		frameTime(0.0),
 		lastFrameTime(0.0),
-
 		accumulator(0.0f),
 		lastFrameTimeCalculation(0.0),
-		averageFrameTime(0.0),
-		averageFrameRate(0.0),
-		pauseBufferClearAndSwap(false)
+		averageFrameTime(0.0)
     {		
 #ifdef _WIN32
 
@@ -62,17 +46,17 @@ namespace vel
 
 #endif
 
-		this->assetManager->loadShader("debug", "debug.vert", "", "debug.frag"); // used for bullet's debug drawer
-		this->assetManager->loadShader("screen", "screen.vert", "", "screen.frag"); // join all frame buffer textures together before post-processing
-		this->assetManager->loadShader("post", "post.vert", "", "post.frag"); // join all frame buffer textures together before post-processing
-		this->assetManager->loadShader("composite", "composite.vert", "", "composite.frag"); // used for rendering texture to screen buffer
+		Runtime::_assetManager->loadShader("debug", "debug.vert", "", "debug.frag"); // used for bullet's debug drawer
+		Runtime::_assetManager->loadShader("screen", "screen.vert", "", "screen.frag"); // join all frame buffer textures together before post-processing
+		Runtime::_assetManager->loadShader("post", "post.vert", "", "post.frag"); // join all frame buffer textures together before post-processing
+		Runtime::_assetManager->loadShader("composite", "composite.vert", "", "composite.frag"); // used for rendering texture to screen buffer
 
-		Texture* ptrDefaultWhite = this->assetManager->loadTexture("defaultWhite", this->config.dataDir + "/textures/defaults/default.jpg");
+		Texture* ptrDefaultWhite = Runtime::_assetManager->loadTexture("defaultWhite", Runtime::_config.dataDir + "/textures/defaults/default.jpg");
 
-		this->gpu->setScreenShader(this->assetManager->getShader("screen"));
-		this->gpu->setPostShader(this->assetManager->getShader("post"));
-		this->gpu->setCompositeShader(this->assetManager->getShader("composite"));
-		this->gpu->setDefaultWhiteTextureHandle(ptrDefaultWhite->frames.at(0).dsaHandle);
+		Runtime::_gpu->setScreenShader(Runtime::_assetManager->getShader("screen"));
+		Runtime::_gpu->setPostShader(Runtime::_assetManager->getShader("post"));
+		Runtime::_gpu->setCompositeShader(Runtime::_assetManager->getShader("composite"));
+		Runtime::_gpu->setDefaultWhiteTextureHandle(ptrDefaultWhite->frames.at(0).dsaHandle);
 
     }
 
@@ -87,24 +71,9 @@ namespace vel
 
 	void App::update() {}
 
-	void App::setAudioDevice(AudioDevice* ad)
-	{
-		this->audioDevice = ad;
-	}
-
 	Scene* App::getActiveScene()
 	{
 		return this->activeScene;
-	}
-
-	void App::showMouseCursor()
-	{
-		this->window->showMouseCursor();
-	}
-
-	void App::hideMouseCursor()
-	{
-		this->window->hideMouseCursor();
 	}
 
 	void App::removeScene(const std::string& name)
@@ -151,7 +120,7 @@ namespace vel
 			{
 				// pause current scene audio if it holds a valid group key
 				if (this->activeScene && this->activeScene->getAudioDeviceGroupKey() != -1)
-					this->audioDevice->pauseCurrentGroup();
+					Runtime::_audioDevice->pauseCurrentGroup();
 
 				// update active scene
 				this->activeScene = s.get();
@@ -159,8 +128,8 @@ namespace vel
 				// swap group keys in audio device and unpause all sounds if scene holds valid group key
 				if (this->activeScene->getAudioDeviceGroupKey() != -1)
 				{
-					this->audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
-					this->audioDevice->unpauseCurrentGroup();
+					Runtime::_audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
+					Runtime::_audioDevice->unpauseCurrentGroup();
 				}
 			}
 		}
@@ -173,17 +142,6 @@ namespace vel
 		scene->setName(className);
 
 		SPDLOG_DEBUG("App::addScene: Adding Scene: {}", className);
-
-		// inject window size and resolution into scene
-		scene->setWindowSize(this->window->getWindowSize().x, this->window->getWindowSize().y);
-		scene->setResolution(this->window->getResolution().x, this->window->getResolution().y);
-		scene->setAssetManager(this->assetManager);
-		scene->setInputState(this->getInputState());
-
-		if (this->audioDevice)
-			scene->setAudioDevice(this->audioDevice);
-
-		scene->initRenderTarget();
 		
 		this->scenes.push_back(std::move(scene));
 
@@ -194,7 +152,7 @@ namespace vel
 			this->activeScene = ptrScene;
 
 			if (this->activeScene->getAudioDeviceGroupKey() != -1)
-				this->audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
+				Runtime::_audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
 		}
 
 		return ptrScene->internalLoad();
@@ -205,47 +163,11 @@ namespace vel
         this->shouldClose = true;      
     }
 
-	const double App::getRuntimeSec() const
-	{
-		using namespace std::chrono;
-		return duration<double>(steady_clock::now() - this->startTime).count();
-	}
-
-    const InputState* App::getInputState() const
-    {
-        return this->window->getInputState();
-    }
-
-	GPU* App::getGPU()
-	{
-		return this->gpu;
-	}
-
-	AssetManager& App::getAssetManager()
-	{
-		return *this->assetManager;
-	}
-
-	double App::getDeltaTime()
-	{
-		return this->deltaTime;
-	}
-
-	double App::getFrameTime()
-	{
-		return this->frameTime;
-	}
-
-	double App::getLogicTime()
-	{
-		return this->fixedLogicTime;
-	}
-
 	void App::calculateAverageFrameTime()
 	{
-		if (this->getRuntimeSec() - this->lastFrameTimeCalculation >= 1.0)
+		if (Runtime::seconds() - this->lastFrameTimeCalculation >= 1.0)
 		{
-			this->lastFrameTimeCalculation = this->getRuntimeSec();
+			this->lastFrameTimeCalculation = Runtime::seconds();
 
 			double average = 0.0;
 			for (auto& v : this->averageFrameTimeArray)
@@ -254,60 +176,37 @@ namespace vel
 			average /= static_cast<double>(this->averageFrameTimeArray.size());
 
 			this->averageFrameTime = average;
-			this->averageFrameRate = 1.0 / average;
+			Runtime::_frameRate = 1.0 / average;
 
 			this->averageFrameTimeArray.clear();
 		}
 
-		this->averageFrameTimeArray.push_back(this->frameTime);
-	}
-
-	bool App::getPauseBufferClearAndSwap()
-	{
-		return this->pauseBufferClearAndSwap;
-	}
-
-	void App::setPauseBufferClearAndSwap(bool in)
-	{
-		this->pauseBufferClearAndSwap = in;
+		this->averageFrameTimeArray.push_back(Runtime::_frameTime);
 	}
 
 	void App::checkWindowSize()
 	{
-		if (this->config.lockResToWin && this->window->getWindowSizeChanged())
+		if (Runtime::_config.lockResToWin && Runtime::_window->getWindowSizeChanged())
 		{
-			this->window->setWindowSizeChanged(false);
-			glm::ivec2 ws = this->window->getWindowSize();
+			Runtime::_window->setWindowSizeChanged(false);
+			glm::ivec2 ws = Runtime::_window->getWindowSize();
 
 			for (auto& s : this->scenes)
-			{
-				s->setWindowSize(ws.x, ws.y);
-				s->setResolution(ws.x, ws.y);
 				s->updateAllCameraResolutions(ws.x, ws.y);
-			}
 		}
 	}
 
 	void App::checkResolution()
 	{
-		if (this->window->getResolutionChanged())
+		if (Runtime::_window->getResolutionChanged())
 		{
-			this->window->setResolutionChanged(false);
-			glm::ivec2 res = this->window->getResolution();
+			Runtime::_window->setResolutionChanged(false);
+			glm::ivec2 res = Runtime::_window->getResolution();
 
 			for (auto& s : this->scenes)
-			{
-				s->setResolution(res.x, res.y);
 				s->updateAllCameraResolutions(res.x, res.y);
-			}
 		}
 	}
-
-	std::chrono::steady_clock::time_point& App::getStartTime()
-	{
-		return this->startTime;
-	}
-
 
 	void App::execute()
 	{
@@ -316,13 +215,13 @@ namespace vel
 		const double maxDebtClamp = this->fixedLogicTime * 4.0; // drop excessive debt
 
 		// Frame cap state
-		const double renderCapHz = static_cast<double>(this->config.maxFps); // <= 0 = uncapped
+		const double renderCapHz = static_cast<double>(Runtime::_config.maxFps); // <= 0 = uncapped
 		const double targetFrameSec = (renderCapHz > 0.0) ? (1.0 / renderCapHz) : 0.0;
-		double capNextTimeSec = this->getRuntimeSec(); // Next time we are allowed to start a new frame
+		double capNextTimeSec = Runtime::seconds(); // Next time we are allowed to start a new frame
 
 		while (true)
 		{
-			if (this->window->shouldClose())
+			if (Runtime::_window->shouldClose())
 				this->close();
 
 			if (this->shouldClose)
@@ -335,27 +234,27 @@ namespace vel
 			// 1) GPU queue depth control - do not let cpu issue new commands until
 			//    the gpu has processed all previously sent commands
 			// --------------------------------------------------------------------
-			this->gpu->clientWaitSync();
+			Runtime::_gpu->clientWaitSync();
 
 			// --------------------------------------------------------------------
 			// 2) Loop boundary timing
 			// --------------------------------------------------------------------
-			this->currentRunTime = this->getRuntimeSec();
-			this->deltaTime = this->currentRunTime - this->lastRunTime;
-			this->lastRunTime = this->currentRunTime;
+			Runtime::_currentRunTime = Runtime::seconds();
+			Runtime::_deltaTime = Runtime::_currentRunTime - this->lastRunTime;
+			this->lastRunTime = Runtime::_currentRunTime;
 
 			// Spiral of death prevention for deltaTime
-			if (this->deltaTime > this->deltaTimeClamp)
-				this->deltaTime = this->deltaTimeClamp;
+			if (Runtime::_deltaTime > this->deltaTimeClamp)
+				Runtime::_deltaTime = this->deltaTimeClamp;
 
-			this->accumulator += this->deltaTime;
+			this->accumulator += Runtime::_deltaTime;
 
 			// --------------------------------------------------------------------
 			// 3) Input + OS events
 			// --------------------------------------------------------------------
 			this->checkWindowSize();
 			this->checkResolution();
-			this->window->updateInputState();
+			Runtime::_window->updateInputState();
 
 			// --------------------------------------------------------------------
 			// 4) Fixed step simulation with bounded catch-up
@@ -363,25 +262,24 @@ namespace vel
 			int steps = 0;
 			while (this->accumulator >= this->fixedLogicTime && steps < maxStepsPerTick)
 			{
-				this->currentSimTick++;
-				this->activeScene->setTick(this->currentSimTick);
+				Runtime::_currentSimTick++;
 
 				const float flt = static_cast<float>(this->fixedLogicTime);
 
 				this->activeScene->stepPhysics(flt);
 
-				//double t1 = this->getRuntimeSec();
+				//double t1 = Runtime::seconds();
 				this->activeScene->updateAnimators(flt);
-				//double t2 = this->getRuntimeSec();
+				//double t2 = Runtime::seconds();
 				//SPDLOG_TRACE("{:.15f}", t2 - t1);
 
-				//double t1 = this->getRuntimeSec();
+				//double t1 = Runtime::seconds();
 				this->activeScene->internalFixedLoop(flt);
-				//double t2 = this->getRuntimeSec();
+				//double t2 = Runtime::seconds();
 				//SPDLOG_TRACE("{:.15f}", t2 - t1);
 				
-				if (this->audioDevice)
-					this->audioDevice->cleanUpManagedSFX();
+				if (Runtime::_audioDevice)
+					Runtime::_audioDevice->cleanUpManagedSFX();
 
 				this->accumulator -= this->fixedLogicTime;
 				++steps;
@@ -396,11 +294,11 @@ namespace vel
 			// --------------------------------------------------------------------
 			float renderLerp = static_cast<float>(std::clamp((this->accumulator / this->fixedLogicTime), 0.0, 1.0));
 
-			float dt = static_cast<float>(this->deltaTime);
+			float dt = static_cast<float>(Runtime::_deltaTime);
 			
-			//double t1 = this->getRuntimeSec();
+			//double t1 = Runtime::seconds();
 			this->activeScene->lerpAnimators(renderLerp);
-			//double t2 = this->getRuntimeSec();
+			//double t2 = Runtime::seconds();
 			//SPDLOG_TRACE("{:.15f}", t2 - t1);
 
 			this->activeScene->updateBillboards();
@@ -412,28 +310,26 @@ namespace vel
 			// --------------------------------------------------------------------
 			// 6) Render submit
 			// --------------------------------------------------------------------
-			this->activeScene->clearAllRenderTargetBuffers(this->gpu);
-			//double t1 = this->getRuntimeSec();
+			this->activeScene->clearAllRenderTargetBuffers();
+			//double t1 = Runtime::seconds();
 			this->activeScene->draw(dt, renderLerp);
-			//double t2 = this->getRuntimeSec();
+			//double t2 = Runtime::seconds();
 			//SPDLOG_TRACE("{:.15f}", t2 - t1);
 
 			// --------------------------------------------------------------------
 			// 7) Insert fence after all GPU commands for this frame are queued
 			// --------------------------------------------------------------------
-			this->gpu->fenceAndFlush();
+			Runtime::_gpu->fenceAndFlush();
 
 			// --------------------------------------------------------------------
 			// 8) Swap buffers
 			// --------------------------------------------------------------------
-			this->window->swapBuffers();
+			Runtime::_window->swapBuffers();
 
-			double now2 = this->getRuntimeSec();
-			this->frameTime = now2 - this->lastFrameTime;
+			double now2 = Runtime::seconds();
+			Runtime::_frameTime = now2 - this->lastFrameTime;
 			this->lastFrameTime = now2;
 			this->calculateAverageFrameTime();
-			this->activeScene->setFrameTime(this->frameTime);
-			this->activeScene->setFrameRate(this->averageFrameRate);
 
 			// --------------------------------------------------------------------
 			// 9) User defined (optional, default does nothing, would be used for
@@ -449,7 +345,7 @@ namespace vel
 				// Schedule next target
 				capNextTimeSec += targetFrameSec;
 
-				double now3 = this->getRuntimeSec();
+				double now3 = Runtime::seconds();
 
 				// If we fell behind badly (breakpoint, hitch), resync so we don't "chase"
 				if (now3 > capNextTimeSec + (targetFrameSec * 2.0))
@@ -467,7 +363,7 @@ namespace vel
 					//}
 
 					// Spin the last ~1 ms for precision
-					while (this->getRuntimeSec() < capNextTimeSec)
+					while (Runtime::seconds() < capNextTimeSec)
 					{
 						// tight spin
 					}

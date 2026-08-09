@@ -1,5 +1,6 @@
 #include <spdlog/spdlog.h>
 
+#include <vel/Runtime.h>
 #include <vel/Util/functions.h>
 #include <vel/Scene/Scene.h>
 #include <vel/Scene/Stage/Actor/Actor.h>
@@ -9,7 +10,6 @@ namespace vel
 {
 	Actor::Actor(const std::string& name) :
 		name(name),
-		updateTick(nullptr),
 		visible(true),
 		dynamic(false),
 		lerpable(false),
@@ -26,7 +26,6 @@ namespace vel
 
 	Actor::Actor(const Actor& a) :
 		name(a.getName()),
-		updateTick(a.getUpdateTick()),
 		visible(a.isVisible()),
 		dynamic(a.isDynamic()),
 		lerpable(a.isLerpable()),
@@ -58,85 +57,45 @@ namespace vel
 		return *this;
 	}
 
-	void Actor::_markTransformDirty()
+	void Actor::_updatePrevTransform()
 	{
-		if (!this->dynamic || (this->dynamic && !this->lerpable) || !this->updateTick)
+		if (!this->dynamic || (this->dynamic && !this->lerpable))
 			return;
 
-		if (this->lastTransformUpdateTick != *this->updateTick)
+		if (this->lastTransformUpdateTick != Runtime::_currentSimTick)
 		{
 			this->previousTransform = this->transform;
-			this->lastTransformUpdateTick = *this->updateTick;
+			this->lastTransformUpdateTick = Runtime::_currentSimTick;
 		}
 	}
 
 	void Actor::setTranslation(glm::vec3 t)
 	{
-		if (*this->updateTick == 0)
-		{
-			this->transform.setTranslation(t);
-			this->previousTransform = this->transform;
-
-			return;
-		}
-
-		this->_markTransformDirty();
+		this->_updatePrevTransform();
 		this->transform.setTranslation(t);
 	}
 
 	void Actor::setRotation(float angle, glm::vec3 axis)
 	{
-		if (*this->updateTick == 0)
-		{
-			this->transform.setRotation(angle, axis);
-			this->previousTransform = this->transform;
-
-			return;
-		}
-
-		this->_markTransformDirty();
+		this->_updatePrevTransform();
 		this->transform.setRotation(angle, axis);
 	}
 
 	void Actor::setRotation(glm::quat r)
 	{
-		if (*this->updateTick == 0)
-		{
-			this->transform.setRotation(r);
-			this->previousTransform = this->transform;
-
-			return;
-		}
-
-		this->_markTransformDirty();
+		this->_updatePrevTransform();
 		this->transform.setRotation(r);
 	}
 
 	void Actor::appendRotation(float angle, glm::vec3 axis)
 	{
-		if (*this->updateTick == 0)
-		{
-			this->transform.appendRotation(angle, axis);
-			this->previousTransform = this->transform;
-
-			return;
-		}
-
-		this->_markTransformDirty();
+		this->_updatePrevTransform();
 		this->transform.appendRotation(angle, axis);
 	}
 
 	void Actor::setScale(glm::vec3 s)
 	{
-		if (*this->updateTick == 0)
-		{
-			this->transform.setScale(s);
-			this->previousTransform = this->transform;
-
-			return;
-		}
-
-		this->_markTransformDirty();
+		this->_updatePrevTransform();
 		this->transform.setScale(s);
 	}
 
@@ -158,16 +117,6 @@ namespace vel
 	glm::mat4 Actor::getMatrix()
 	{
 		return this->transform.getMatrix();
-	}
-
-	void Actor::setUpdateTick(const uint32_t* t)
-	{
-		this->updateTick = t;
-	}
-
-	const uint32_t* Actor::getUpdateTick() const
-	{
-		return this->updateTick;
 	}
 
 	void* Actor::getUserPointer()

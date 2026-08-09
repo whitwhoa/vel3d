@@ -1,12 +1,12 @@
+
+#include <vel/Runtime.h>
 #include <vel/Scene/Stage/Stage.h>
 
 
 namespace vel
 {
-	Stage::Stage(const std::string& name, AssetManager* assetManager, const uint32_t* logicTickPtr) :
+	Stage::Stage(const std::string& name) :
 		name(name),
-		assetManager(assetManager),
-		logicTickPtr(logicTickPtr),
 		visible(true)
 	{}
 
@@ -112,9 +112,6 @@ namespace vel
 
 		std::unique_ptr<Actor> a = std::make_unique<Actor>(actorIn);
 
-		if(!a->getUpdateTick())
-			a->setUpdateTick(this->logicTickPtr);
-
 		Actor* ptrA = a.get(); // save raw pointer for return after move
 
 		ActCompositeKey key = { fboToUse, shaderProgramId, vaoToUse };
@@ -139,8 +136,6 @@ namespace vel
 
 		if (material) // actor default to EmptyMaterial if none provided
 			a->setMaterial(material);
-
-		a->setUpdateTick(this->logicTickPtr);
 
 		Actor* ptrA = a.get(); // save raw pointer for return after move
 
@@ -291,11 +286,11 @@ namespace vel
 
 	void Stage::updateTextActor(TextActor* ta)
 	{
-		std::unique_ptr<Mesh> updatedMesh = std::move(this->assetManager->loadTextActorMesh(ta));
+		std::unique_ptr<Mesh> updatedMesh = std::move(Runtime::_assetManager->loadTextActorMesh(ta));
 		ta->actor->getMesh()->setVertices(updatedMesh->getVertices());
 		ta->actor->getMesh()->setIndices(updatedMesh->getIndices());
 
-		this->assetManager->updateMesh(ta->actor->getMesh());
+		Runtime::_assetManager->updateMesh(ta->actor->getMesh());
 		ta->requiresUpdate = false;
 	}
 

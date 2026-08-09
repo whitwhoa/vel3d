@@ -5,8 +5,7 @@
 
 namespace vel
 {
-	HeadlessApp::HeadlessApp(AssetManager* am) : 
-		assetManager(am),
+	HeadlessApp::HeadlessApp() : 
 		activeScene(nullptr),
 		currentSimTick(0)
 	{
@@ -22,8 +21,6 @@ namespace vel
 		scene->setName(className);
 
 		SPDLOG_DEBUG("HeadlessApp::addScene: Adding HeadlessScene: {}", className);
-
-		scene->setAssetManager(this->assetManager);
 
 		this->scenes.push_back(std::move(scene));
 
@@ -84,7 +81,6 @@ namespace vel
 			return;
 
 		this->currentSimTick++;
-		this->activeScene->setTick(this->currentSimTick);
 
 		this->activeScene->stepPhysics(dt);
 		this->activeScene->updateAnimators(dt);

@@ -6,6 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <vel/Runtime.h>
 #include <vel/Util/functions.h>
 #include <vel/Physics/CollisionObjectTemplate.h>
 #include <vel/Scene/Scene.h>
@@ -18,19 +19,23 @@ using json = nlohmann::json;
 
 namespace vel
 {
-	Scene::Scene(const std::string& dataDir, GPU* gpu) :
-		HeadlessScene(dataDir),
-		gpu(gpu),
+	Scene::Scene() :
+		HeadlessScene(),
 		sceneRenderTarget(nullptr),
-		inputState(nullptr),
-		audioDevice(nullptr),
 		audioGroupKey(-1),
 		animationTime(0.0f),
 		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)),
 		frameTime(0.0),
 		frameRate(0.0)
 	{
+		this->sceneRenderTarget = Runtime::_gpu->createFinalRenderTarget(
+			"finalRenderTarget_" + this->name,
+			Runtime::_window->getWindowSize().x,
+			Runtime::_window->getWindowSize().y
+		);
 
+		if(Runtime::_audioDevice)
+			this->audioGroupKey = Runtime::_audioDevice->generateGroupKey();
 	}
 	
 	Scene::~Scene()
@@ -43,35 +48,6 @@ namespace vel
 		this->immediateLoop(frameTime, renderLerpInterval);
 	}
 
-	void Scene::setFrameTime(double ft)
-	{
-		this->frameTime = ft;
-	}
-
-	double Scene::getFrameTime() const
-	{
-		return this->frameTime;
-	}
-
-	void Scene::setFrameRate(double fr)
-	{
-		this->frameRate = fr;
-	}
-
-	double Scene::getFrameRate() const
-	{
-		return this->frameRate;
-	}
-
-	void Scene::initRenderTarget()
-	{
-		this->sceneRenderTarget = this->gpu->createFinalRenderTarget(
-			"finalRenderTarget_" + this->name, 
-			this->getWindowSize().x, 
-			this->getWindowSize().y
-		);
-	}
-
 	FinalRenderTarget* Scene::getSceneRenderTarget()
 	{
 		return this->sceneRenderTarget.get();
@@ -79,12 +55,12 @@ namespace vel
 
 	void Scene::loadBGMSound(const std::string& path)
 	{
-		this->soundsInUse.push_back(this->audioDevice->loadBGM(path));
+		this->soundsInUse.push_back(Runtime::_audioDevice->loadBGM(path));
 	}
 
 	bool Scene::loadSFXSound(const std::string& path)
 	{
-		std::optional<std::string> sfxOpt = this->audioDevice->loadSFX(path);
+		std::optional<std::string> sfxOpt = Runtime::_audioDevice->loadSFX(path);
 		if (!sfxOpt)
 			return false;
 
@@ -92,59 +68,17 @@ namespace vel
 		return true;
 	}
 
-	void Scene::setAudioDevice(AudioDevice* ad)
-	{
-		if (ad == nullptr)
-			return;
-
-		this->audioDevice = ad;
-		this->audioGroupKey = ad->generateGroupKey();
-	}
-
 	int Scene::getAudioDeviceGroupKey()
 	{
 		return this->audioGroupKey;
 	}
 
-	void Scene::setInputState(const InputState* is)
-	{
-		this->inputState = is;
-	}
-
-	glm::ivec2 Scene::getResolution()
-	{
-		return this->resolution;
-	}
-
-	void Scene::setResolution(int x, int y)
-	{
-		this->resolution = glm::ivec2(x, y);
-	}
-
-	glm::ivec2 Scene::getWindowSize()
-	{
-		return this->windowSize;
-	}
-
-	void Scene::setWindowSize(int x, int y)
-	{
-		this->windowSize = glm::ivec2(x, y);
-	}
-
 	Camera* Scene::addCamera(const std::string& name, CameraType type)
 	{
 		std::unique_ptr<Camera> c = std::make_unique<Camera>(name, type);
-		c->setResolution(this->resolution.x, this->resolution.y);
 
 		Camera* cameraPtr = c.get();
 		this->cameras.push_back(std::move(c));
-
-		cameraPtr->setGpu(this->gpu);
-		cameraPtr->setRenderTarget(this->gpu->createRenderTarget(
-			(cameraPtr->getName() + "_RT"),
-			cameraPtr->getResolution().x,
-			cameraPtr->getResolution().y
-		));
 
 		return cameraPtr;
 	}
@@ -171,38 +105,38 @@ namespace vel
 		SPDLOG_DEBUG("Freeing assets for scene: {}", this->name);
 		
 		for (auto& pMaterial : this->materialsInUse)
-			this->assetManager->removeMaterial(pMaterial);
+			Runtime::_assetManager->removeMaterial(pMaterial);
 		
 		for (auto& pTexture : this->texturesInUse)
-			this->assetManager->removeTexture(pTexture);
+			Runtime::_assetManager->removeTexture(pTexture);
 
 		for (auto& pFontBitmap : this->fontBitmapsInUse)
-			this->assetManager->removeFontBitmap(pFontBitmap);
+			Runtime::_assetManager->removeFontBitmap(pFontBitmap);
 		
 		for (auto& pMesh : this->meshesInUse)
-			this->assetManager->removeMesh(pMesh);
+			Runtime::_assetManager->removeMesh(pMesh);
         
 		for (auto& pShader : this->shadersInUse)
-			this->assetManager->removeShader(pShader);
+			Runtime::_assetManager->removeShader(pShader);
 
 		for (auto& cw : this->collisionWorlds)
 			delete cw;
 
 		for (auto& s : this->soundsInUse)
-			this->audioDevice->removeSound(s);
+			Runtime::_audioDevice->removeSound(s);
 
 		for (auto& s : this->skeletonsInUse)
-			this->assetManager->removeSkeleton(s);
+			Runtime::_assetManager->removeSkeleton(s);
 
 		for (auto& a : this->animationsInUse)
-			this->assetManager->removeAnimation(a);
+			Runtime::_assetManager->removeAnimation(a);
 
 
 		for (auto& c : this->cameras)
-			this->gpu->clearRenderTarget(c->getRenderTarget());
+			Runtime::_gpu->clearRenderTarget(&c->getRenderTarget());
 		this->cameras.clear();
 
-		this->gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
+		Runtime::_gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
 	}
 
 	void Scene::setScreenTint(glm::vec4 c)
@@ -217,7 +151,7 @@ namespace vel
 
 	FontBitmap* Scene::loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath)
 	{
-		FontBitmap* fb = this->assetManager->loadFontBitmap(fontName, fontSize, fontPath);
+		FontBitmap* fb = Runtime::_assetManager->loadFontBitmap(fontName, fontSize, fontPath);
 
 		this->fontBitmapsInUse.push_back(fb);
 
@@ -226,7 +160,7 @@ namespace vel
 
 	FontBitmap* Scene::loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath)
 	{
-		FontBitmap* fb = this->assetManager->loadFontBitmapVisualHeight(fontName, desiredVisiblePx, fontPath);
+		FontBitmap* fb = Runtime::_assetManager->loadFontBitmapVisualHeight(fontName, desiredVisiblePx, fontPath);
 
 		this->fontBitmapsInUse.push_back(fb);
 
@@ -235,7 +169,7 @@ namespace vel
 
 	Texture* Scene::loadTexture(const std::string& name, const std::string& path, int options)
 	{
-		Texture* t = this->assetManager->loadTexture(name, path, options);
+		Texture* t = Runtime::_assetManager->loadTexture(name, path, options);
 
 		this->texturesInUse.push_back(t);
 
@@ -274,7 +208,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(diffuseMaterialShader);
 
 		std::unique_ptr<DiffuseMaterial> m = std::make_unique<DiffuseMaterial>(name, diffuseMaterialShader);
@@ -282,7 +216,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<DiffuseMaterial*>(pMaterial);
@@ -295,7 +229,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseLightmapMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(diffuseLightmapMaterialShader);
 
 		std::unique_ptr<DiffuseLightmapMaterial> m = std::make_unique<DiffuseLightmapMaterial>(name, diffuseLightmapMaterialShader);
@@ -303,7 +237,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<DiffuseLightmapMaterial*>(pMaterial);
@@ -316,7 +250,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseAnimatedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseAnimatedMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(diffuseAnimatedMaterialShader);
 
 		std::unique_ptr<DiffuseAnimatedMaterial> m = std::make_unique<DiffuseAnimatedMaterial>(name, diffuseAnimatedMaterialShader);
@@ -324,7 +258,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<DiffuseAnimatedMaterial*>(pMaterial);
@@ -337,7 +271,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseAnimatedLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseAnimatedLightmapMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(diffuseAnimatedLightmapMaterialShader);
 
 		std::unique_ptr<DiffuseAnimatedLightmapMaterial> m = std::make_unique<DiffuseAnimatedLightmapMaterial>(name, diffuseAnimatedLightmapMaterialShader);
@@ -345,7 +279,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<DiffuseAnimatedLightmapMaterial*>(pMaterial);
@@ -358,7 +292,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseSkinnedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseSkinnedMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(diffuseSkinnedMaterialShader);
 
 		std::unique_ptr<DiffuseSkinnedMaterial> m = std::make_unique<DiffuseSkinnedMaterial>(name, diffuseSkinnedMaterialShader);
@@ -366,7 +300,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<DiffuseSkinnedMaterial*>(pMaterial);
@@ -381,7 +315,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* alphaMaskMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* alphaMaskMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(alphaMaskMaterialShader);
 
 		std::unique_ptr<AlphaMaskMaterial> m = std::make_unique<AlphaMaskMaterial>(name, alphaMaskMaterialShader);
@@ -389,7 +323,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<AlphaMaskMaterial*>(pMaterial);
@@ -402,7 +336,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* textMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* textMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(textMaterialShader);
 
 		std::unique_ptr<TextMaterial> m = std::make_unique<TextMaterial>(name, textMaterialShader);
@@ -410,7 +344,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<TextMaterial*>(pMaterial);
@@ -423,7 +357,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseAmbientCubeMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseAmbientCubeMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(diffuseAmbientCubeMaterialShader);
 
 		std::unique_ptr<DiffuseAmbientCubeMaterial> m = std::make_unique<DiffuseAmbientCubeMaterial>(name, diffuseAmbientCubeMaterialShader);
@@ -431,7 +365,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<DiffuseAmbientCubeMaterial*>(pMaterial);
@@ -444,7 +378,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseAmbientCubeSkinnedMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseAmbientCubeSkinnedMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(diffuseAmbientCubeSkinnedMaterialShader);
 
 		std::unique_ptr<DiffuseAmbientCubeSkinnedMaterial> m = std::make_unique<DiffuseAmbientCubeSkinnedMaterial>(name, diffuseAmbientCubeSkinnedMaterialShader);
@@ -452,7 +386,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<DiffuseAmbientCubeSkinnedMaterial*>(pMaterial);
@@ -465,7 +399,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* RGBAMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* RGBAMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(RGBAMaterialShader);
 
 		std::unique_ptr<RGBAMaterial> m = std::make_unique<RGBAMaterial>(name, RGBAMaterialShader);
@@ -473,7 +407,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<RGBAMaterial*>(pMaterial);
@@ -486,7 +420,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* RGBALineMaterialShader = this->assetManager->loadShader(shaderName, "line.vert", "line.geom", "line.frag", defs); // returns existing if already loaded
+		Shader* RGBALineMaterialShader = Runtime::_assetManager->loadShader(shaderName, "line.vert", "line.geom", "line.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(RGBALineMaterialShader);
 
 		std::unique_ptr<RGBALineMaterial> m = std::make_unique<RGBALineMaterial>(name, RGBALineMaterialShader);
@@ -494,7 +428,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<RGBALineMaterial*>(pMaterial);
@@ -507,7 +441,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* RGBALightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* RGBALightmapMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(RGBALightmapMaterialShader);
 
 		std::unique_ptr<RGBALightmapMaterial> m = std::make_unique<RGBALightmapMaterial>(name, RGBALightmapMaterialShader);
@@ -515,7 +449,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<RGBALightmapMaterial*>(pMaterial);
@@ -528,7 +462,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseCausticMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseCausticMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(diffuseCausticMaterialShader);
 
 		std::unique_ptr<DiffuseCausticMaterial> m = std::make_unique<DiffuseCausticMaterial>(name, diffuseCausticMaterialShader);
@@ -536,7 +470,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<DiffuseCausticMaterial*>(pMaterial);
@@ -549,7 +483,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseCausticLightmapMaterialShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* diffuseCausticLightmapMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(diffuseCausticLightmapMaterialShader);
 
 		std::unique_ptr<DiffuseCausticLightmapMaterial> m = std::make_unique<DiffuseCausticLightmapMaterial>(name, diffuseCausticLightmapMaterialShader);
@@ -557,7 +491,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<DiffuseCausticLightmapMaterial*>(pMaterial);
@@ -570,7 +504,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* theShader = this->assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		Shader* theShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 		this->shadersInUse.push_back(theShader);
 
 		std::unique_ptr<DiffuseSingleSelectableMaterial> m = std::make_unique<DiffuseSingleSelectableMaterial>(name, theShader);
@@ -578,32 +512,52 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = this->assetManager->addMaterial(std::move(m));
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<DiffuseSingleSelectableMaterial*>(pMaterial);
 	}
 
+	AnimatedBillboardMaterial* Scene::addAnimatedBillboardMaterial(const std::string& name, int opts)
+	{
+		std::vector<std::string> defs = AnimatedBillboardMaterial::shaderDefs;
+		std::string shaderName = "animatedBillboardMaterial";
+
+		this->setShaderOpts(opts, defs, shaderName);
+
+		Shader* animatedBillboardMaterialShader = Runtime::_assetManager->loadShader("NPCBillboardShader", "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
+		this->shadersInUse.push_back(animatedBillboardMaterialShader);
+
+		std::unique_ptr<AnimatedBillboardMaterial> m = std::make_unique<AnimatedBillboardMaterial>(name, animatedBillboardMaterialShader);
+
+		if (opts & MTRL_OPT_TRANSLUCENT)
+			m->setHasAlphaChannel(true);
+
+		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
+		this->materialsInUse.push_back(pMaterial);
+
+		return static_cast<AnimatedBillboardMaterial*>(pMaterial);
+	}
 
 
 	Shader* Scene::getShader(const std::string& name)
 	{
-		return this->assetManager->getShader(name);
+		return Runtime::_assetManager->getShader(name);
 	}
 
 	Texture* Scene::getTexture(const std::string& name)
 	{
-		return this->assetManager->getTexture(name);
+		return Runtime::_assetManager->getTexture(name);
 	}
 
 	FontBitmap* Scene::getFontBitmap(const std::string& name)
 	{
-		return this->assetManager->getFontBitmap(name);
+		return Runtime::_assetManager->getFontBitmap(name);
 	}
 
 	Material* Scene::getMaterial(const std::string& name)
 	{
-		return this->assetManager->getMaterial(name);
+		return Runtime::_assetManager->getMaterial(name);
 	}
 
 	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
@@ -616,7 +570,7 @@ namespace vel
 		ta->originType = originType;
 
 		// create the mesh using provided FontBitmap and text string
-		Mesh* pTam = this->assetManager->addMesh(std::move(this->assetManager->loadTextActorMesh(ta.get())));
+		Mesh* pTam = Runtime::_assetManager->addMesh(std::move(Runtime::_assetManager->loadTextActorMesh(ta.get())));
 		this->meshesInUse.push_back(pTam);
 
 		// create material
@@ -640,7 +594,7 @@ namespace vel
 		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);
 
 		// create the mesh
-		Mesh* pMesh = this->assetManager->addMesh(std::move(LineActor::segmentsToMesh(name, points)));
+		Mesh* pMesh = Runtime::_assetManager->addMesh(std::move(LineActor::segmentsToMesh(name, points)));
 		this->meshesInUse.push_back(pMesh);
 
 		bool hasAlpha = false;
@@ -671,7 +625,7 @@ namespace vel
 	{
 		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);
 
-		Mesh* pMesh = this->assetManager->addMesh(std::move(LineActor::pointsToMesh(name, points)));
+		Mesh* pMesh = Runtime::_assetManager->addMesh(std::move(LineActor::pointsToMesh(name, points)));
 		this->meshesInUse.push_back(pMesh);
 
 		bool hasAlpha = color.w < 0.999f;
@@ -692,7 +646,7 @@ namespace vel
 		std::unique_ptr<Mesh> tmpM = std::make_unique<Mesh>(name + "_mesh");
 		tmpM->initBillboardQuad(width, height);
 
-		Mesh* m = this->assetManager->addMesh(std::move(tmpM));
+		Mesh* m = Runtime::_assetManager->addMesh(std::move(tmpM));
 
 		this->meshesInUse.push_back(m);
 
@@ -706,7 +660,7 @@ namespace vel
 
 	Billboard* Scene::addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh)
 	{
-		this->assetManager->incrementMeshUsage(mesh);
+		Runtime::_assetManager->incrementMeshUsage(mesh);
 		this->meshesInUse.push_back(mesh);
 
 		Actor* a = stage->addActor(name, mesh, material);
@@ -748,11 +702,11 @@ namespace vel
 			{
 				c->update();
 
-				gpu->updateCameraViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different resolutions
+				Runtime::_gpu->updateCameraViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different resolutions
 
-				gpu->setRenderTarget(c->getRenderTarget());
+				Runtime::_gpu->setRenderTarget(&c->getRenderTarget());
 
-				gpu->setOpaqueRenderState();
+				Runtime::_gpu->setOpaqueRenderState();
 
 				bool foundFirstAlpha = false;
 
@@ -766,23 +720,23 @@ namespace vel
 						if (a->getMaterial()->getHasAlphaChannel() && !foundFirstAlpha)
 						{
 							foundFirstAlpha = true;
-							gpu->setAlphaRenderState();
+							Runtime::_gpu->setAlphaRenderState();
 						}
 
 						if (actorsFirstPass)
 							a->getMaterial()->preDraw(frameTime);
 
-						gpu->useShader(a->getMaterial()->getShader()); // only alters gpu state if necessary
-						gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
-						gpu->setActiveMaterial(a->getMaterial());
+						Runtime::_gpu->useShader(a->getMaterial()->getShader()); // only alters gpu state if necessary
+						Runtime::_gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
+						Runtime::_gpu->setActiveMaterial(a->getMaterial());
 
-						a->getMaterial()->draw(alpha, gpu, a.get(), c->getViewMatrix(), c->getProjectionMatrix());
+						a->getMaterial()->draw(alpha, Runtime::_gpu.get(), a.get(), c->getViewMatrix(), c->getProjectionMatrix());
 					}
 				}
 
 				actorsFirstPass = false;
 
-				gpu->composeFBOs();
+				Runtime::_gpu->composeFBOs();
 			}
 		}
 
@@ -790,33 +744,30 @@ namespace vel
 		// all stage camera's framebuffers are now updated, loop through each stage camera and check if it should display it's contents 
 
 		// now bind the scene's FinalRenderTarget. It's viewport size should always be the full size of the window, or screen in fullscreen mode
-		std::unique_ptr<FinalRenderTarget> updatedFRT =  gpu->updateFinalRenderTargetVPSize(
+		std::unique_ptr<FinalRenderTarget> updatedFRT = Runtime::_gpu->updateFinalRenderTargetVPSize(
 			this->sceneRenderTarget.get(), 
-			this->getWindowSize().x, 
-			this->getWindowSize().y
+			Runtime::_window->getWindowSize().x,
+			Runtime::_window->getWindowSize().y
 		);
 
 		if (updatedFRT)
 			this->sceneRenderTarget = std::move(updatedFRT);
 
 
-		gpu->setFinalRenderTarget(this->sceneRenderTarget.get());
+		Runtime::_gpu->setFinalRenderTarget(this->sceneRenderTarget.get());
 
 
 		for (auto& c : this->cameras)
 			if (c->isFinalRenderCam())
-				gpu->drawToFinalRenderTarget(c->getRenderTarget()->opaqueTexture.frames.at(0).dsaHandle);
+				Runtime::_gpu->drawToFinalRenderTarget(c->getRenderTarget().opaqueTexture.frames.at(0).dsaHandle);
 		
 
 		// call post process to apply post process shader while drawing into the default framebuffer for display to screen
-		gpu->setDefaultFrameBuffer();
-		gpu->drawToScreen(this->sceneRenderTarget.get(), this->screenTint);
+		Runtime::_gpu->setDefaultFrameBuffer();
+		Runtime::_gpu->drawToScreen(this->sceneRenderTarget.get(), this->screenTint);
 
-		// If you don't set glviewport back to the scene's render resolution (vs leaving it at the window resolution), mouse
-		// movement gets jacked up (scene resolution is not the same as the resolution value in the sceneRenderTarget, resolution
-		// in that object is for tracking the last rendered resolution of that framebuffer which should always be the size of the
-		// window (or screen in fullsreen mode) so that all previously rendered camera textures encompass the entire window)
-		gpu->setViewportSize(this->resolution.x, this->resolution.y);
+		// If you don't set glviewport back to the render resolution (vs leaving it at the window size), mouse movement gets jacked up 
+		Runtime::_gpu->setViewportSize(Runtime::_window->getResolution().x, Runtime::_window->getResolution().y);
 
 
 		// moving collision debug draw event as final thing as it draws directly to the screen buffer, and I don't want to have to 
@@ -827,23 +778,23 @@ namespace vel
 			if (cw->getIsActive() && cw->getDebugDrawer() != nullptr)
 			{
 				cw->getDynamicsWorld()->debugDrawWorld(); // load vertices into associated CollisionDebugDrawer
-				gpu->useShader(cw->getDebugDrawer()->getShaderProgram());
-				gpu->setShaderMat4("vp", cw->getCamera()->getProjectionMatrix() * cw->getCamera()->getViewMatrix());
-				gpu->debugDrawCollisionWorld(cw->getDebugDrawer()); // draw all loaded vertices with a single call and clear
+				Runtime::_gpu->useShader(cw->getDebugDrawer()->getShaderProgram());
+				Runtime::_gpu->setShaderMat4("vp", cw->getCamera()->getProjectionMatrix() * cw->getCamera()->getViewMatrix());
+				Runtime::_gpu->debugDrawCollisionWorld(cw->getDebugDrawer()); // draw all loaded vertices with a single call and clear
 			}
 		}
 //#endif
 	}
 
-	void Scene::clearAllRenderTargetBuffers(GPU* gpu)
+	void Scene::clearAllRenderTargetBuffers()
 	{
 		for (auto& c : this->cameras)
 		{
-			gpu->setRenderTarget(c->getRenderTarget());
-			gpu->clearRenderTargetBuffers(0.0f, 0.0f, 0.0f, 0.0f);
+			Runtime::_gpu->setRenderTarget(&c->getRenderTarget());
+			Runtime::_gpu->clearRenderTargetBuffers(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 		
-		gpu->clearFinalRenderTarget(this->sceneRenderTarget.get(), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+		Runtime::_gpu->clearFinalRenderTarget(this->sceneRenderTarget.get(), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
 		// calling this here SOMEHOW allowed the cleared color to bleed into the final render whenever the update rate was
 		// uncapped, and the screen window size was small. Moving it into the gpu::drawToScreen() method seems to have

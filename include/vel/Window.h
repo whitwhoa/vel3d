@@ -17,7 +17,6 @@ struct GLFWusercontext;
 
 namespace vel
 {
-
     class Window
     {
     private:

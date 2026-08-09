@@ -12,13 +12,17 @@ namespace vel
     Transform::Transform() :
         translation(glm::vec3(0.0f, 0.0f, 0.0f)),
         scale(glm::vec3(1.0f, 1.0f, 1.0f)),
-		rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f))
+		rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)),
+		matrix(glm::mat4(1.0f)),
+		matrixDirty(true)
     {}
 
     Transform::Transform(glm::vec3 t, glm::quat r, glm::vec3 s) :
         translation(t), 
         rotation(r), 
-        scale(s)
+        scale(s),
+		matrix(glm::mat4(1.0f)),
+		matrixDirty(true)
 	{}   
 
 	glm::vec3 Transform::getRotationEulers()

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 
-#include <vel/AssetManager.h>
 #include <vel/Scene/HeadlessScene.h>
 
 namespace vel
@@ -10,13 +9,12 @@ namespace vel
 	class HeadlessApp
 	{
 	protected:
-		AssetManager*									assetManager;
 		std::vector<std::unique_ptr<HeadlessScene>>		scenes;
 		HeadlessScene*									activeScene;
 		uint32_t										currentSimTick;
 
 	public:
-		HeadlessApp(AssetManager* am);
+		HeadlessApp();
 		~HeadlessApp();
 
 		void			addScene(std::unique_ptr<HeadlessScene> scene, bool makeActive = false);

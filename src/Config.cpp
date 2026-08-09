@@ -30,7 +30,8 @@ namespace vel
         fxaa(false),
         cursorHidden(false),
         lockResToWin(true),
-        openglDebugContext(false)
+        openglDebugContext(false),
+        headless(false)
 	{
         // User Config Parameters, if config.ini file exists
         std::optional<std::unordered_map<std::string, std::string>> ucpOpt = this->loadFromFile();

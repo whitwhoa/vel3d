@@ -1,16 +1,14 @@
 
 #include <spdlog/spdlog.h>
 
+#include <vel/Runtime.h>
 #include <vel/Scene/HeadlessScene.h>
 
 
 namespace vel
 {
-	HeadlessScene::HeadlessScene(const std::string& dataDir) :
-		tick(0),
-		dataDir(dataDir),
-		name(""),
-		assetManager(nullptr)
+	HeadlessScene::HeadlessScene() :
+		name("")
 	{}
 
 	HeadlessScene::~HeadlessScene() {}
@@ -35,26 +33,6 @@ namespace vel
 		return this->name;
 	}
 
-	void HeadlessScene::setTick(uint32_t t)
-	{
-		this->tick = t;
-	}
-
-	const uint32_t HeadlessScene::getTick() const
-	{
-		return this->tick;
-	}
-
-	const uint32_t* HeadlessScene::getTickPointer() const
-	{
-		return &this->tick;
-	}
-
-	void HeadlessScene::setAssetManager(AssetManager* am)
-	{
-		this->assetManager = am;
-	}
-
 	void HeadlessScene::stepPhysics(float delta)
 	{
 		for (auto& cw : this->collisionWorlds)
@@ -64,7 +42,7 @@ namespace vel
 
 	bool HeadlessScene::loadMesh(const std::string& path)
 	{
-		std::vector<Mesh*> loadedMeshes = this->assetManager->loadMesh(path);
+		std::vector<Mesh*> loadedMeshes = Runtime::_assetManager->loadMesh(path);
 		if (loadedMeshes.size() == 0)
 		{
 			SPDLOG_DEBUG("HeadlessScene::loadMesh: call to assetManager->loadMesh resulted in nullopt");
@@ -79,12 +57,12 @@ namespace vel
 
 	Mesh* HeadlessScene::getMesh(const std::string& name)
 	{
-		return this->assetManager->getMesh(name);
+		return Runtime::_assetManager->getMesh(name);
 	}
 
 	ozz::animation::Skeleton* HeadlessScene::loadSkeleton(const std::string& name, const std::string& path)
 	{
-		ozz::animation::Skeleton* s = this->assetManager->loadSkeleton(name, path);
+		ozz::animation::Skeleton* s = Runtime::_assetManager->loadSkeleton(name, path);
 
 		this->skeletonsInUse.push_back(name);
 
@@ -93,12 +71,12 @@ namespace vel
 
 	ozz::animation::Skeleton* HeadlessScene::getSkeleton(const std::string& name)
 	{
-		return this->assetManager->getSkeleton(name);
+		return Runtime::_assetManager->getSkeleton(name);
 	}
 
 	ozz::animation::Animation* HeadlessScene::loadAnimation(const std::string& name, const std::string& path)
 	{
-		ozz::animation::Animation* s = this->assetManager->loadAnimation(name, path);
+		ozz::animation::Animation* s = Runtime::_assetManager->loadAnimation(name, path);
 
 		this->animationsInUse.push_back(name);
 
@@ -107,7 +85,7 @@ namespace vel
 
 	ozz::animation::Animation* HeadlessScene::getAnimation(const std::string& name)
 	{
-		return this->assetManager->getAnimation(name);
+		return Runtime::_assetManager->getAnimation(name);
 	}
 
 	CollisionWorld* HeadlessScene::addCollisionWorld(const std::string& name, float gravity)
@@ -150,7 +128,7 @@ namespace vel
 
 	Stage* HeadlessScene::addStage(const std::string& name, int pos)
 	{
-		std::unique_ptr<Stage> s = std::make_unique<Stage>(name, this->assetManager, this->getTickPointer());
+		std::unique_ptr<Stage> s = std::make_unique<Stage>(name);
 		Stage* stage = s.get();
 
 		if (pos == -1 || pos >= static_cast<int>(this->stages.size()))

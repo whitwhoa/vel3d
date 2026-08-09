@@ -2,7 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include <vel/Render/GPU.h>
+#include <vel/Runtime.h>
 #include <vel/Render/Camera.h>
 
 
@@ -13,20 +13,20 @@ namespace vel
 {
 	Camera::Camera(const std::string& name, CameraType type) :
 		name(name),
-		type(type),
-		gpu(nullptr),
-		resolution(glm::ivec2(1280, 720)),
-		resolutionFixed(false),
+		resolution(Runtime::_window->getResolution()),
 		previousResolution(glm::ivec2(0, 0)),
+		renderTarget(Runtime::_gpu->createRenderTarget((name + "_RT"), resolution.x, resolution.y)),
+		type(type),
+		fovScale(75.0f),
 		nearPlane(0.1f),
 		farPlane(100.0f),
-		fovScale(75.0f),
 		position(glm::vec3(0.0f, 0.0f, 0.0f)),
 		lookAt(glm::vec3(0.0f, 0.0f, 0.0f)),
 		up(glm::vec3(0.0f, 1.0f, 0.0f)),
 		viewMatrix(glm::mat4(1.0f)),
 		projectionMatrix(glm::mat4(1.0f)),
-		finalRenderCam(true)
+		finalRenderCam(true),
+		resolutionFixed(false)
 	{
 
 	}
@@ -36,14 +36,9 @@ namespace vel
 		return this->lookAt;
 	}
 
-	RenderTarget* Camera::getRenderTarget()
+	RenderTarget& Camera::getRenderTarget()
 	{
-		return &this->renderTarget.value();
-	}
-
-	void Camera::setRenderTarget(RenderTarget rt)
-	{
-		this->renderTarget = rt;
+		return this->renderTarget;
 	}
 
 	bool Camera::isFinalRenderCam()
@@ -127,22 +122,12 @@ namespace vel
 
 	}
 
-	//void Camera::updateViewMatrix()
-	//{
-	//	if (type == CameraType::SCREEN_SPACE)
-	//	{
-	//		this->viewMatrix = glm::mat4(1.0f);
-	//		return;
-	//	}
-
-	//	this->viewMatrix = glm::lookAt(this->position, this->lookAt, this->up);
-	//}
-
 	void Camera::updateViewMatrix()
 	{
 		if (type == CameraType::SCREEN_SPACE)
 		{
-			this->viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-this->position.x, -this->position.y, 0.0f));
+			//this->viewMatrix = glm::mat4(1.0f); // static
+			this->viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-this->position.x, -this->position.y, 0.0f)); // allow movement
 			return;
 		}
 
@@ -173,8 +158,8 @@ namespace vel
 		{
 			SPDLOG_DEBUG("Camera::update: viewport size altered");
 
-			RenderTarget rt = this->gpu->createRenderTarget((this->getName() + "_RT"), currentResolution.x, currentResolution.y);
-			this->gpu->clearRenderTarget(&this->renderTarget.value());
+			RenderTarget rt = Runtime::_gpu->createRenderTarget((this->getName() + "_RT"), currentResolution.x, currentResolution.y);
+			Runtime::_gpu->clearRenderTarget(&this->renderTarget);
 			this->renderTarget = rt;
 		}
 
@@ -218,10 +203,4 @@ namespace vel
 	{
 		return this->position;
 	}
-
-	void Camera::setGpu(GPU* gpu)
-	{
-		this->gpu = gpu;
-	}
-
 }

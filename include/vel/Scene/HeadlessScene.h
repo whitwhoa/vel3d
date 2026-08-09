@@ -8,7 +8,6 @@
 #include <ozz/animation//runtime/animation.h>
 
 #include <vel/Scene/Stage/Stage.h>
-#include <vel/AssetManager.h>
 #include <vel/Physics/CollisionWorld.h>
 
 
@@ -19,10 +18,7 @@ namespace vel
 	class HeadlessScene
 	{
 	protected:
-		uint32_t								tick;
-		std::string								dataDir;
 		std::string								name = "";
-		AssetManager*							assetManager;
 		std::vector<std::unique_ptr<Stage>>		stages;
 		std::vector<CollisionWorld*> 			collisionWorlds;
 		std::vector<Mesh*>						meshesInUse;
@@ -46,7 +42,7 @@ namespace vel
 
 
 	public:
-		HeadlessScene(const std::string& dataDir);
+		HeadlessScene();
 		~HeadlessScene();
 
 		virtual bool							internalLoad();
@@ -56,12 +52,6 @@ namespace vel
 
 		void									setName(const std::string& n);
 		const std::string&						getName();
-
-		void									setTick(uint32_t t);
-		const uint32_t							getTick() const;
-		const uint32_t*							getTickPointer() const;
-
-		void									setAssetManager(AssetManager* am);
 
 		void									stepPhysics(float delta);
 

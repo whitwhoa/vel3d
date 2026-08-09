@@ -23,7 +23,6 @@ namespace vel
 	{
 	private:
 		std::string										name;
-		const uint32_t*									updateTick;
 		bool											visible;
 		bool											dynamic;
 		bool											lerpable;
@@ -58,7 +57,7 @@ namespace vel
 		void											_removeParentActor();
 		void											_removeChildActor(Actor* child);
 
-		void											_markTransformDirty();
+		void											_updatePrevTransform();
 		
 
 	public:
@@ -71,8 +70,6 @@ namespace vel
 
 
 		void											setDynamic(bool dynamic, bool lerpable = true);
-		void											setUpdateTick(const uint32_t* t);
-		const uint32_t*									getUpdateTick() const;
 
 		void											setName(std::string newName);
 		const std::string								getName() const;
@@ -107,10 +104,8 @@ namespace vel
 		void											addChildActor(Actor* a);
 		std::vector<Actor*>&							getChildActors();
 
-		//Transform&										getTransform();
 		const Transform&								getTransform() const;
 		const Transform&								getPreviousTransform() const;
-		//void											updatePreviousTransform();
 
 		glm::mat4										getWorldMatrix();
 		glm::mat4										getWorldRenderMatrix(float alpha); // contains logic for interpolation

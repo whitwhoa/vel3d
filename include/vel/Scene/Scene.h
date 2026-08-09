@@ -5,10 +5,7 @@
 #include <string>
 #include <optional>
 
-#include <vel/AssetManager.h>
 #include <vel/InputState.h>
-#include <vel/AudioDevice.h>
-#include <vel/Render/GPU.h>
 #include <vel/Render/Camera.h>
 #include <vel/Render/FinalRenderTarget.h>
 #include <vel/Physics/CollisionWorld.h>
@@ -34,6 +31,7 @@
 #include <vel/Scene/Stage/Actor/Material/DiffuseCausticMaterial.h>
 #include <vel/Scene/Stage/Actor/Material/DiffuseCausticLightmapMaterial.h>
 #include <vel/Scene/Stage/Actor/Material/DiffuseSingleSelectableMaterial.h>
+#include <vel/Scene/Stage/Actor/Material/AnimatedBillboardMaterial.h>
 
 
 namespace vel
@@ -41,14 +39,8 @@ namespace vel
 	class Scene : public HeadlessScene
 	{
 	private:
-		GPU*								gpu;
-		glm::ivec2							windowSize;
-		glm::ivec2							resolution;
-
-
-
-		std::vector<std::unique_ptr<Camera>>	cameras;
-		std::unique_ptr<FinalRenderTarget>		sceneRenderTarget;
+		std::vector<std::unique_ptr<Camera>>	cameras; // TODO: why ptr?
+		std::unique_ptr<FinalRenderTarget>		sceneRenderTarget; // TODO: why ptr?
 
 		float								animationTime;
 		glm::vec4							screenTint;
@@ -68,8 +60,6 @@ namespace vel
 
 		
 	protected:
-		const InputState*					inputState;
-		AudioDevice*						audioDevice;
 		int									audioGroupKey;
 
 		Texture*							loadTexture(const std::string& name, const std::string& path, int options = 0);
@@ -99,6 +89,7 @@ namespace vel
 		DiffuseCausticMaterial*				addDiffuseCausticMaterial(const std::string& name, int opts = 0);
 		DiffuseCausticLightmapMaterial*		addDiffuseCausticLightmapMaterial(const std::string& name, int opts = 0);
 		DiffuseSingleSelectableMaterial*	addDiffuseSingleSelectableMaterial(const std::string& name, int opts = 0);
+		AnimatedBillboardMaterial*			addAnimatedBillboardMaterial(const std::string& name, int opts = 0);
 
 
 		Shader*								getShader(const std::string& name);
@@ -127,42 +118,26 @@ namespace vel
 		
 
 	public:
-		Scene(const std::string& dataDir, GPU* gpu);
+		Scene();
 		~Scene();
 		virtual void						internalImmediateLoop(float frameTime, float renderLerpInterval);
 		virtual void						immediateLoop(float frameTime, float renderLerpInterval) = 0;
 
-		glm::ivec2							getResolution();
-		void								setResolution(int x, int y);
-
-		glm::ivec2							getWindowSize();
-		void								setWindowSize(int x, int y);
-
-		void								setInputState(const InputState* is);
-
 		void								lerpAnimators(float alpha);
 		void								draw(float frameTime, float alpha);
 
-		void								clearAllRenderTargetBuffers(GPU* gpu);
+		void								clearAllRenderTargetBuffers();
 
 		void								updateTextActors();
 
 		void								setScreenTint(glm::vec4 c);
 		void								clearScreenTint();
 
-		void								setAudioDevice(AudioDevice* ad);
-
 		int									getAudioDeviceGroupKey();
 		
-		void								initRenderTarget();
 		FinalRenderTarget*					getSceneRenderTarget();
 
 		void								updateBillboards();
-
-		void								setFrameTime(double ft);
-		double								getFrameTime() const;
-		void								setFrameRate(double fr);
-		double								getFrameRate() const;
 
 		void								updateAllCameraResolutions(int x, int y);
 
