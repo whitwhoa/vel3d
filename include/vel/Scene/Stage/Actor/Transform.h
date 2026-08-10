@@ -13,8 +13,6 @@ namespace vel
 		glm::vec3			translation;
 		glm::quat			rotation;
 		glm::vec3			scale;
-		glm::mat4			matrix;
-		bool				matrixDirty;
 
 	public:
 							Transform();

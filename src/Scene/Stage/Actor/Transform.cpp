@@ -8,21 +8,16 @@
 
 namespace vel
 {
-
     Transform::Transform() :
         translation(glm::vec3(0.0f, 0.0f, 0.0f)),
         scale(glm::vec3(1.0f, 1.0f, 1.0f)),
-		rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)),
-		matrix(glm::mat4(1.0f)),
-		matrixDirty(true)
+		rotation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f))
     {}
 
     Transform::Transform(glm::vec3 t, glm::quat r, glm::vec3 s) :
         translation(t), 
         rotation(r), 
-        scale(s),
-		matrix(glm::mat4(1.0f)),
-		matrixDirty(true)
+        scale(s)
 	{}   
 
 	glm::vec3 Transform::getRotationEulers()
@@ -34,31 +29,26 @@ namespace vel
     void Transform::setTranslation(glm::vec3 translation) 
     {
         this->translation = translation;
-		this->matrixDirty = true;
     }
 
 	void Transform::setRotation(glm::quat rotation)
 	{
 		this->rotation = rotation;
-		this->matrixDirty = true;
 	}
 
     void Transform::setRotation(float angle, glm::vec3 axis)
     {
 		this->rotation = glm::angleAxis(glm::radians(angle), axis);
-		this->matrixDirty = true;
     }
 
 	void Transform::appendRotation(float angle, glm::vec3 axis)
 	{
 		this->rotation *= glm::angleAxis(glm::radians(angle), axis);
-		this->matrixDirty = true;
 	}
 
     void Transform::setScale(glm::vec3 scale)
     {
         this->scale = scale;
-		this->matrixDirty = true;
     }
 
     const glm::vec3& Transform::getTranslation() const
@@ -86,29 +76,13 @@ namespace vel
 		//return m;
 
 		// Optimization 1
-		//glm::mat4 m = glm::mat4(1.0f);
-		//m = glm::toMat4(this->rotation);
-		//m[0] *= this->scale.x;
-		//m[1] *= this->scale.y;
-		//m[2] *= this->scale.z;
-		//m[3] = glm::vec4(this->translation, 1.0f);
-		//return m;
-
-		// Optimization 2
-		if (this->matrixDirty)
-		{
-			this->matrix = glm::toMat4(this->rotation);
-
-			this->matrix[0] *= this->scale.x;
-			this->matrix[1] *= this->scale.y;
-			this->matrix[2] *= this->scale.z;
-
-			this->matrix[3] = glm::vec4(this->translation, 1.0f);
-
-			this->matrixDirty = false;
-		}
-
-		return this->matrix;
+		glm::mat4 m = glm::mat4(1.0f);
+		m = glm::toMat4(this->rotation);
+		m[0] *= this->scale.x;
+		m[1] *= this->scale.y;
+		m[2] *= this->scale.z;
+		m[3] = glm::vec4(this->translation, 1.0f);
+		return m;
     }
 
 	glm::vec3 Transform::interpolateTranslations(const Transform& previousTransform, const Transform& currentTransform, float alpha)
