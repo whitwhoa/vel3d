@@ -62,7 +62,7 @@ namespace vel
 
 
 	public:
-		Stage::Stage(const std::string& name);
+		Stage(const std::string& name);
 		~Stage();
 
 		const std::string&	getName() const;
