@@ -48,7 +48,7 @@ namespace vel
 
 		Runtime::_assetManager->loadShader("debug", "debug.vert", "", "debug.frag"); // used for bullet's debug drawer
 		Runtime::_assetManager->loadShader("screen", "screen.vert", "", "screen.frag"); // join all frame buffer textures together before post-processing
-		Runtime::_assetManager->loadShader("post", "post.vert", "", "post.frag"); // join all frame buffer textures together before post-processing
+		Runtime::_assetManager->loadShader("post", "post.vert", "", "post.frag"); // post-processing
 		Runtime::_assetManager->loadShader("composite", "composite.vert", "", "composite.frag"); // used for rendering texture to screen buffer
 
 		Texture* ptrDefaultWhite = Runtime::_assetManager->loadTexture("defaultWhite", Runtime::_config.dataDir + "/textures/defaults/default.jpg");
