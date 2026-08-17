@@ -30,39 +30,32 @@ namespace vel
 	class GPU
 	{
 	private:
-        Shader*								screenShader;
-		Shader*								postShader;
-		Shader*								compositeShader;
-		uint64_t							defaultWhiteTextureHandle;
+		glm::vec4							zeroFillerVec;
+		glm::vec4							oneFillerVec;
+		glm::vec4							activeClearColorValues;
+
+		std::unique_ptr<Mesh>				screenSpaceMesh;
+		std::unique_ptr<Shader>				screenShader;
+		std::unique_ptr<Shader>				postShader;
+		std::unique_ptr<Shader>				compositeShader;
 		RenderTarget*						activeRenderTarget;
 		Shader*								activeShader;
 		Mesh*								activeMesh;
 		Material*							activeMaterial;
-		unsigned int						bonesUBO;
-		void								initBoneUBO();
-
-		unsigned int						texturesUBO;
-		void								initTextureUBO();
-
-		unsigned int						lightmapTextureUBO;
-		void								initLightMapTextureUBO();
-
-		Mesh								screenSpaceMesh;
-		void								initScreenSpaceMesh();
-
-		glm::vec4							zeroFillerVec;
-		glm::vec4							oneFillerVec;
-
-		glm::vec4							activeClearColorValues;
 		glm::ivec2							activeCameraViewportSize;
-		int									activeFramebuffer;
-
-		bool								useFXAA;
-
-
 		GLsync								prevFrameFence;
 
+		unsigned int						bonesUBO;
+		unsigned int						texturesUBO;
+		unsigned int						lightmapTextureUBO;
+		int									activeFramebuffer;
+		bool								useFXAA;
 
+		void								initBoneUBO();
+		void								initTextureUBO();
+		void								initLightMapTextureUBO();
+		void								initScreenSpaceMesh();
+		void								initShaders();
 
 		void								bindFrameBuffer(unsigned int fbo);
 
@@ -131,11 +124,6 @@ namespace vel
 		void								setRenderTarget(RenderTarget* rt);
 
 		void								drawToFinalRenderTarget(GLuint64 dsaHandle);
-
-		void								setScreenShader(Shader* s);
-		void								setPostShader(Shader* s);
-		void								setCompositeShader(Shader* s);
-		void								setDefaultWhiteTextureHandle(uint64_t th);
 
 		void								disableDepthMask();
 		void								enableDepthMask();

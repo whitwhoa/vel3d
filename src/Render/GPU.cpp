@@ -24,35 +24,55 @@
 namespace vel
 {
 	GPU::GPU(bool fxaa) :
-		screenShader(nullptr),
-		postShader(nullptr),
-		compositeShader(nullptr),
-		activeShader(nullptr),
-		activeMesh(nullptr),
-		activeMaterial(nullptr),
-		activeRenderTarget(nullptr),
-		screenSpaceMesh(Mesh("screenSpaceMesh")),
 		zeroFillerVec(glm::vec4(0.0f)),
 		oneFillerVec(1.0f),
 		activeClearColorValues(glm::vec4(0.0f)),
-		activeCameraViewportSize(glm::ivec2(1280, 720)),
-		activeFramebuffer(-1),
-		useFXAA(fxaa),
-		prevFrameFence(0)
-	{
-		//glClearColor(0.0f, 0.0f, 0.0f, 0.0f); // why?
 
-        //this->enableDepthTest();
+		screenSpaceMesh(std::make_unique<Mesh>("screenSpaceMesh")),
+		screenShader(std::make_unique<Shader>()),
+		postShader(std::make_unique<Shader>()),
+		compositeShader(std::make_unique<Shader>()),
+		activeRenderTarget(nullptr),
+		activeShader(nullptr),
+		activeMesh(nullptr),
+		activeMaterial(nullptr),
+		activeCameraViewportSize(glm::ivec2(1280, 720)),
+		prevFrameFence(0),
+
+		bonesUBO(0),
+		texturesUBO(0),
+		lightmapTextureUBO(0),
+		
+		activeFramebuffer(-1),
+		useFXAA(fxaa)
+		
+	{
 		this->enableBackfaceCulling();
+
 		this->initBoneUBO();
 		this->initTextureUBO();
 		this->initLightMapTextureUBO();
+
 		this->initScreenSpaceMesh();
+
+		this->initShaders();
 	}
 
 	GPU::~GPU()
 	{
-		this->clearMesh(&this->screenSpaceMesh);
+		this->clearMesh(this->screenSpaceMesh.get());
+
+		glDeleteBuffers(1, &this->bonesUBO);
+		glDeleteBuffers(1, &this->texturesUBO);
+		glDeleteBuffers(1, &this->lightmapTextureUBO);
+
+		this->bonesUBO = 0;
+		this->texturesUBO = 0;
+		this->lightmapTextureUBO = 0;
+
+		this->clearShader(this->screenShader.get());
+		this->clearShader(this->postShader.get());
+		this->clearShader(this->compositeShader.get());
 	}
 
 	std::unique_ptr<FinalRenderTarget> GPU::createFinalRenderTarget(const std::string& name, unsigned int width, unsigned int height)
@@ -205,14 +225,14 @@ namespace vel
 	{
 		this->setCompositeRenderState();
 		
-		this->useShader(this->compositeShader);
+		this->useShader(this->compositeShader.get());
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, this->activeRenderTarget->accumTexture.frames.at(0).id);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, this->activeRenderTarget->revealTexture.frames.at(0).id);
 		
-		this->useMesh(&this->screenSpaceMesh);
+		this->useMesh(this->screenSpaceMesh.get());
 
 		this->drawGpuMesh();		
 	}
@@ -223,35 +243,13 @@ namespace vel
 			GL_DEBUG_SEVERITY_NOTIFICATION, -1, message.c_str());
 	}
 
-	void GPU::setDefaultWhiteTextureHandle(uint64_t th)
-	{
-		this->defaultWhiteTextureHandle = th;
-	}
-
-	void GPU::setScreenShader(Shader* s)
-	{
-		this->screenShader = s;
-	}
-
-	void GPU::setPostShader(Shader* s)
-	{
-		this->postShader = s;
-	}
-
-	void GPU::setCompositeShader(Shader* s)
-	{
-		this->compositeShader = s;
-	}
-
 	void GPU::drawToFinalRenderTarget(GLuint64 dsaHandle)
 	{
-		this->useShader(this->screenShader);
+		this->useShader(this->screenShader.get());
 
 		this->updateTextureUBO(0, dsaHandle);
 
-		this->updateLightmapTextureUBO(this->defaultWhiteTextureHandle);
-
-		this->useMesh(&this->screenSpaceMesh);
+		this->useMesh(this->screenSpaceMesh.get());
 
 		this->drawGpuMesh();
 	}
@@ -262,7 +260,7 @@ namespace vel
 
 		this->disableBlend();
 
-		this->useShader(this->postShader);
+		this->useShader(this->postShader.get());
 
 		this->updateTextureUBO(0, frt->texture.frames.at(0).dsaHandle);
 
@@ -271,9 +269,7 @@ namespace vel
 		this->setShaderVec3("resolution", glm::vec3(frt->resolution.x, frt->resolution.y, 0.0f));
 		this->setShaderBool("enableFXAA", this->useFXAA);
 
-		this->updateLightmapTextureUBO(this->defaultWhiteTextureHandle);
-
-		this->useMesh(&this->screenSpaceMesh);
+		this->useMesh(this->screenSpaceMesh.get());
 
 		this->drawGpuMesh();
 
@@ -367,12 +363,12 @@ namespace vel
 		v3.materialUBOIndex = 0;
 
 		std::vector<Vertex> vs = { v0, v1, v2, v3 };
-		this->screenSpaceMesh.setVertices(vs);
+		this->screenSpaceMesh->setVertices(vs);
 
 		std::vector<unsigned int> is = { 0,1,2,0,2,3 };
-		this->screenSpaceMesh.setIndices(is);
+		this->screenSpaceMesh->setIndices(is);
 
-		this->loadMesh(&this->screenSpaceMesh);
+		this->loadMesh(this->screenSpaceMesh.get());
 	}
 
 	void GPU::enableBackfaceCulling()
@@ -441,13 +437,10 @@ namespace vel
 		glBufferData(GL_UNIFORM_BUFFER, MAX_SUPPORTED_BONES * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 		glBindBufferBase(GL_UNIFORM_BUFFER, 1, this->bonesUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-		//std::cout << "bonesUBO: " << this->bonesUBO << std::endl;
 	}
 
 	void GPU::updateBonesUBO(const std::vector<std::pair<unsigned int, glm::mat4>>& boneData)
 	{
-		
 		glBindBuffer(GL_UNIFORM_BUFFER, this->bonesUBO);
 
 		for (auto& bd : boneData)
@@ -479,7 +472,6 @@ namespace vel
 			glMakeTextureHandleNonResidentARB(td.dsaHandle);
 			glDeleteTextures(1, &td.id);
 		}
-		
 	}
 
 	void GPU::clearRenderTarget(RenderTarget* rt)
@@ -572,7 +564,6 @@ namespace vel
 		/////////////////////////////////////////////////////////
 		// Shader Program
 		/////////////////////////////////////////////////////////
-
 		unsigned int id;
 
 		id = glCreateProgram();
@@ -858,7 +849,7 @@ namespace vel
 	{
 		for (auto& td : t->frames)
 		{
-			//// create a texture buffer and bind it to context
+			// create a texture buffer and bind it to context
 			glGenTextures(1, &td.id);
 			glBindTexture(GL_TEXTURE_2D, td.id);
 
@@ -1215,4 +1206,256 @@ namespace vel
 		}
 	}
 
+	void GPU::initShaders()
+	{
+		////////////////////////////////////////////////////////
+		// Screen Shader
+		////////////////////////////////////////////////////////
+		this->screenShader->name = "screen";
+
+		this->screenShader->vertCode = R"GLSL(
+#version 460 core
+
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoords;
+layout (location = 3) in vec2 aLightMapCoords;
+layout (location = 4) in uint aTexId;
+
+out vec2 TexCoords;
+flat out uint TexId;
+
+void main()
+{
+    TexCoords = aTexCoords;
+	TexId = aTexId;
+
+	gl_Position = vec4(aPos, 1.0);
 }
+)GLSL";
+
+		this->screenShader->fragCode = R"GLSL(
+#version 460 core
+#extension GL_ARB_bindless_texture : require
+#extension GL_ARB_gpu_shader_int64 : require
+
+in vec2 TexCoords;
+in vec2 LMTexCoords;
+flat in uint TexId;
+
+const int MAX_TEXTURE_SLOTS = 250;
+layout (std140, binding = 0) uniform TexturesUBO
+{
+    sampler2D tex[MAX_TEXTURE_SLOTS];
+};
+
+out vec4 FragColor;
+
+void main()
+{	
+	FragColor = texture(tex[TexId], TexCoords).rgba;
+}
+)GLSL";
+
+		this->loadShader(this->screenShader.get());
+
+
+		////////////////////////////////////////////////////////
+		// Post Shader
+		////////////////////////////////////////////////////////
+		this->postShader->name = "post";
+
+		this->postShader->vertCode = R"GLSL(
+#version 460 core
+
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoords;
+layout (location = 3) in vec2 aLightMapCoords;
+layout (location = 4) in uint aTexId;
+
+out vec2 TexCoords;
+flat out uint TexId;
+
+void main()
+{
+    TexCoords = aTexCoords;
+	TexId = aTexId;
+
+	gl_Position = vec4(aPos, 1.0);
+}
+)GLSL";
+
+		this->postShader->fragCode = R"GLSL(
+#version 460 core
+#extension GL_ARB_bindless_texture : require
+#extension GL_ARB_gpu_shader_int64 : require
+
+in vec2 TexCoords;
+in vec2 LMTexCoords;
+flat in uint TexId;
+
+uniform vec4 tint;
+uniform vec3 resolution;
+uniform bool enableFXAA;
+
+const int MAX_TEXTURE_SLOTS = 250;
+layout (std140, binding = 0) uniform TexturesUBO
+{
+    sampler2D tex[MAX_TEXTURE_SLOTS];
+};
+
+out vec4 FragColor;
+
+vec3 applyFXAA(sampler2D tex, vec2 uv, vec2 res)
+{
+    vec2 inverseResolution = 1.0 / res;
+
+    // Sample positions
+    vec3 rgbNW = texture(tex, uv + (vec2(-1.0, -1.0) * inverseResolution)).rgb;
+    vec3 rgbNE = texture(tex, uv + (vec2( 1.0, -1.0) * inverseResolution)).rgb;
+    vec3 rgbSW = texture(tex, uv + (vec2(-1.0,  1.0) * inverseResolution)).rgb;
+    vec3 rgbSE = texture(tex, uv + (vec2( 1.0,  1.0) * inverseResolution)).rgb;
+    vec3 rgbM  = texture(tex, uv).rgb;
+
+    // Luma (brightness)
+    float lumaNW = dot(rgbNW, vec3(0.299, 0.587, 0.114));
+    float lumaNE = dot(rgbNE, vec3(0.299, 0.587, 0.114));
+    float lumaSW = dot(rgbSW, vec3(0.299, 0.587, 0.114));
+    float lumaSE = dot(rgbSE, vec3(0.299, 0.587, 0.114));
+    float lumaM  = dot(rgbM,  vec3(0.299, 0.587, 0.114));
+
+    float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+    float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+
+    // Early exit: if contrast is too low, skip FXAA
+    if (lumaMax - lumaMin < max(0.0312, lumaMax * 0.125))
+        return rgbM;
+    
+    // Edge detection
+    vec2 dir;
+    dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
+    dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
+
+    float dirReduce = max(
+        (lumaNW + lumaNE + lumaSW + lumaSE) * (0.25 * 0.5),
+        1.0 / 32.0
+    );
+    float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+    dir = clamp(dir * rcpDirMin, vec2(-8.0), vec2(8.0)) * inverseResolution;
+
+    // Sample along the edge direction
+    vec3 rgbA = 0.5 * (
+        texture(tex, uv + dir * (1.0/3.0 - 0.5)).rgb +
+        texture(tex, uv + dir * (2.0/3.0 - 0.5)).rgb
+    );
+    vec3 rgbB = rgbA * 0.5 + 0.25 * (
+        texture(tex, uv + dir * -0.5).rgb +
+        texture(tex, uv + dir * 0.5).rgb
+    );
+
+    // Choose based on brightness range
+    float lumaB = dot(rgbB, vec3(0.299, 0.587, 0.114));
+    if ((lumaB < lumaMin) || (lumaB > lumaMax))
+        return rgbA;
+    else
+        return rgbB;
+}
+
+void main()
+{	
+	if (enableFXAA)
+	{
+		vec3 fxaaResult = applyFXAA(tex[TexId], TexCoords, vec2(resolution.x, resolution.y));
+		FragColor = mix(vec4(fxaaResult, 1.0), vec4(tint.rgb, 1.0), tint.a);
+	}
+	else
+	{
+		vec4 texColor = texture(tex[TexId], TexCoords);
+		FragColor = mix(texColor, vec4(tint.rgb, 1.0), tint.a);
+	}
+}
+)GLSL";
+
+		this->loadShader(this->postShader.get());
+
+
+		////////////////////////////////////////////////////////
+		// Composite Shader
+		////////////////////////////////////////////////////////
+		this->compositeShader->name = "composite";
+
+		this->compositeShader->vertCode = R"GLSL(
+#version 460 core
+
+layout (location = 0) in vec3 position;
+
+void main()
+{
+	gl_Position = vec4(position, 1.0f);
+}
+)GLSL";
+
+		this->compositeShader->fragCode = R"GLSL(
+#version 460 core
+#extension GL_ARB_bindless_texture : require
+#extension GL_ARB_gpu_shader_int64 : require
+
+// shader outputs
+layout (location = 0) out vec4 frag;
+
+// color accumulation buffer
+layout (binding = 0) uniform sampler2D accum;
+
+// revealage threshold buffer
+layout (binding = 1) uniform sampler2D reveal;
+
+// epsilon number
+const float EPSILON = 0.00001f;
+
+// calculate floating point numbers equality accurately
+bool isApproximatelyEqual(float a, float b)
+{
+	return abs(a - b) <= (abs(a) < abs(b) ? abs(b) : abs(a)) * EPSILON;
+}
+
+// get the max value between three values
+float max3(vec3 v) 
+{
+	return max(max(v.x, v.y), v.z);
+}
+
+void main()
+{
+	// fragment coordination
+	ivec2 coords = ivec2(gl_FragCoord.xy);
+	
+	// fragment revealage
+	float revealage = texelFetch(reveal, coords, 0).r;
+	
+	// save the blending and color texture fetch cost if there is not a transparent fragment
+	if (isApproximatelyEqual(revealage, 1.0f)) 
+		discard;
+ 
+	// fragment color
+	vec4 accumulation = texelFetch(accum, coords, 0);
+	
+	// suppress overflow
+	if (isinf(max3(abs(accumulation.rgb)))) 
+		accumulation.rgb = vec3(accumulation.a);
+
+	// prevent floating point precision bug
+	vec3 average_color = accumulation.rgb / max(accumulation.a, EPSILON);
+
+	// blend pixels
+	frag = vec4(average_color, 1.0f - revealage);
+}
+)GLSL";
+
+		this->loadShader(this->compositeShader.get());
+
+	}
+
+
+
+} // END NAMESPACE

@@ -286,6 +286,10 @@ namespace vel
 
 	void Stage::updateTextActor(TextActor* ta)
 	{
+		// TODO: since we are removing AssetManager, and migrating its functionality into
+		// HeadlessScene and Scene, this TextActor update logic will need to be moved into
+		// Scene, which will contain the necessary implementation to update a mesh
+
 		std::unique_ptr<Mesh> updatedMesh = std::move(Runtime::_assetManager->loadTextActorMesh(ta));
 		ta->actor->getMesh()->setVertices(updatedMesh->getVertices());
 		ta->actor->getMesh()->setIndices(updatedMesh->getIndices());
