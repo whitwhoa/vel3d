@@ -45,7 +45,7 @@ namespace vel
 		float								animationTime;
 		glm::vec4							screenTint;
 
-		std::vector<Shader*>				shadersInUse;
+		std::unordered_map<std::string, std::unique_ptr<Shader>>	shaders;
 		std::vector<Texture*> 				texturesInUse;
 		std::vector<Material*> 				materialsInUse;
 		std::vector<FontBitmap*> 			fontBitmapsInUse;
@@ -54,7 +54,7 @@ namespace vel
 		double								frameTime;
 		double								frameRate;
 
-		void								freeAssets();
+		void								freeAssets() override;
 
 		void								setShaderOpts(int opts, std::vector<std::string>& defs, std::string& shaderName);
 
@@ -91,8 +91,6 @@ namespace vel
 		DiffuseSingleSelectableMaterial*	addDiffuseSingleSelectableMaterial(const std::string& name, int opts = 0);
 		AnimatedBillboardMaterial*			addAnimatedBillboardMaterial(const std::string& name, int opts = 0);
 
-
-		Shader*								getShader(const std::string& name);
 		Texture*							getTexture(const std::string& name);
 		FontBitmap*							getFontBitmap(const std::string& name);
 		Camera*								getCamera(const std::string& name);
@@ -114,6 +112,27 @@ namespace vel
 		// if we have 100 enemies that all use the same size billboard, they can all use the same mesh, and we don't have to 
 		// make 100 extra calls into the graphics driver to swap vaos)
 		Billboard* addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh);
+
+
+
+
+
+		std::optional<std::string>	loadShaderFile(const std::string& shaderPath);
+		std::string					getTopShaderLines(const std::string& shaderCode, int numLinesToGet);
+		std::string					getBottomShaderLines(const std::string& shaderCode, int numLinesToSkip);
+		Shader*						loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, const std::string& fragFile, std::vector<std::string> defs = {});
+		Shader*						getShader(const std::string& name);
+		void						removeShader(const Shader* pShader);
+
+
+		std::vector<Mesh*>			loadMesh(const std::string& path) override;
+		Mesh*						addMesh(std::unique_ptr<Mesh> m) override;
+		void						updateRenderMesh(Mesh* m);
+		void						removeMesh(Mesh* pMesh) override;
+
+
+
+
 
 		
 

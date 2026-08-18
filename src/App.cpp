@@ -64,14 +64,14 @@ namespace vel
 		return this->activeScene;
 	}
 
-	void App::removeScene(const std::string& name)
+	void App::removeScene(unsigned int id)
 	{
-		SPDLOG_DEBUG("App::removeScene: Removing Scene: {}", name);
+		SPDLOG_DEBUG("App::removeScene: Removing Scene: {}", id);
 
 		size_t i = 0;
 		for (auto& s : this->scenes)
 		{
-			if (s->getName() == name)
+			if (s->getId() == id)
 				break;
 			
 			i++;
@@ -79,32 +79,14 @@ namespace vel
 
 		this->scenes.erase(this->scenes.begin() + i);
 	}
-	
-	bool App::sceneExists(const std::string& name)
+
+	void App::swapScene(unsigned int id)
 	{
-		for (auto& s : this->scenes)
-			if (s->getName() == name)
-				return true;
-
-		return false;
-	}
-
-	Scene* App::getScene(const std::string& name)
-	{
-		for (auto& s : this->scenes)
-			if (s->getName() == name)
-				return s.get();
-
-		return nullptr;
-	}
-
-	void App::swapScene(const std::string& name)
-	{
-		SPDLOG_DEBUG("App::swapScene: Swapping to Scene: {}", name);
+		SPDLOG_DEBUG("App::swapScene: Swapping to Scene: {}", id);
 
 		for (auto& s : this->scenes)
 		{
-			if (s->getName() == name)
+			if (s->getId() == id)
 			{
 				// pause current scene audio if it holds a valid group key
 				if (this->activeScene && this->activeScene->getAudioDeviceGroupKey() != -1)
@@ -125,11 +107,7 @@ namespace vel
 
     bool App::addScene(std::unique_ptr<Scene> scene, bool makeActive)
     {
-		std::string className = typeid(*scene).name();// name is "class Test" when we need just "Test", so trim off "class "
-		className.erase(0, 6);
-		scene->setName(className);
-
-		SPDLOG_DEBUG("App::addScene: Adding Scene: {}", className);
+		SPDLOG_DEBUG("App::addScene: Adding new Scene");
 		
 		this->scenes.push_back(std::move(scene));
 

@@ -16,11 +16,7 @@ namespace vel
 
 	void HeadlessApp::addScene(std::unique_ptr<HeadlessScene> scene, bool makeActive)
 	{
-		std::string className = typeid(*scene).name();// name is "class Test" when we need just "Test", so trim off "class "
-		className.erase(0, 6);
-		scene->setName(className);
-
-		SPDLOG_DEBUG("HeadlessApp::addScene: Adding HeadlessScene: {}", className);
+		SPDLOG_DEBUG("HeadlessApp::addScene: Adding new HeadlessScene");
 
 		this->scenes.push_back(std::move(scene));
 
@@ -31,14 +27,14 @@ namespace vel
 			this->activeScene = ptrScene;
 	}
 
-	void HeadlessApp::removeScene(const std::string& name)
+	void HeadlessApp::removeScene(unsigned int id)
 	{
-		SPDLOG_DEBUG("HeadlessApp::removeScene: Removing Scene: {}", name);
+		SPDLOG_DEBUG("HeadlessApp::removeScene: Removing Scene: {}", id);
 
 		size_t i = 0;
 		for (auto& s : this->scenes)
 		{
-			if (s->getName() == name)
+			if (s->getId() == id)
 				break;
 
 			i++;
@@ -47,30 +43,12 @@ namespace vel
 		this->scenes.erase(this->scenes.begin() + i);
 	}
 
-	bool HeadlessApp::sceneExists(const std::string& name)
+	void HeadlessApp::swapScene(unsigned int id)
 	{
-		for (auto& s : this->scenes)
-			if (s->getName() == name)
-				return true;
-
-		return false;
-	}
-
-	HeadlessScene* HeadlessApp::getScene(const std::string& name)
-	{
-		for (auto& s : this->scenes)
-			if (s->getName() == name)
-				return s.get();
-
-		return nullptr;
-	}
-
-	void HeadlessApp::swapScene(const std::string& name)
-	{
-		SPDLOG_DEBUG("HeadlessScene::swapScene: Swapping to Scene: {}", name);
+		SPDLOG_DEBUG("HeadlessScene::swapScene: Swapping to Scene: {}", id);
 
 		for (auto& s : this->scenes)
-			if (s->getName() == name)
+			if (s->getId() == id)
 				this->activeScene = s.get();
 	}
 

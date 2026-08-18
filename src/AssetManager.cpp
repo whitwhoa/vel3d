@@ -21,7 +21,7 @@
 
 #include <vel/AssetManager.h>
 #include <vel/Util/functions.h>
-#include <vel/Scene/Stage/Actor/Mesh/AssimpMeshLoader.h>
+//#include <vel/Scene/Stage/Actor/Mesh/AssimpMeshLoader.h>
 
 
 using namespace std::chrono_literals;
@@ -31,354 +31,147 @@ namespace vel
 
 	AssetManager::AssetManager(const std::string& dataDir, GPU* gpu) :
 		dataDir(dataDir),
-		meshLoader(std::make_unique<vel::AssimpMeshLoader>()),
+		//meshLoader(std::make_unique<vel::AssimpMeshLoader>()),
 		gpu(gpu)
 	{}
 	AssetManager::~AssetManager(){}
 
-	
-
-	/***********************************************************************************************
-	* SHADERS
-	************************************************************************************************/
-	int AssetManager::getShaderIndex(const std::string& name)
-	{
-		for (int i = 0; i < this->shaders.size(); i++)
-			if (this->shaders.at(i).first->name == name)
-				return i;
-
-		return -1;
-	}
-
-	int AssetManager::getShaderIndex(const Shader* s)
-	{
-		for (int i = 0; i < this->shaders.size(); i++)
-			if (this->shaders.at(i).first.get() == s)
-				return i;
-
-		return -1;
-	}
-
-	std::optional<std::string> AssetManager::loadShaderFile(const std::string& shaderPath)
-	{
-		std::ifstream shaderFile(shaderPath);
-
-		if (!shaderFile.is_open()) 
-		{
-			SPDLOG_DEBUG("AssetManager::loadShaderFile(): could not open shader file: {}", shaderPath);
-			return std::nullopt;
-		}
-
-		std::stringstream shaderStream;
-		shaderStream << shaderFile.rdbuf();
-		shaderFile.close();
-
-		if (shaderStream.str().empty()) 
-		{
-			SPDLOG_DEBUG("AssetManager::loadShaderFile(): Shader file is empty: {}", shaderPath);
-			return std::nullopt;
-		}
-
-		return shaderStream.str();
-	}
-
-	std::string AssetManager::getTopShaderLines(const std::string& shaderCode, int numLinesToGet)
-	{
-		std::istringstream shaderStream(shaderCode);
-		std::string line;
-		std::string firstLines;
-
-		for (int i = 0; i < numLinesToGet; ++i) 
-		{
-			std::getline(shaderStream, line);
-			firstLines += line + "\n";
-		}
-
-		return firstLines;
-	}
-
-	std::string AssetManager::getBottomShaderLines(const std::string& shaderCode, int numLinesToSkip)
-	{
-		std::istringstream shaderStream(shaderCode);
-		std::string line;
-
-		// Skip the specified number of lines
-		for (int i = 0; i < numLinesToSkip; ++i) 
-			std::getline(shaderStream, line);
-
-		// Return the remaining shader code
-		std::stringstream remainingShaderCode;
-		remainingShaderCode << shaderStream.rdbuf();
-
-		return remainingShaderCode.str();
-	}
-
-	Shader* AssetManager::loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, 
-		const std::string& fragFile, std::vector<std::string> defs)
-	{
-		int shaderIndex = this->getShaderIndex(name);
-
-		if (shaderIndex > -1)
-		{
-			SPDLOG_DEBUG("Existing Shader, bypass reload: {}", name);
-			
-			this->shaders.at(shaderIndex).second++;
-
-			return this->shaders.at(shaderIndex).first.get();
-		}
-
-		SPDLOG_DEBUG("Loading new Shader: {}", name);
-
-
-		// Process vertex shader script
-		std::optional<std::string> vcOpt = this->loadShaderFile(this->dataDir + "/shaders/" + vertFile);
-		if (!vcOpt)
-			return nullptr;
-
-		std::string vertexCode = vcOpt.value();
-		std::string topVertexLines = this->getTopShaderLines(vertexCode, 10);
-		std::string bottomVertexLines = this->getBottomShaderLines(vertexCode, 10);
-		std::stringstream preprocessedVertexCode;
-		preprocessedVertexCode << topVertexLines;
-			
-		for (const auto& def : defs) // preload defs into scripts
-			preprocessedVertexCode << "#define " << def << "\n";
 
-		preprocessedVertexCode << bottomVertexLines;
+	///***********************************************************************************************
+	//* MESHES
+	//************************************************************************************************/
+	//int AssetManager::getMeshIndex(const std::string& name)
+	//{
+	//	for (int i = 0; i < this->meshes.size(); i++)
+	//		if (this->meshes.at(i).first->getName() == name)
+	//			return i;
+
+	//	return -1;
+	//}
+
+	//int AssetManager::getMeshIndex(const Mesh* m)
+	//{
+	//	for (int i = 0; i < this->meshes.size(); i++)
+	//		if (this->meshes.at(i).first.get() == m)
+	//			return i;
+
+	//	return -1;
+	//}
+
+	//std::vector<Mesh*> AssetManager::loadMesh(const std::string& path)
+	//{
+	//	const std::vector<std::string>& preLoadData = this->meshLoader->preload(path);
+	//	if (preLoadData.size() == 0)
+	//	{
+	//		SPDLOG_DEBUG("AssetManager::loadMesh: failed to preload required data for loading of mesh");
+	//		return {};
+	//	}
+
+	//	std::vector<Mesh*> out;
+
+	//	// check for duplicates
+	//	std::vector<std::string> requiredData;
+	//	for (auto& pld : preLoadData)
+	//	{
+	//		int meshIndex = this->getMeshIndex(pld);
+
+	//		if (meshIndex == -1)
+	//		{
+	//			requiredData.push_back(pld);
+	//		}		
+	//		else
+	//		{
+	//			SPDLOG_DEBUG("Existing Mesh, bypass reload: {}", pld);
+	//			this->meshes.at(meshIndex).second++;
+	//			out.push_back(this->meshes.at(meshIndex).first.get());
+	//		}
+	//	}
+
+	//	std::vector<std::unique_ptr<Mesh>> loadedAssets = this->meshLoader->load(&requiredData);
+
+	//	for (auto& lam : loadedAssets)
+	//	{
+	//		this->meshes.push_back(std::pair<std::unique_ptr<Mesh>, int>(std::move(lam), 1));
+	//		out.push_back(this->meshes.back().first.get());
+
+	//		if (this->gpu != nullptr)
+	//			this->gpu->loadMesh(this->meshes.back().first.get());
+	//	}
+
+	//	this->meshLoader->reset();
+	//		
+	//	return out;
+	//}
+
+	//// This method assumes that the caller understands no duplication checks are occuring
+	//Mesh* AssetManager::addMesh(std::unique_ptr<Mesh> m)
+	//{		
+	//	this->meshes.push_back(std::pair<std::unique_ptr<Mesh>, int>(std::move(m), 1));
+
+	//	if(this->gpu != nullptr)
+	//		this->gpu->loadMesh(this->meshes.back().first.get());
+
+	//	return this->meshes.back().first.get();
+	//}
+
+	//void AssetManager::incrementMeshUsage(const Mesh* pMesh)
+	//{
+	//	for (auto& meshUsagePair : this->meshes)
+	//	{
+	//		if (meshUsagePair.first.get() == pMesh)
+	//		{
+	//			meshUsagePair.second++;
+	//			return;
+	//		}
+	//	}
+
+	//	SPDLOG_DEBUG("{} is not an existing mesh, and cannot be incremented", pMesh->getName());
+	//}
+
+	//// updates gpu state of provided Mesh*
+	//void AssetManager::updateMesh(Mesh* m)
+	//{
+	//	if (this->gpu != nullptr)
+	//		this->gpu->updateMesh(m);
+	//}
+
+	//Mesh* AssetManager::getMesh(const std::string& name)
+	//{
+	//	int meshIndex = this->getMeshIndex(name);
 
-		vertexCode = preprocessedVertexCode.str();
+	//	if (meshIndex == -1)
+	//	{
+	//		SPDLOG_ERROR("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
+	//		return nullptr;
+	//	}
 
+	//	return this->meshes.at(meshIndex).first.get();
+	//}
+	//
+	//void AssetManager::removeMesh(const Mesh* pMesh)
+	//{
+	//	int meshIndex = this->getMeshIndex(pMesh);
 
-		// Process Geometry shader script
-		std::string geomCode = "";
-		if (geomFile != "")
-		{
-			std::optional<std::string> gcOpt = this->loadShaderFile(this->dataDir + "/shaders/" + geomFile);
-			if (!gcOpt)
-				return nullptr;
+	//	if (meshIndex == -1)
+	//		return;
 
-			geomCode = gcOpt.value();
-			std::string topGeomLines = this->getTopShaderLines(geomCode, 10);
-			std::string bottomGeomLines = this->getBottomShaderLines(geomCode, 10);
-			std::stringstream preprocessedGeomCode;
-			preprocessedGeomCode << topGeomLines;
+	//	auto& m = this->meshes.at(meshIndex);
+	//	m.second--;
 
-			for (const auto& def : defs) // preload defs into scripts
-				preprocessedGeomCode << "#define " << def << "\n";
+	//	if(m.second == 0)
+	//	{
+	//		SPDLOG_DEBUG("Full remove Mesh: {}", pMesh->getName());
 
-			preprocessedGeomCode << bottomGeomLines;
+	//		if (this->gpu != nullptr)
+	//			this->gpu->clearMesh(m.first.get());
 
-			geomCode = preprocessedGeomCode.str();
-		}
-			
-
-		// Process fragment shader script
-		std::optional<std::string> fcOpt = this->loadShaderFile(this->dataDir + "/shaders/" + fragFile);
-		if (!fcOpt)
-			return nullptr;
+	//		this->meshes.erase(this->meshes.begin() + meshIndex);
 
-		std::string fragmentCode = fcOpt.value();
-		std::string topFragmentLines = this->getTopShaderLines(fragmentCode, 10);
-		std::string bottomFragmentLines = this->getBottomShaderLines(fragmentCode, 10);
-		std::stringstream preprocessedFragmentCode;
-		preprocessedFragmentCode << topFragmentLines;
-
-		for (const auto& def : defs) // preload defs into scripts
-			preprocessedFragmentCode << "#define " << def << "\n";
-
-		preprocessedFragmentCode << bottomFragmentLines;			
-		fragmentCode = preprocessedFragmentCode.str();
-
-		
-		// Build the shader
-		std::unique_ptr<Shader> s = std::make_unique<Shader>();
-		s->name = name;
-		s->vertCode = vertexCode;
-		s->geomCode = geomCode;
-		s->fragCode = fragmentCode;
-
-		this->shaders.push_back(std::pair<std::unique_ptr<Shader>, int>(std::move(s), 1));
-
-		Shader* loadedShader = this->shaders.back().first.get();
-
-		this->gpu->loadShader(loadedShader);
-
-		return loadedShader;
-	}
-
-	Shader* AssetManager::getShader(const std::string& name)
-	{
-		int shaderIndex = this->getShaderIndex(name);
-
-		if (shaderIndex == -1)
-		{
-			SPDLOG_DEBUG("AssetManager::getShader(): Attempting to get shader that does not exist: {}", name);
-			return nullptr;
-		}
-
-		return this->shaders.at(shaderIndex).first.get();
-	}
-
-	void AssetManager::removeShader(const Shader* pShader)
-	{
-		int shaderIndex = this->getShaderIndex(pShader);
-
-		if (shaderIndex == -1)
-			return;
-
-		auto& s = this->shaders.at(shaderIndex);
-		s.second--;
-
-		if (s.second == 0)
-		{
-			SPDLOG_DEBUG("Full remove Shader: {}", pShader->name);
-			
-			this->gpu->clearShader(s.first.get());
-
-			this->shaders.erase(this->shaders.begin() + shaderIndex);
-
-			return;
-		}
-
-		SPDLOG_DEBUG("Decrement Shader usageCount, retain: {}", pShader->name);
-	}
-
-
-	/***********************************************************************************************
-	* MESHES
-	************************************************************************************************/
-	int AssetManager::getMeshIndex(const std::string& name)
-	{
-		for (int i = 0; i < this->meshes.size(); i++)
-			if (this->meshes.at(i).first->getName() == name)
-				return i;
-
-		return -1;
-	}
-
-	int AssetManager::getMeshIndex(const Mesh* m)
-	{
-		for (int i = 0; i < this->meshes.size(); i++)
-			if (this->meshes.at(i).first.get() == m)
-				return i;
-
-		return -1;
-	}
-
-	std::vector<Mesh*> AssetManager::loadMesh(const std::string& path)
-	{
-		const std::vector<std::string>& preLoadData = this->meshLoader->preload(path);
-		if (preLoadData.size() == 0)
-		{
-			SPDLOG_DEBUG("AssetManager::loadMesh: failed to preload required data for loading of mesh");
-			return {};
-		}
-
-		std::vector<Mesh*> out;
-
-		// check for duplicates
-		std::vector<std::string> requiredData;
-		for (auto& pld : preLoadData)
-		{
-			int meshIndex = this->getMeshIndex(pld);
-
-			if (meshIndex == -1)
-			{
-				requiredData.push_back(pld);
-			}		
-			else
-			{
-				SPDLOG_DEBUG("Existing Mesh, bypass reload: {}", pld);
-				this->meshes.at(meshIndex).second++;
-				out.push_back(this->meshes.at(meshIndex).first.get());
-			}
-		}
-
-		std::vector<std::unique_ptr<Mesh>> loadedAssets = this->meshLoader->load(&requiredData);
-
-		for (auto& lam : loadedAssets)
-		{
-			this->meshes.push_back(std::pair<std::unique_ptr<Mesh>, int>(std::move(lam), 1));
-			out.push_back(this->meshes.back().first.get());
-
-			if (this->gpu != nullptr)
-				this->gpu->loadMesh(this->meshes.back().first.get());
-		}
-
-		this->meshLoader->reset();
-			
-		return out;
-	}
-
-	// This method assumes that the caller understands no duplication checks are occuring
-	Mesh* AssetManager::addMesh(std::unique_ptr<Mesh> m)
-	{		
-		this->meshes.push_back(std::pair<std::unique_ptr<Mesh>, int>(std::move(m), 1));
-
-		if(this->gpu != nullptr)
-			this->gpu->loadMesh(this->meshes.back().first.get());
-
-		return this->meshes.back().first.get();
-	}
-
-	void AssetManager::incrementMeshUsage(const Mesh* pMesh)
-	{
-		for (auto& meshUsagePair : this->meshes)
-		{
-			if (meshUsagePair.first.get() == pMesh)
-			{
-				meshUsagePair.second++;
-				return;
-			}
-		}
-
-		SPDLOG_DEBUG("{} is not an existing mesh, and cannot be incremented", pMesh->getName());
-	}
-
-	// updates gpu state of provided Mesh*
-	void AssetManager::updateMesh(Mesh* m)
-	{
-		if (this->gpu != nullptr)
-			this->gpu->updateMesh(m);
-	}
-
-	Mesh* AssetManager::getMesh(const std::string& name)
-	{
-		int meshIndex = this->getMeshIndex(name);
-
-		if (meshIndex == -1)
-		{
-			SPDLOG_ERROR("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
-			return nullptr;
-		}
-
-		return this->meshes.at(meshIndex).first.get();
-	}
-	
-	void AssetManager::removeMesh(const Mesh* pMesh)
-	{
-		int meshIndex = this->getMeshIndex(pMesh);
-
-		if (meshIndex == -1)
-			return;
-
-		auto& m = this->meshes.at(meshIndex);
-		m.second--;
-
-		if(m.second == 0)
-		{
-			SPDLOG_DEBUG("Full remove Mesh: {}", pMesh->getName());
-
-			if (this->gpu != nullptr)
-				this->gpu->clearMesh(m.first.get());
-
-			this->meshes.erase(this->meshes.begin() + meshIndex);
-
-			return;
-		}
-
-		SPDLOG_DEBUG("Decrement Mesh usageCount, retain: {}", pMesh->getName());
-	}
+	//		return;
+	//	}
+
+	//	SPDLOG_DEBUG("Decrement Mesh usageCount, retain: {}", pMesh->getName());
+	//}
 
 
 	/***********************************************************************************************

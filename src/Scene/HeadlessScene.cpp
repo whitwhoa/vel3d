@@ -3,15 +3,29 @@
 
 #include <vel/Runtime.h>
 #include <vel/Scene/HeadlessScene.h>
-
+#include <vel/Scene/Stage/Actor/Mesh/AssimpMeshLoader.h>
 
 namespace vel
 {
+	unsigned int HeadlessScene::nextSceneId = 0;
+
 	HeadlessScene::HeadlessScene() :
-		name("")
+		id(HeadlessScene::nextSceneId++),
+		meshLoader(std::make_unique<AssimpMeshLoader>())
 	{}
 
 	HeadlessScene::~HeadlessScene() {}
+
+	void HeadlessScene::freeAssets()
+	{
+		for (auto& meshKV : this->meshes)
+			this->removeMesh(meshKV.second.get());
+	}
+
+	unsigned int HeadlessScene::getId()
+	{
+		return this->id;
+	}
 
 	bool HeadlessScene::internalLoad()
 	{
@@ -23,41 +37,11 @@ namespace vel
 		this->fixedLoop(deltaTime);
 	}
 
-	void HeadlessScene::setName(const std::string& n)
-	{
-		this->name = n;
-	}
-
-	const std::string& HeadlessScene::getName()
-	{
-		return this->name;
-	}
-
 	void HeadlessScene::stepPhysics(float delta)
 	{
 		for (auto& cw : this->collisionWorlds)
 			if (cw->getIsActive())
 				cw->getDynamicsWorld()->stepSimulation(delta, 0);
-	}
-
-	bool HeadlessScene::loadMesh(const std::string& path)
-	{
-		std::vector<Mesh*> loadedMeshes = Runtime::_assetManager->loadMesh(path);
-		if (loadedMeshes.size() == 0)
-		{
-			SPDLOG_DEBUG("HeadlessScene::loadMesh: call to assetManager->loadMesh resulted in nullopt");
-			return false;
-		}
-
-		for (auto& t : loadedMeshes)
-			this->meshesInUse.push_back(t);
-
-		return true;
-	}
-
-	Mesh* HeadlessScene::getMesh(const std::string& name)
-	{
-		return Runtime::_assetManager->getMesh(name);
 	}
 
 	ozz::animation::Skeleton* HeadlessScene::loadSkeleton(const std::string& name, const std::string& path)
@@ -157,6 +141,81 @@ namespace vel
 		SPDLOG_DEBUG("HeadlessScene::getStage: Attempting to retrive stage that does not exist: {}" + name);
 
 		return nullptr;
+	}
+
+	/***********************************************************************************************
+	* LOAD MESHES
+	************************************************************************************************/
+	std::vector<Mesh*> HeadlessScene::loadMesh(const std::string& path)
+	{
+		const std::vector<std::string>& preLoadData = this->meshLoader->preload(path);
+		if (preLoadData.size() == 0)
+		{
+			SPDLOG_DEBUG("AssetManager::loadMesh: failed to preload required data for loading of mesh");
+			return {};
+		}
+
+		std::vector<Mesh*> out;
+
+		// check for duplicates
+		std::vector<std::string> requiredData;
+		for (auto& pld : preLoadData)
+		{
+			auto it = this->meshes.find(pld);
+
+			if (it == this->meshes.end())
+				requiredData.push_back(pld);
+			else
+				out.push_back(it->second.get());
+		}
+
+		std::vector<std::unique_ptr<Mesh>> loadedAssets = this->meshLoader->load(&requiredData);
+
+		for (auto& m : loadedAssets)
+		{
+			Mesh* rawPtr = m.get();
+			this->meshes.emplace(m->getName(), std::move(m));
+
+			out.push_back(rawPtr);
+		}
+
+		this->meshLoader->reset();
+
+		return out;
+	}
+
+	// This method assumes that the caller understands no duplication checks are occuring
+	Mesh* HeadlessScene::addMesh(std::unique_ptr<Mesh> m)
+	{
+		Mesh* rawPtr = m.get();
+		this->meshes.emplace(m->getName(), std::move(m));
+
+		return rawPtr;
+	}
+
+	Mesh* HeadlessScene::getMesh(const std::string& name)
+	{
+		auto it = this->meshes.find(name);
+
+		if (it == this->meshes.end())
+		{
+			SPDLOG_ERROR("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
+			return nullptr;
+		}
+		else
+		{
+			return it->second.get();
+		}
+	}
+
+	void HeadlessScene::removeMesh(Mesh* m)
+	{
+		auto it = this->meshes.find(m->getName());
+
+		if (it == this->meshes.end())
+			return;
+
+		this->meshes.erase(m->getName());
 	}
 
 }

@@ -29,7 +29,7 @@ namespace vel
 		frameRate(0.0)
 	{
 		this->sceneRenderTarget = Runtime::_gpu->createFinalRenderTarget(
-			"finalRenderTarget_" + this->name,
+			"sceneRenderTarget_" + this->id,
 			Runtime::_window->getWindowSize().x,
 			Runtime::_window->getWindowSize().y
 		);
@@ -102,7 +102,7 @@ namespace vel
 
 	void Scene::freeAssets()
 	{
-		SPDLOG_DEBUG("Freeing assets for scene: {}", this->name);
+		SPDLOG_DEBUG("Freeing assets for scene: {}", this->id);
 		
 		for (auto& pMaterial : this->materialsInUse)
 			Runtime::_assetManager->removeMaterial(pMaterial);
@@ -112,24 +112,24 @@ namespace vel
 
 		for (auto& pFontBitmap : this->fontBitmapsInUse)
 			Runtime::_assetManager->removeFontBitmap(pFontBitmap);
-		
-		for (auto& pMesh : this->meshesInUse)
-			Runtime::_assetManager->removeMesh(pMesh);
         
-		for (auto& pShader : this->shadersInUse)
-			Runtime::_assetManager->removeShader(pShader);
-
-		for (auto& cw : this->collisionWorlds)
-			delete cw;
+		for (auto& shaderKV : this->shaders)
+			this->removeShader(shaderKV.second.get());
 
 		for (auto& s : this->soundsInUse)
 			Runtime::_audioDevice->removeSound(s);
+
+
+		// THESE GO IN HeadlessScene once we move transfer the corresponding functionality
+		for (auto& cw : this->collisionWorlds)
+			delete cw;
 
 		for (auto& s : this->skeletonsInUse)
 			Runtime::_assetManager->removeSkeleton(s);
 
 		for (auto& a : this->animationsInUse)
 			Runtime::_assetManager->removeAnimation(a);
+		// END
 
 
 		for (auto& c : this->cameras)
@@ -137,6 +137,10 @@ namespace vel
 		this->cameras.clear();
 
 		Runtime::_gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
+
+
+		HeadlessScene::freeAssets();
+
 	}
 
 	void Scene::setScreenTint(glm::vec4 c)
@@ -175,11 +179,6 @@ namespace vel
 
 		return t;
 	}
-	
-	void Scene::addShaderInUse(Shader* s)
-	{
-		this->shadersInUse.push_back(s);
-	}
 
 	void Scene::addMaterialInUse(Material* m)
 	{
@@ -208,8 +207,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(diffuseMaterialShader);
+		Shader* diffuseMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseMaterial> m = std::make_unique<DiffuseMaterial>(name, diffuseMaterialShader);
 
@@ -229,8 +227,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseLightmapMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(diffuseLightmapMaterialShader);
+		Shader* diffuseLightmapMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseLightmapMaterial> m = std::make_unique<DiffuseLightmapMaterial>(name, diffuseLightmapMaterialShader);
 
@@ -250,8 +247,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseAnimatedMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(diffuseAnimatedMaterialShader);
+		Shader* diffuseAnimatedMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseAnimatedMaterial> m = std::make_unique<DiffuseAnimatedMaterial>(name, diffuseAnimatedMaterialShader);
 
@@ -271,8 +267,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseAnimatedLightmapMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(diffuseAnimatedLightmapMaterialShader);
+		Shader* diffuseAnimatedLightmapMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseAnimatedLightmapMaterial> m = std::make_unique<DiffuseAnimatedLightmapMaterial>(name, diffuseAnimatedLightmapMaterialShader);
 
@@ -292,8 +287,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseSkinnedMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(diffuseSkinnedMaterialShader);
+		Shader* diffuseSkinnedMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseSkinnedMaterial> m = std::make_unique<DiffuseSkinnedMaterial>(name, diffuseSkinnedMaterialShader);
 
@@ -315,8 +309,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* alphaMaskMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(alphaMaskMaterialShader);
+		Shader* alphaMaskMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<AlphaMaskMaterial> m = std::make_unique<AlphaMaskMaterial>(name, alphaMaskMaterialShader);
 
@@ -336,8 +329,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* textMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(textMaterialShader);
+		Shader* textMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<TextMaterial> m = std::make_unique<TextMaterial>(name, textMaterialShader);
 
@@ -357,8 +349,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseAmbientCubeMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(diffuseAmbientCubeMaterialShader);
+		Shader* diffuseAmbientCubeMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseAmbientCubeMaterial> m = std::make_unique<DiffuseAmbientCubeMaterial>(name, diffuseAmbientCubeMaterialShader);
 
@@ -378,8 +369,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseAmbientCubeSkinnedMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(diffuseAmbientCubeSkinnedMaterialShader);
+		Shader* diffuseAmbientCubeSkinnedMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseAmbientCubeSkinnedMaterial> m = std::make_unique<DiffuseAmbientCubeSkinnedMaterial>(name, diffuseAmbientCubeSkinnedMaterialShader);
 
@@ -399,8 +389,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* RGBAMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(RGBAMaterialShader);
+		Shader* RGBAMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<RGBAMaterial> m = std::make_unique<RGBAMaterial>(name, RGBAMaterialShader);
 
@@ -420,8 +409,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* RGBALineMaterialShader = Runtime::_assetManager->loadShader(shaderName, "line.vert", "line.geom", "line.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(RGBALineMaterialShader);
+		Shader* RGBALineMaterialShader = this->loadShader(shaderName, "line.vert", "line.geom", "line.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<RGBALineMaterial> m = std::make_unique<RGBALineMaterial>(name, RGBALineMaterialShader);
 
@@ -441,8 +429,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* RGBALightmapMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(RGBALightmapMaterialShader);
+		Shader* RGBALightmapMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<RGBALightmapMaterial> m = std::make_unique<RGBALightmapMaterial>(name, RGBALightmapMaterialShader);
 
@@ -462,8 +449,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseCausticMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(diffuseCausticMaterialShader);
+		Shader* diffuseCausticMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseCausticMaterial> m = std::make_unique<DiffuseCausticMaterial>(name, diffuseCausticMaterialShader);
 
@@ -483,8 +469,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* diffuseCausticLightmapMaterialShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(diffuseCausticLightmapMaterialShader);
+		Shader* diffuseCausticLightmapMaterialShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseCausticLightmapMaterial> m = std::make_unique<DiffuseCausticLightmapMaterial>(name, diffuseCausticLightmapMaterialShader);
 
@@ -504,8 +489,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* theShader = Runtime::_assetManager->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(theShader);
+		Shader* theShader = this->loadShader(shaderName, "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<DiffuseSingleSelectableMaterial> m = std::make_unique<DiffuseSingleSelectableMaterial>(name, theShader);
 
@@ -525,8 +509,7 @@ namespace vel
 
 		this->setShaderOpts(opts, defs, shaderName);
 
-		Shader* animatedBillboardMaterialShader = Runtime::_assetManager->loadShader("NPCBillboardShader", "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
-		this->shadersInUse.push_back(animatedBillboardMaterialShader);
+		Shader* animatedBillboardMaterialShader = this->loadShader("NPCBillboardShader", "uber.vert", "", "uber.frag", defs); // returns existing if already loaded
 
 		std::unique_ptr<AnimatedBillboardMaterial> m = std::make_unique<AnimatedBillboardMaterial>(name, animatedBillboardMaterialShader);
 
@@ -537,12 +520,6 @@ namespace vel
 		this->materialsInUse.push_back(pMaterial);
 
 		return static_cast<AnimatedBillboardMaterial*>(pMaterial);
-	}
-
-
-	Shader* Scene::getShader(const std::string& name)
-	{
-		return Runtime::_assetManager->getShader(name);
 	}
 
 	Texture* Scene::getTexture(const std::string& name)
@@ -772,7 +749,6 @@ namespace vel
 
 		// moving collision debug draw event as final thing as it draws directly to the screen buffer, and I don't want to have to 
 		// think about updating it right now
-//#ifdef DEBUG_LOG
 		for (auto& cw : this->collisionWorlds)
 		{
 			if (cw->getIsActive() && cw->getDebugDrawer() != nullptr)
@@ -783,7 +759,7 @@ namespace vel
 				Runtime::_gpu->debugDrawCollisionWorld(cw->getDebugDrawer()); // draw all loaded vertices with a single call and clear
 			}
 		}
-//#endif
+
 	}
 
 	void Scene::clearAllRenderTargetBuffers()
@@ -802,5 +778,216 @@ namespace vel
 		// comment). 
 		//gpu->clearScreenBuffer(0.0f, 1.0f, 0.0f, 1.0f); 
 	}
+
+	/***********************************************************************************************
+	* LOAD SHADERS (this will not be required after we refactor for MDI)
+	************************************************************************************************/
+	std::optional<std::string> Scene::loadShaderFile(const std::string& shaderPath)
+	{
+		std::ifstream shaderFile(shaderPath);
+
+		if (!shaderFile.is_open())
+		{
+			SPDLOG_DEBUG("AssetManager::loadShaderFile(): could not open shader file: {}", shaderPath);
+			return std::nullopt;
+		}
+
+		std::stringstream shaderStream;
+		shaderStream << shaderFile.rdbuf();
+		shaderFile.close();
+
+		if (shaderStream.str().empty())
+		{
+			SPDLOG_DEBUG("AssetManager::loadShaderFile(): Shader file is empty: {}", shaderPath);
+			return std::nullopt;
+		}
+
+		return shaderStream.str();
+	}
+
+	std::string Scene::getTopShaderLines(const std::string& shaderCode, int numLinesToGet)
+	{
+		std::istringstream shaderStream(shaderCode);
+		std::string line;
+		std::string firstLines;
+
+		for (int i = 0; i < numLinesToGet; ++i)
+		{
+			std::getline(shaderStream, line);
+			firstLines += line + "\n";
+		}
+
+		return firstLines;
+	}
+
+	std::string Scene::getBottomShaderLines(const std::string& shaderCode, int numLinesToSkip)
+	{
+		std::istringstream shaderStream(shaderCode);
+		std::string line;
+
+		// Skip the specified number of lines
+		for (int i = 0; i < numLinesToSkip; ++i)
+			std::getline(shaderStream, line);
+
+		// Return the remaining shader code
+		std::stringstream remainingShaderCode;
+		remainingShaderCode << shaderStream.rdbuf();
+
+		return remainingShaderCode.str();
+	}
+
+	Shader* Scene::loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile,
+		const std::string& fragFile, std::vector<std::string> defs)
+	{
+
+		if (this->shaders.contains(name))
+		{
+			SPDLOG_DEBUG("Existing Shader, bypass reload: {}", name);
+
+			return this->shaders.at(name).get();
+		}
+
+		SPDLOG_DEBUG("Loading new Shader: {}", name);
+
+
+		// Process vertex shader script
+		std::optional<std::string> vcOpt = this->loadShaderFile(Runtime::_config.dataDir + "/shaders/" + vertFile);
+		if (!vcOpt)
+			return nullptr;
+
+		std::string vertexCode = vcOpt.value();
+		std::string topVertexLines = this->getTopShaderLines(vertexCode, 10);
+		std::string bottomVertexLines = this->getBottomShaderLines(vertexCode, 10);
+		std::stringstream preprocessedVertexCode;
+		preprocessedVertexCode << topVertexLines;
+
+		for (const auto& def : defs) // preload defs into scripts
+			preprocessedVertexCode << "#define " << def << "\n";
+
+		preprocessedVertexCode << bottomVertexLines;
+
+		vertexCode = preprocessedVertexCode.str();
+
+
+		// Process Geometry shader script
+		std::string geomCode = "";
+		if (geomFile != "")
+		{
+			std::optional<std::string> gcOpt = this->loadShaderFile(Runtime::_config.dataDir + "/shaders/" + geomFile);
+			if (!gcOpt)
+				return nullptr;
+
+			geomCode = gcOpt.value();
+			std::string topGeomLines = this->getTopShaderLines(geomCode, 10);
+			std::string bottomGeomLines = this->getBottomShaderLines(geomCode, 10);
+			std::stringstream preprocessedGeomCode;
+			preprocessedGeomCode << topGeomLines;
+
+			for (const auto& def : defs) // preload defs into scripts
+				preprocessedGeomCode << "#define " << def << "\n";
+
+			preprocessedGeomCode << bottomGeomLines;
+
+			geomCode = preprocessedGeomCode.str();
+		}
+
+
+		// Process fragment shader script
+		std::optional<std::string> fcOpt = this->loadShaderFile(Runtime::_config.dataDir + "/shaders/" + fragFile);
+		if (!fcOpt)
+			return nullptr;
+
+		std::string fragmentCode = fcOpt.value();
+		std::string topFragmentLines = this->getTopShaderLines(fragmentCode, 10);
+		std::string bottomFragmentLines = this->getBottomShaderLines(fragmentCode, 10);
+		std::stringstream preprocessedFragmentCode;
+		preprocessedFragmentCode << topFragmentLines;
+
+		for (const auto& def : defs) // preload defs into scripts
+			preprocessedFragmentCode << "#define " << def << "\n";
+
+		preprocessedFragmentCode << bottomFragmentLines;
+		fragmentCode = preprocessedFragmentCode.str();
+
+
+		// Build the shader
+		std::unique_ptr<Shader> s = std::make_unique<Shader>();
+		s->name = name;
+		s->vertCode = vertexCode;
+		s->geomCode = geomCode;
+		s->fragCode = fragmentCode;
+
+		Shader* rawPtr = s.get();
+
+		this->shaders.emplace(name, std::move(s));
+
+		Runtime::_gpu->loadShader(rawPtr);
+
+		return rawPtr;
+	}
+
+	Shader* Scene::getShader(const std::string& name)
+	{
+		auto it = this->shaders.find(name);
+
+		if (it == shaders.end())
+		{
+			SPDLOG_DEBUG("AssetManager::getShader(): Attempting to get shader that does not exist: {}", name);
+			return nullptr;
+		}
+
+		return it->second.get();
+	}
+
+	void Scene::removeShader(const Shader* pShader)
+	{
+		auto it = this->shaders.find(pShader->name);
+
+		if (it == shaders.end())
+			return;
+
+		Runtime::_gpu->clearShader(it->second.get());
+		this->shaders.erase(pShader->name);
+	}
+
+	/***********************************************************************************************
+	* LOAD MESHES
+	************************************************************************************************/
+	std::vector<Mesh*> Scene::loadMesh(const std::string& path)
+	{
+		std::vector<Mesh*> out = HeadlessScene::loadMesh(path);
+		for(auto& m : out)
+			Runtime::_gpu->loadMesh(m);
+
+		return out;
+	}
+
+	// This method assumes that the caller understands no duplication checks are occuring
+	Mesh* Scene::addMesh(std::unique_ptr<Mesh> m)
+	{
+		Mesh* rawPtr = HeadlessScene::addMesh(std::move(m));
+		Runtime::_gpu->loadMesh(rawPtr);
+
+		return rawPtr;
+	}
+
+	void Scene::updateRenderMesh(Mesh* m)
+	{
+		Runtime::_gpu->updateMesh(m);
+	}
+
+	void Scene::removeMesh(Mesh* m)
+	{
+		auto it = this->meshes.find(m->getName());
+
+		if (it == this->meshes.end())
+			return;
+
+		Runtime::_gpu->clearMesh(m);
+
+		this->meshes.erase(m->getName());
+	}
+
+
 
 } // END VEL NAMESPACE

@@ -8,6 +8,7 @@
 #include <ozz/animation//runtime/animation.h>
 
 #include <vel/Scene/Stage/Stage.h>
+#include <vel/Scene/Stage/Actor/Mesh/MeshLoaderInterface.h>
 #include <vel/Physics/CollisionWorld.h>
 
 
@@ -18,18 +19,30 @@ namespace vel
 	class HeadlessScene
 	{
 	protected:
-		std::string								name = "";
+		static unsigned int nextSceneId;
+
+		unsigned int							id;
+		std::unique_ptr<MeshLoaderInterface>	meshLoader;
+
 		std::vector<std::unique_ptr<Stage>>		stages;
 		std::vector<CollisionWorld*> 			collisionWorlds;
-		std::vector<Mesh*>						meshesInUse;
+
+		std::unordered_map<std::string, std::unique_ptr<Mesh>> meshes;
+
 		std::vector<std::string>				skeletonsInUse;
 		std::vector<std::string>				animationsInUse;
 
 
+		virtual void							freeAssets();
+
 		int										getCollisionWorldIndex(const std::string& name);
 
-		bool									loadMesh(const std::string& path);
+		virtual std::vector<Mesh*>				loadMesh(const std::string& path);
+		virtual Mesh*							addMesh(std::unique_ptr<Mesh> m);
 		Mesh*									getMesh(const std::string& name);
+		virtual void							removeMesh(Mesh* pMesh);
+
+
 
 		ozz::animation::Skeleton*				loadSkeleton(const std::string& name, const std::string& path);
 		ozz::animation::Skeleton*				getSkeleton(const std::string& name);
@@ -50,9 +63,6 @@ namespace vel
 		virtual void							internalFixedLoop(float deltaTime);
 		virtual void							fixedLoop(float deltaTime) = 0;
 
-		void									setName(const std::string& n);
-		const std::string&						getName();
-
 		void									stepPhysics(float delta);
 
 		void									updateAnimators(float delta);
@@ -60,6 +70,7 @@ namespace vel
 		Stage*									addStage(const std::string& name, int pos = -1);
 		Stage*									getStage(const std::string& name);
 
+		unsigned int							getId();
 		
 	};
 }

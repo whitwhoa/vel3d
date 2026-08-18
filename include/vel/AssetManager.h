@@ -8,10 +8,10 @@
 #include <ozz/animation/runtime/skeleton.h>
 
 #include <vel/Render/GPU.h>
-#include <vel/Render/Shader.h>
+//#include <vel/Render/Shader.h>
 #include <vel/Scene/Stage/Actor/TextActor.h>
 #include <vel/Scene/Stage/Actor/Mesh/Mesh.h>
-#include <vel/Scene/Stage/Actor/Mesh/MeshLoaderInterface.h>
+//#include <vel/Scene/Stage/Actor/Mesh/MeshLoaderInterface.h>
 #include <vel/Scene/Stage/Actor/Material/Material.h>
 #include <vel/Scene/Stage/Actor/Material/MaterialAnimator.h>
 #include <vel/Scene/Stage/Actor/Font/FontBitmap.h>
@@ -26,13 +26,10 @@ namespace vel
 	{
 	private:
 		std::string													dataDir;
-		std::unique_ptr<MeshLoaderInterface>						meshLoader;
+		//std::unique_ptr<MeshLoaderInterface>						meshLoader;
 		GPU*														gpu;
 		
-
-
-		std::vector<std::pair<std::unique_ptr<Shader>, int>>		shaders;
-		std::vector<std::pair<std::unique_ptr<Mesh>, int>>			meshes;
+		//std::vector<std::pair<std::unique_ptr<Mesh>, int>>			meshes;
 		std::vector<std::pair<std::unique_ptr<Texture>, int>>		textures;
 		std::vector<std::pair<std::unique_ptr<Material>, int>>		materials;
 		std::vector<std::pair<std::unique_ptr<FontBitmap>, int>>	fontBitmaps;
@@ -41,11 +38,8 @@ namespace vel
 		std::unordered_map<std::string, std::pair<std::unique_ptr<ozz::animation::Animation>, int>> animations;
 
 
-		int													getShaderIndex(const std::string& name);
-		int													getShaderIndex(const Shader* s);
-
-		int													getMeshIndex(const std::string& name);
-		int													getMeshIndex(const Mesh* m);
+		//int													getMeshIndex(const std::string& name);
+		//int													getMeshIndex(const Mesh* m);
 
 		int													getTextureIndex(const std::string& name);
 		int													getTextureIndex(const Texture* t);
@@ -63,19 +57,12 @@ namespace vel
 		AssetManager(const std::string& dataDir, GPU* gpu = nullptr);
 		~AssetManager();
 
-		std::optional<std::string>	loadShaderFile(const std::string& shaderPath);
-		std::string					getTopShaderLines(const std::string& shaderCode, int numLinesToGet);
-		std::string					getBottomShaderLines(const std::string& shaderCode, int numLinesToSkip);
-		Shader*						loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, const std::string& fragFile, std::vector<std::string> defs = {});
-		Shader*						getShader(const std::string& name);
-		void						removeShader(const Shader* pShader);
-
-		std::vector<Mesh*>			loadMesh(const std::string& path);
-		Mesh*						addMesh(std::unique_ptr<Mesh> m);
-		Mesh*						getMesh(const std::string& name);
-		void						updateMesh(Mesh* m);
-		void						removeMesh(const Mesh* pMesh);
-		void						incrementMeshUsage(const Mesh* pMesh);
+		//std::vector<Mesh*>			loadMesh(const std::string& path);
+		//Mesh*						addMesh(std::unique_ptr<Mesh> m);
+		//Mesh*						getMesh(const std::string& name);
+		//void						updateMesh(Mesh* m);
+		//void						removeMesh(const Mesh* pMesh);
+		//void						incrementMeshUsage(const Mesh* pMesh);
 
 		Texture*					loadTexture(const std::string& name, const std::string& path, int options = 0);
 		Texture*					getTexture(const std::string& name);

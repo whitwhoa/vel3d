@@ -54,10 +54,9 @@ namespace vel
         virtual void									execute();
         void											close();
 
-		void											removeScene(const std::string& name);
-		void											swapScene(const std::string& name);
-		bool											sceneExists(const std::string& name);
-        Scene*                                          getScene(const std::string& name);
+		void											removeScene(unsigned int id);
+		void											swapScene(unsigned int id);
+
 		Scene*											getActiveScene();
         
 

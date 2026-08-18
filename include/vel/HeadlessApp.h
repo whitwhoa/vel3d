@@ -18,10 +18,8 @@ namespace vel
 		~HeadlessApp();
 
 		void			addScene(std::unique_ptr<HeadlessScene> scene, bool makeActive = false);
-		void			removeScene(const std::string& name);
-		void			swapScene(const std::string& name);
-		bool			sceneExists(const std::string& name);
-		HeadlessScene*	getScene(const std::string& name);
+		void			removeScene(unsigned int id);
+		void			swapScene(unsigned int id);
 		
 		void			stepSimulation(float dt);
 
