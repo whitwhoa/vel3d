@@ -547,8 +547,7 @@ namespace vel
 		ta->originType = originType;
 
 		// create the mesh using provided FontBitmap and text string
-		Mesh* pTam = Runtime::_assetManager->addMesh(std::move(Runtime::_assetManager->loadTextActorMesh(ta.get())));
-		this->meshesInUse.push_back(pTam);
+		Mesh* pTam = this->addMesh(std::move(Runtime::_assetManager->loadTextActorMesh(ta.get())));
 
 		// create material
 		Material* taMaterial = this->addTextMaterial(name + "_material", MTRL_OPT_TRANSLUCENT);
@@ -571,8 +570,7 @@ namespace vel
 		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);
 
 		// create the mesh
-		Mesh* pMesh = Runtime::_assetManager->addMesh(std::move(LineActor::segmentsToMesh(name, points)));
-		this->meshesInUse.push_back(pMesh);
+		Mesh* pMesh = this->addMesh(std::move(LineActor::segmentsToMesh(name, points)));
 
 		bool hasAlpha = false;
 		for (auto& c : colors)
@@ -602,8 +600,7 @@ namespace vel
 	{
 		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);
 
-		Mesh* pMesh = Runtime::_assetManager->addMesh(std::move(LineActor::pointsToMesh(name, points)));
-		this->meshesInUse.push_back(pMesh);
+		Mesh* pMesh = this->addMesh(std::move(LineActor::pointsToMesh(name, points)));
 
 		bool hasAlpha = color.w < 0.999f;
 
@@ -623,9 +620,7 @@ namespace vel
 		std::unique_ptr<Mesh> tmpM = std::make_unique<Mesh>(name + "_mesh");
 		tmpM->initBillboardQuad(width, height);
 
-		Mesh* m = Runtime::_assetManager->addMesh(std::move(tmpM));
-
-		this->meshesInUse.push_back(m);
+		Mesh* m = this->addMesh(std::move(tmpM));
 
 		// create actor
 		Actor* a = stage->addActor(name, m, material);
@@ -637,9 +632,6 @@ namespace vel
 
 	Billboard* Scene::addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh)
 	{
-		Runtime::_assetManager->incrementMeshUsage(mesh);
-		this->meshesInUse.push_back(mesh);
-
 		Actor* a = stage->addActor(name, mesh, material);
 		a->setDynamic(true);
 
@@ -653,10 +645,29 @@ namespace vel
 			s->lerpAnimators(alpha);
 	}
 
+	void Scene::updateTextActor(TextActor* ta)
+	{
+		std::unique_ptr<Mesh> updatedMesh = std::move(Runtime::_assetManager->loadTextActorMesh(ta));
+		ta->actor->getMesh()->setVertices(updatedMesh->getVertices());
+		ta->actor->getMesh()->setIndices(updatedMesh->getIndices());
+
+		Runtime::_gpu->updateMesh(ta->actor->getMesh());
+
+		ta->requiresUpdate = false;
+	}
+
 	void Scene::updateTextActors()
 	{
 		for (auto& s : this->stages)
-			s->updateTextActors();
+		{
+			for (auto& ta : s->getTextActors())
+			{
+				if (!ta->requiresUpdate)
+					continue;
+
+				this->updateTextActor(ta.get());
+			}
+		}
 	}
 
 	void Scene::updateBillboards()

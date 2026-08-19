@@ -147,6 +147,7 @@ namespace vel
 
 		void								clearAllRenderTargetBuffers();
 
+		void								updateTextActor(TextActor* ta);
 		void								updateTextActors();
 
 		void								setScreenTint(glm::vec4 c);

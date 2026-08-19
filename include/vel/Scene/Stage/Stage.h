@@ -91,6 +91,7 @@ namespace vel
 		void			removeTextActor(TextActor*);
 		void			removeTextActor(const std::string& name);
 		void			updateTextActors();
+		std::vector<std::unique_ptr<TextActor>>& getTextActors();
 
 
 		LineActor*		addLineActor(std::unique_ptr<LineActor> la);

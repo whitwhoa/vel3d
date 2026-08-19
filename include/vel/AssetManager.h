@@ -8,10 +8,8 @@
 #include <ozz/animation/runtime/skeleton.h>
 
 #include <vel/Render/GPU.h>
-//#include <vel/Render/Shader.h>
 #include <vel/Scene/Stage/Actor/TextActor.h>
 #include <vel/Scene/Stage/Actor/Mesh/Mesh.h>
-//#include <vel/Scene/Stage/Actor/Mesh/MeshLoaderInterface.h>
 #include <vel/Scene/Stage/Actor/Material/Material.h>
 #include <vel/Scene/Stage/Actor/Material/MaterialAnimator.h>
 #include <vel/Scene/Stage/Actor/Font/FontBitmap.h>
@@ -20,26 +18,18 @@
 
 namespace vel
 {
-	//class GPU;
-
 	class AssetManager
 	{
 	private:
 		std::string													dataDir;
-		//std::unique_ptr<MeshLoaderInterface>						meshLoader;
 		GPU*														gpu;
 		
-		//std::vector<std::pair<std::unique_ptr<Mesh>, int>>			meshes;
 		std::vector<std::pair<std::unique_ptr<Texture>, int>>		textures;
 		std::vector<std::pair<std::unique_ptr<Material>, int>>		materials;
 		std::vector<std::pair<std::unique_ptr<FontBitmap>, int>>	fontBitmaps;
 		
 		std::unordered_map<std::string, std::pair<std::unique_ptr<ozz::animation::Skeleton>, int>> skeletons;
 		std::unordered_map<std::string, std::pair<std::unique_ptr<ozz::animation::Animation>, int>> animations;
-
-
-		//int													getMeshIndex(const std::string& name);
-		//int													getMeshIndex(const Mesh* m);
 
 		int													getTextureIndex(const std::string& name);
 		int													getTextureIndex(const Texture* t);
@@ -56,13 +46,6 @@ namespace vel
 	public:
 		AssetManager(const std::string& dataDir, GPU* gpu = nullptr);
 		~AssetManager();
-
-		//std::vector<Mesh*>			loadMesh(const std::string& path);
-		//Mesh*						addMesh(std::unique_ptr<Mesh> m);
-		//Mesh*						getMesh(const std::string& name);
-		//void						updateMesh(Mesh* m);
-		//void						removeMesh(const Mesh* pMesh);
-		//void						incrementMeshUsage(const Mesh* pMesh);
 
 		Texture*					loadTexture(const std::string& name, const std::string& path, int options = 0);
 		Texture*					getTexture(const std::string& name);

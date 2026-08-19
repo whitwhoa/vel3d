@@ -284,27 +284,10 @@ namespace vel
 		this->_removeTextActor(this->_getTextActorIndex(name));
 	}
 
-	void Stage::updateTextActor(TextActor* ta)
+	std::vector<std::unique_ptr<TextActor>>& Stage::getTextActors()
 	{
-		// TODO: since we are removing AssetManager, and migrating its functionality into
-		// HeadlessScene and Scene, this TextActor update logic will need to be moved into
-		// Scene, which will contain the necessary implementation to update a mesh
-
-		std::unique_ptr<Mesh> updatedMesh = std::move(Runtime::_assetManager->loadTextActorMesh(ta));
-		ta->actor->getMesh()->setVertices(updatedMesh->getVertices());
-		ta->actor->getMesh()->setIndices(updatedMesh->getIndices());
-
-		Runtime::_assetManager->updateMesh(ta->actor->getMesh());
-		ta->requiresUpdate = false;
+		return this->textActors;
 	}
-
-	void Stage::updateTextActors()
-	{
-		for (auto& ta : this->textActors)
-			if (ta->requiresUpdate)
-				this->updateTextActor(ta.get());
-	}
-
 
 	//
 	// Billboards

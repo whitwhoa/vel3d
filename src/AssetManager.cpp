@@ -21,7 +21,6 @@
 
 #include <vel/AssetManager.h>
 #include <vel/Util/functions.h>
-//#include <vel/Scene/Stage/Actor/Mesh/AssimpMeshLoader.h>
 
 
 using namespace std::chrono_literals;
@@ -31,147 +30,9 @@ namespace vel
 
 	AssetManager::AssetManager(const std::string& dataDir, GPU* gpu) :
 		dataDir(dataDir),
-		//meshLoader(std::make_unique<vel::AssimpMeshLoader>()),
 		gpu(gpu)
 	{}
 	AssetManager::~AssetManager(){}
-
-
-	///***********************************************************************************************
-	//* MESHES
-	//************************************************************************************************/
-	//int AssetManager::getMeshIndex(const std::string& name)
-	//{
-	//	for (int i = 0; i < this->meshes.size(); i++)
-	//		if (this->meshes.at(i).first->getName() == name)
-	//			return i;
-
-	//	return -1;
-	//}
-
-	//int AssetManager::getMeshIndex(const Mesh* m)
-	//{
-	//	for (int i = 0; i < this->meshes.size(); i++)
-	//		if (this->meshes.at(i).first.get() == m)
-	//			return i;
-
-	//	return -1;
-	//}
-
-	//std::vector<Mesh*> AssetManager::loadMesh(const std::string& path)
-	//{
-	//	const std::vector<std::string>& preLoadData = this->meshLoader->preload(path);
-	//	if (preLoadData.size() == 0)
-	//	{
-	//		SPDLOG_DEBUG("AssetManager::loadMesh: failed to preload required data for loading of mesh");
-	//		return {};
-	//	}
-
-	//	std::vector<Mesh*> out;
-
-	//	// check for duplicates
-	//	std::vector<std::string> requiredData;
-	//	for (auto& pld : preLoadData)
-	//	{
-	//		int meshIndex = this->getMeshIndex(pld);
-
-	//		if (meshIndex == -1)
-	//		{
-	//			requiredData.push_back(pld);
-	//		}		
-	//		else
-	//		{
-	//			SPDLOG_DEBUG("Existing Mesh, bypass reload: {}", pld);
-	//			this->meshes.at(meshIndex).second++;
-	//			out.push_back(this->meshes.at(meshIndex).first.get());
-	//		}
-	//	}
-
-	//	std::vector<std::unique_ptr<Mesh>> loadedAssets = this->meshLoader->load(&requiredData);
-
-	//	for (auto& lam : loadedAssets)
-	//	{
-	//		this->meshes.push_back(std::pair<std::unique_ptr<Mesh>, int>(std::move(lam), 1));
-	//		out.push_back(this->meshes.back().first.get());
-
-	//		if (this->gpu != nullptr)
-	//			this->gpu->loadMesh(this->meshes.back().first.get());
-	//	}
-
-	//	this->meshLoader->reset();
-	//		
-	//	return out;
-	//}
-
-	//// This method assumes that the caller understands no duplication checks are occuring
-	//Mesh* AssetManager::addMesh(std::unique_ptr<Mesh> m)
-	//{		
-	//	this->meshes.push_back(std::pair<std::unique_ptr<Mesh>, int>(std::move(m), 1));
-
-	//	if(this->gpu != nullptr)
-	//		this->gpu->loadMesh(this->meshes.back().first.get());
-
-	//	return this->meshes.back().first.get();
-	//}
-
-	//void AssetManager::incrementMeshUsage(const Mesh* pMesh)
-	//{
-	//	for (auto& meshUsagePair : this->meshes)
-	//	{
-	//		if (meshUsagePair.first.get() == pMesh)
-	//		{
-	//			meshUsagePair.second++;
-	//			return;
-	//		}
-	//	}
-
-	//	SPDLOG_DEBUG("{} is not an existing mesh, and cannot be incremented", pMesh->getName());
-	//}
-
-	//// updates gpu state of provided Mesh*
-	//void AssetManager::updateMesh(Mesh* m)
-	//{
-	//	if (this->gpu != nullptr)
-	//		this->gpu->updateMesh(m);
-	//}
-
-	//Mesh* AssetManager::getMesh(const std::string& name)
-	//{
-	//	int meshIndex = this->getMeshIndex(name);
-
-	//	if (meshIndex == -1)
-	//	{
-	//		SPDLOG_ERROR("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
-	//		return nullptr;
-	//	}
-
-	//	return this->meshes.at(meshIndex).first.get();
-	//}
-	//
-	//void AssetManager::removeMesh(const Mesh* pMesh)
-	//{
-	//	int meshIndex = this->getMeshIndex(pMesh);
-
-	//	if (meshIndex == -1)
-	//		return;
-
-	//	auto& m = this->meshes.at(meshIndex);
-	//	m.second--;
-
-	//	if(m.second == 0)
-	//	{
-	//		SPDLOG_DEBUG("Full remove Mesh: {}", pMesh->getName());
-
-	//		if (this->gpu != nullptr)
-	//			this->gpu->clearMesh(m.first.get());
-
-	//		this->meshes.erase(this->meshes.begin() + meshIndex);
-
-	//		return;
-	//	}
-
-	//	SPDLOG_DEBUG("Decrement Mesh usageCount, retain: {}", pMesh->getName());
-	//}
 
 
 	/***********************************************************************************************
