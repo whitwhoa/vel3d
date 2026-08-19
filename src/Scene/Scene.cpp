@@ -6,6 +6,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include <stb_headers/stb_image.h>
+#include <stb_headers/stb_truetype.h>
+
 #include <vel/Runtime.h>
 #include <vel/Util/functions.h>
 #include <vel/Physics/CollisionObjectTemplate.h>
@@ -104,23 +107,23 @@ namespace vel
 	{
 		SPDLOG_DEBUG("Freeing assets for scene: {}", this->id);
 		
-		for (auto& pMaterial : this->materialsInUse)
-			Runtime::_assetManager->removeMaterial(pMaterial);
-		
-		for (auto& pTexture : this->texturesInUse)
-			Runtime::_assetManager->removeTexture(pTexture);
+		while (!this->materials.empty())
+			this->removeMaterial(this->materials.begin()->second.get());
 
-		for (auto& pFontBitmap : this->fontBitmapsInUse)
-			Runtime::_assetManager->removeFontBitmap(pFontBitmap);
-        
-		for (auto& shaderKV : this->shaders)
-			this->removeShader(shaderKV.second.get());
+		while (!this->textures.empty())
+			this->removeTexture(this->textures.begin()->second.get());
+
+		while (!this->fontBitmaps.empty())
+			this->removeFontBitmap(this->fontBitmaps.begin()->second.get());
+
+		while (!this->shaders.empty())
+			this->removeShader(this->shaders.begin()->second.get());
 
 		for (auto& s : this->soundsInUse)
 			Runtime::_audioDevice->removeSound(s);
 
 
-		// THESE GO IN HeadlessScene once we move transfer the corresponding functionality
+		// THESE GO IN HeadlessScene once we transfer the corresponding functionality
 		for (auto& cw : this->collisionWorlds)
 			delete cw;
 
@@ -153,38 +156,6 @@ namespace vel
 		this->screenTint = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
 	}
 
-	FontBitmap* Scene::loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath)
-	{
-		FontBitmap* fb = Runtime::_assetManager->loadFontBitmap(fontName, fontSize, fontPath);
-
-		this->fontBitmapsInUse.push_back(fb);
-
-		return fb;
-	}
-
-	FontBitmap* Scene::loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath)
-	{
-		FontBitmap* fb = Runtime::_assetManager->loadFontBitmapVisualHeight(fontName, desiredVisiblePx, fontPath);
-
-		this->fontBitmapsInUse.push_back(fb);
-
-		return fb;
-	}
-
-	Texture* Scene::loadTexture(const std::string& name, const std::string& path, int options)
-	{
-		Texture* t = Runtime::_assetManager->loadTexture(name, path, options);
-
-		this->texturesInUse.push_back(t);
-
-		return t;
-	}
-
-	void Scene::addMaterialInUse(Material* m)
-	{
-		this->materialsInUse.push_back(m);
-	}
-
 	void Scene::setShaderOpts(int opts, std::vector<std::string>& defs, std::string& shaderName)
 	{
 		if (opts & MTRL_OPT_TRANSLUCENT)
@@ -214,8 +185,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<DiffuseMaterial*>(pMaterial);
 	}
@@ -234,8 +204,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<DiffuseLightmapMaterial*>(pMaterial);
 	}
@@ -254,8 +223,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<DiffuseAnimatedMaterial*>(pMaterial);
 	}
@@ -274,8 +242,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<DiffuseAnimatedLightmapMaterial*>(pMaterial);
 	}
@@ -294,8 +261,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<DiffuseSkinnedMaterial*>(pMaterial);
 	}
@@ -316,8 +282,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<AlphaMaskMaterial*>(pMaterial);
 	}
@@ -336,8 +301,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<TextMaterial*>(pMaterial);
 	}
@@ -356,8 +320,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<DiffuseAmbientCubeMaterial*>(pMaterial);
 	}
@@ -376,8 +339,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<DiffuseAmbientCubeSkinnedMaterial*>(pMaterial);
 	}
@@ -396,8 +358,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<RGBAMaterial*>(pMaterial);
 	}
@@ -416,8 +377,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<RGBALineMaterial*>(pMaterial);
 	}
@@ -436,8 +396,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<RGBALightmapMaterial*>(pMaterial);
 	}
@@ -456,8 +415,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<DiffuseCausticMaterial*>(pMaterial);
 	}
@@ -476,8 +434,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<DiffuseCausticLightmapMaterial*>(pMaterial);
 	}
@@ -496,8 +453,7 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<DiffuseSingleSelectableMaterial*>(pMaterial);
 	}
@@ -516,25 +472,9 @@ namespace vel
 		if (opts & MTRL_OPT_TRANSLUCENT)
 			m->setHasAlphaChannel(true);
 
-		Material* pMaterial = Runtime::_assetManager->addMaterial(std::move(m));
-		this->materialsInUse.push_back(pMaterial);
+		Material* pMaterial = this->addMaterial(std::move(m));
 
 		return static_cast<AnimatedBillboardMaterial*>(pMaterial);
-	}
-
-	Texture* Scene::getTexture(const std::string& name)
-	{
-		return Runtime::_assetManager->getTexture(name);
-	}
-
-	FontBitmap* Scene::getFontBitmap(const std::string& name)
-	{
-		return Runtime::_assetManager->getFontBitmap(name);
-	}
-
-	Material* Scene::getMaterial(const std::string& name)
-	{
-		return Runtime::_assetManager->getMaterial(name);
 	}
 
 	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
@@ -547,7 +487,7 @@ namespace vel
 		ta->originType = originType;
 
 		// create the mesh using provided FontBitmap and text string
-		Mesh* pTam = this->addMesh(std::move(Runtime::_assetManager->loadTextActorMesh(ta.get())));
+		Mesh* pTam = this->addMesh(std::move(this->loadTextActorMesh(ta.get())));
 
 		// create material
 		Material* taMaterial = this->addTextMaterial(name + "_material", MTRL_OPT_TRANSLUCENT);
@@ -647,7 +587,7 @@ namespace vel
 
 	void Scene::updateTextActor(TextActor* ta)
 	{
-		std::unique_ptr<Mesh> updatedMesh = std::move(Runtime::_assetManager->loadTextActorMesh(ta));
+		std::unique_ptr<Mesh> updatedMesh = std::move(this->loadTextActorMesh(ta));
 		ta->actor->getMesh()->setVertices(updatedMesh->getVertices());
 		ta->actor->getMesh()->setIndices(updatedMesh->getIndices());
 
@@ -950,7 +890,7 @@ namespace vel
 		return it->second.get();
 	}
 
-	void Scene::removeShader(const Shader* pShader)
+	void Scene::removeShader(Shader* pShader)
 	{
 		auto it = this->shaders.find(pShader->name);
 
@@ -968,7 +908,8 @@ namespace vel
 	{
 		std::vector<Mesh*> out = HeadlessScene::loadMesh(path);
 		for(auto& m : out)
-			Runtime::_gpu->loadMesh(m);
+			if(!m->getGpuMesh())
+				Runtime::_gpu->loadMesh(m);
 
 		return out;
 	}
@@ -997,6 +938,579 @@ namespace vel
 		Runtime::_gpu->clearMesh(m);
 
 		this->meshes.erase(m->getName());
+	}
+
+	std::unique_ptr<Mesh> Scene::loadTextActorMesh(TextActor* ta)
+	{
+		std::vector<Vertex> meshVertices = {};
+		std::vector<unsigned int> meshIndices = {};
+		ta->caretPositions.clear();
+
+		unsigned int lastIndex = 0;
+		unsigned int lineCount = 1;
+
+		float offsetX = 0.0f;
+		float offsetY = 0.0f;
+
+		ta->caretPositions.push_back({ offsetX, -offsetY });
+
+		for (auto c : ta->text)
+		{
+			if (c == '\n')
+			{
+				if (offsetX > ta->logicalWidth)
+					ta->logicalWidth = offsetX;
+
+				++lineCount;
+				offsetX = 0.0f;
+				offsetY += ta->fontBitmap->lineHeight;
+
+				ta->caretPositions.push_back({ offsetX, -offsetY });
+
+				continue;
+			}
+
+			const auto glyphInfo = this->getFontGlyphInfo(c, offsetX, offsetY, ta->fontBitmap);
+			offsetX = glyphInfo.offsetX;
+			offsetY = glyphInfo.offsetY;
+
+			Vertex v1;
+			v1.position = glyphInfo.positions[0];
+			v1.normal = glm::vec3(0.0f, 0.0f, 1.0f);
+			v1.textureCoordinates = glyphInfo.uvs[0];
+			v1.materialUBOIndex = 0;
+			meshVertices.push_back(v1);
+
+			Vertex v2;
+			v2.position = glyphInfo.positions[1];
+			v2.normal = glm::vec3(0.0f, 0.0f, 1.0f);
+			v2.textureCoordinates = glyphInfo.uvs[1];
+			v2.materialUBOIndex = 0;
+			meshVertices.push_back(v2);
+
+			Vertex v3;
+			v3.position = glyphInfo.positions[2];
+			v3.normal = glm::vec3(0.0f, 0.0f, 1.0f);
+			v3.textureCoordinates = glyphInfo.uvs[2];
+			v3.materialUBOIndex = 0;
+			meshVertices.push_back(v3);
+
+			Vertex v4;
+			v4.position = glyphInfo.positions[3];
+			v4.normal = glm::vec3(0.0f, 0.0f, 1.0f);
+			v4.textureCoordinates = glyphInfo.uvs[3];
+			v4.materialUBOIndex = 0;
+			meshVertices.push_back(v4);
+
+			// Add indices with correct winding
+			meshIndices.push_back(lastIndex + 1); // 1
+			meshIndices.push_back(lastIndex); // 0
+			meshIndices.push_back(lastIndex + 3); // 3
+			meshIndices.push_back(lastIndex + 1); // 1
+			meshIndices.push_back(lastIndex + 3); // 3
+			meshIndices.push_back(lastIndex + 2); // 2
+
+			lastIndex += 4;
+
+			ta->caretPositions.push_back({ offsetX, -offsetY });
+		}
+
+		std::unique_ptr<Mesh> m = std::make_unique<Mesh>(ta->name + "_mesh");
+		m->setVertices(meshVertices);
+		m->setIndices(meshIndices);
+
+		AABB maabb = m->getAABB();
+
+		float minX = maabb.getMinEdge().x;
+		float maxX = maabb.getMaxEdge().x;
+		float logicalMaxY = ta->fontBitmap->ascent;
+		float logicalMinY = ta->fontBitmap->descent - static_cast<float>(lineCount - 1) * ta->fontBitmap->lineHeight;
+
+		float xOffset = 0.0f;
+		float yOffset = 0.0f;
+
+		// Horizontal alignment can remain based on actual geometry.
+		if (ta->originType == PlaneOrigin::RIGHT_BOTTOM ||
+			ta->originType == PlaneOrigin::RIGHT_CENTER ||
+			ta->originType == PlaneOrigin::RIGHT_TOP)
+		{
+			xOffset = maxX;
+		}
+		else if (ta->originType == PlaneOrigin::CENTER_BOTTOM ||
+			ta->originType == PlaneOrigin::CENTER_CENTER ||
+			ta->originType == PlaneOrigin::CENTER_TOP)
+		{
+			xOffset = (minX + maxX) * 0.5f;
+		}
+
+		// Vertical alignment uses stable font metrics.
+		if (ta->originType == PlaneOrigin::LEFT_TOP ||
+			ta->originType == PlaneOrigin::CENTER_TOP ||
+			ta->originType == PlaneOrigin::RIGHT_TOP)
+		{
+			yOffset = logicalMaxY;
+		}
+		else if (ta->originType == PlaneOrigin::LEFT_CENTER ||
+			ta->originType == PlaneOrigin::CENTER_CENTER ||
+			ta->originType == PlaneOrigin::RIGHT_CENTER)
+		{
+			yOffset = (logicalMinY + logicalMaxY) * 0.5f;
+		}
+		else // BOTTOM
+		{
+			yOffset = logicalMinY;
+		}
+
+		for (auto& v : m->getMutableVertices())
+		{
+			v.position.x -= xOffset;
+			v.position.y -= yOffset;
+		}
+
+		for (auto& p : ta->caretPositions)
+		{
+			p.x -= xOffset;
+			p.y -= yOffset;
+		}
+
+		ta->logicalHeight = logicalMaxY - logicalMinY;
+		if (offsetX > ta->logicalWidth)
+			ta->logicalWidth = offsetX;
+		//ta->logicalWidth = maabb.getSize().x;
+
+		return m;
+	}
+
+	/***********************************************************************************************
+	* LOAD TEXTURES
+	************************************************************************************************/
+	std::optional<TextureData> Scene::generateTextureData(const std::string& path)
+	{
+		TextureData td;
+		td.primaryImageData.data = stbi_load(
+			path.c_str(),
+			&td.primaryImageData.width,
+			&td.primaryImageData.height,
+			&td.primaryImageData.nrComponents,
+			0
+		);
+
+		if (!td.primaryImageData.data)
+			return std::nullopt;
+
+		return td;
+	}
+
+	Texture* Scene::loadTexture(const std::string& name, const std::string& path, int options)
+	{
+		if (this->textures.contains(name))
+		{
+			SPDLOG_DEBUG("Existing Texture, bypass reload: {}", name);
+
+			return this->textures.at(name).get();
+		}
+
+		SPDLOG_DEBUG("Loading new Texture: {}", name);
+
+
+		std::unique_ptr<Texture> texture = std::make_unique<Texture>();
+		texture->name = name;
+		texture->options = options;
+
+		// Determine if path is a directory or file, if directory then load each file in the directory as a texture frame
+		if (std::filesystem::is_directory(path))
+		{
+			std::map<int, std::string> orderedFiles;
+
+			for (const auto& entry : std::filesystem::directory_iterator(path))
+				orderedFiles[std::stoi(vel::explode_string(entry.path().filename().string(), '.')[0])] = entry.path().string();
+
+			for (auto& of : orderedFiles)
+			{
+				std::optional<TextureData> td = this->generateTextureData(of.second);
+
+				if (!td)
+				{
+					SPDLOG_DEBUG("AssetManager::loadTexture(): failed to load all files in directory: {}", path);
+					return nullptr;
+				}
+
+				texture->frames.push_back(td.value());
+			}
+		}
+		else
+		{
+			std::optional<TextureData> td = this->generateTextureData(path);
+
+			if (!td)
+			{
+				SPDLOG_DEBUG("AssetManager::loadTexture(): Unable to load texture at path: {}", path);
+				return nullptr;
+			}
+
+			texture->frames.push_back(td.value());
+		}
+
+
+		// loop over all frames and if any of them have alpha channel, set HAS_ALPHA of texture to true
+		for (auto& f : texture->frames)
+		{
+			if (f.alphaChannel)
+			{
+				texture->options |= TXT_OPT_HAS_ALPHA;
+				break;
+			}
+		}
+
+		Texture* rawPtr = texture.get();
+
+		this->textures.emplace(name, std::move(texture));
+
+		Runtime::_gpu->loadTexture(rawPtr);
+
+		return rawPtr;
+	}
+
+	Texture* Scene::getTexture(const std::string& name)
+	{
+		auto it = this->textures.find(name);
+
+		if (it == this->textures.end())
+		{
+			SPDLOG_ERROR("Scene::getTexture(): Attempting to get texture that does not exist: {}", name);
+			return nullptr;
+		}
+
+		return it->second.get();
+	}
+
+	void Scene::removeTexture(Texture* pTexture)
+	{
+		auto it = this->textures.find(pTexture->name);
+
+		if (it == this->textures.end())
+			return;
+
+		SPDLOG_DEBUG("Remove Texture: {}", pTexture->name);
+
+		Runtime::_gpu->clearTexture(pTexture);
+
+		// texture remained in system ram after gpu load for use within engine, free it now
+		if (pTexture->options & TXT_OPT_CPU_AND_GPU)
+			for (auto& td : pTexture->frames)
+				stbi_image_free(td.primaryImageData.data);
+
+		this->textures.erase(pTexture->name);
+	}
+
+	/***********************************************************************************************
+	* LOAD MATERIALS
+	************************************************************************************************/
+	Material* Scene::addMaterial(std::unique_ptr<Material> m)
+	{
+		if (this->materials.contains(m->getName()))
+		{
+			SPDLOG_DEBUG("Existing Material, bypass reload: {}", m->getName());
+
+			return this->materials.at(m->getName()).get();
+		}
+
+		SPDLOG_DEBUG("Loading new Material: {}", m->getName());
+
+		Material* rawPtr = m.get();
+		this->materials.emplace(m->getName(), std::move(m));
+
+		return rawPtr;
+	}
+
+	Material* Scene::getMaterial(const std::string& name)
+	{
+		auto it = this->materials.find(name);
+
+		if (it == this->materials.end())
+		{
+			SPDLOG_ERROR("Scene::getMaterial(): Attempting to get material that does not exist: {}", name);
+			return nullptr;
+		}
+
+		return it->second.get();
+	}
+
+	void Scene::removeMaterial(Material* pMaterial)
+	{
+		auto it = this->materials.find(pMaterial->getName());
+
+		if (it == this->materials.end())
+			return;
+
+		SPDLOG_DEBUG("Remove Texture: {}", pMaterial->getName());
+
+		this->materials.erase(pMaterial->getName());
+	}
+
+	/***********************************************************************************************
+	* FONTBITMAPS
+	************************************************************************************************/
+	float Scene::measureFontHeight(const std::string& text, FontBitmap* fb)
+	{
+		if (!fb)
+			return 0.f;
+
+		float offsetX = 0.0f;
+		float offsetY = 0.0f;
+
+		bool hasVisibleGlyph = false;
+
+		float minY = 0.0f;
+		float maxY = 0.0f;
+
+		for (char c : text)
+		{
+			if (c == '\n')
+			{
+				offsetX = 0.0f;
+				continue;
+			}
+
+			uint32_t character = static_cast<uint32_t>(static_cast<unsigned char>(c));
+
+			if (character < fb->firstChar || character >= fb->firstChar + fb->charCount)
+				continue;
+
+			stbtt_aligned_quad quad;
+
+			stbtt_GetPackedQuad(
+				reinterpret_cast<stbtt_packedchar*>(fb->charInfo.get()),
+				fb->textureWidth,
+				fb->textureHeight,
+				character - fb->firstChar,
+				&offsetX,
+				&offsetY,
+				&quad,
+				1
+			);
+
+			// Match existing text mesh convention.
+			const float ymin = -quad.y1;
+			const float ymax = -quad.y0;
+
+			if (!hasVisibleGlyph)
+			{
+				minY = ymin;
+				maxY = ymax;
+				hasVisibleGlyph = true;
+			}
+			else
+			{
+				minY = std::min(minY, ymin);
+				maxY = std::max(maxY, ymax);
+			}
+		}
+
+		if (!hasVisibleGlyph)
+			return 0.0f;
+
+		return maxY - minY;
+	}
+
+	FontGlyphInfo Scene::getFontGlyphInfo(uint32_t character, float offsetX, float offsetY, FontBitmap* fb)
+	{
+		stbtt_aligned_quad quad;
+
+		stbtt_GetPackedQuad((stbtt_packedchar*)fb->charInfo.get(), fb->textureWidth, fb->textureHeight,
+			character - fb->firstChar, &offsetX, &offsetY, &quad, 1);
+		const auto xmin = quad.x0;
+		const auto xmax = quad.x1;
+		const auto ymin = -quad.y1;
+		const auto ymax = -quad.y0;
+
+		FontGlyphInfo info{};
+		info.offsetX = offsetX;
+		info.offsetY = offsetY;
+		info.positions[0] = { xmin, ymin, 0 };
+		info.positions[1] = { xmin, ymax, 0 };
+		info.positions[2] = { xmax, ymax, 0 };
+		info.positions[3] = { xmax, ymin, 0 };
+		info.uvs[0] = { quad.s0, quad.t1 };
+		info.uvs[1] = { quad.s0, quad.t0 };
+		info.uvs[2] = { quad.s1, quad.t0 };
+		info.uvs[3] = { quad.s1, quad.t1 };
+
+		return info;
+	}
+
+	FontBitmap* Scene::loadFontBitmapRaw(const std::string& fontName, int stbFontSize, const std::string& fontPath)
+	{
+		if (this->fontBitmaps.contains(fontName))
+		{
+			SPDLOG_DEBUG("Existing FontBitmap, bypass reload: {}", fontName);
+
+			return this->fontBitmaps.at(fontName).get();
+		}
+
+		SPDLOG_DEBUG("Loading new FontBitmap: {}", fontName);
+
+
+		std::ifstream file(fontPath, std::ios::binary | std::ios::ate);
+		if (!file.is_open())
+		{
+			SPDLOG_DEBUG("Scene::loadFontBitmap(): Failed to open file: {}", fontPath);
+			return nullptr;
+		}
+
+		const auto size = file.tellg();
+		file.seekg(0, std::ios::beg);
+		auto bytes = std::vector<uint8_t>(size);
+		file.read(reinterpret_cast<char*>(&bytes[0]), size);
+		file.close();
+
+
+		//
+		// Build texture data
+		//
+		auto fontData = bytes;
+
+		std::unique_ptr<FontBitmap> fb = std::make_unique<FontBitmap>();
+		fb->fontName = fontName;
+		fb->fontSize = stbFontSize;
+		fb->fontPath = fontPath;
+		fb->data = std::make_unique<unsigned char[]>(fb->textureWidth * fb->textureHeight);
+		fb->charInfo = std::make_unique<fb_packedchar[]>(fb->charCount);
+
+
+		//
+		// Gather font statistics
+		//
+		stbtt_fontinfo fontInfo;
+
+		int fontOffset = stbtt_GetFontOffsetForIndex(fontData.data(), 0);
+
+		if (fontOffset < 0 || !stbtt_InitFont(&fontInfo, fontData.data(), fontOffset))
+		{
+			SPDLOG_DEBUG("Scene::loadFontBitmapRaw(): Failed to initialize font metrics: {}", fontPath);
+			return nullptr;
+		}
+
+		int ascent;
+		int descent;
+		int lineGap;
+
+		stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
+
+		float fontScale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(stbFontSize));
+
+		fb->ascent = static_cast<float>(ascent) * fontScale;
+		fb->descent = static_cast<float>(descent) * fontScale;
+		fb->lineGap = static_cast<float>(lineGap) * fontScale;
+
+		fb->fontHeight = fb->ascent - fb->descent;
+		fb->lineHeight = fb->fontHeight + fb->lineGap;
+
+
+		//
+		// Pack Atlas
+		//
+		int maxAtlasSize = 4096;
+		bool fontPacked = false;
+
+		while (fb->textureWidth <= maxAtlasSize)
+		{
+			stbtt_pack_context context;
+			bool fontInitialized = stbtt_PackBegin(&context, fb->data.get(), fb->textureWidth, fb->textureHeight, 0, 1, nullptr);
+
+			if (!fontInitialized)
+			{
+				SPDLOG_DEBUG("Scene::loadFontBitmap(): Failed to initialize font");
+				return nullptr;
+			}
+
+			stbtt_PackSetOversampling(&context, fb->oversampleX, fb->oversampleY);
+			fontPacked = stbtt_PackFontRange(&context, fontData.data(), 0, fb->fontSize, fb->firstChar, fb->charCount, (stbtt_packedchar*)fb->charInfo.get());
+
+			stbtt_PackEnd(&context);
+
+			if (fontPacked)
+				break;
+
+			fb->textureWidth *= 2;
+			fb->textureHeight *= 2;
+			fb->data = std::make_unique<unsigned char[]>(fb->textureWidth * fb->textureHeight);
+		}
+
+		if (!fontPacked)
+		{
+			SPDLOG_DEBUG("Scene::loadFontBitmap(): Failed to pack font");
+			return nullptr;
+		}
+
+
+		FontBitmap* rawPtr = fb.get();
+		this->fontBitmaps.emplace(fb->fontName, std::move(fb));
+
+		Runtime::_gpu->loadFontBitmapTexture(rawPtr);
+
+		return rawPtr;
+	}
+
+	FontBitmap* Scene::loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath)
+	{
+		return this->loadFontBitmapRaw(fontName, fontSize, fontPath);
+	}
+
+	FontBitmap* Scene::loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath)
+	{
+		if (this->fontBitmaps.contains(fontName))
+		{
+			SPDLOG_DEBUG("Existing FontBitmap, bypass reload: {}", fontName);
+
+			return this->fontBitmaps.at(fontName).get();
+		}
+
+		SPDLOG_DEBUG("Loading new FontBitmap: {}", fontName);
+
+
+		const std::string referenceText = "Hg";
+
+		FontBitmap* testFont = this->loadFontBitmapRaw(fontName + "_calibration", desiredVisiblePx, fontPath);
+
+		float measuredHeight = this->measureFontHeight(referenceText, testFont);
+
+		if (measuredHeight <= 0.0f)
+			return testFont;
+
+		float correction = desiredVisiblePx / measuredHeight;
+		int correctedSize = (int)std::round(desiredVisiblePx * correction);
+
+		this->removeFontBitmap(testFont);
+
+		return this->loadFontBitmapRaw(fontName, correctedSize, fontPath);
+	}
+
+	FontBitmap* Scene::getFontBitmap(const std::string& name)
+	{
+		auto it = this->fontBitmaps.find(name);
+
+		if (it == this->fontBitmaps.end())
+		{
+			SPDLOG_ERROR("Scene::getFontBitmap(): Attempting to get FontBitmap that does not exist: {}", name);
+			return nullptr;
+		}
+
+		return it->second.get();
+	}
+
+	void Scene::removeFontBitmap(FontBitmap* pFontBitmap)
+	{
+		auto it = this->fontBitmaps.find(pFontBitmap->fontName);
+
+		if (it == this->fontBitmaps.end())
+			return;
+
+		SPDLOG_DEBUG("Remove FontBitmap: {}", pFontBitmap->fontName);
+
+		Runtime::_gpu->clearTexture(&pFontBitmap->texture);
+
+		this->fontBitmaps.erase(pFontBitmap->fontName);
 	}
 
 

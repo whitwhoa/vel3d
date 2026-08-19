@@ -849,6 +849,26 @@ namespace vel
 	{
 		for (auto& td : t->frames)
 		{
+			if (td.primaryImageData.nrComponents == 1)
+			{
+				td.alphaChannel = false;
+				td.primaryImageData.sizedFormat = GL_R8; // 8 bits per channel x1 channel
+				td.primaryImageData.format = GL_RED;
+			}
+			else if (td.primaryImageData.nrComponents == 3)
+			{
+				td.alphaChannel = false;
+				td.primaryImageData.sizedFormat = GL_RGB8; // 8 bits per channel x3 channels
+				td.primaryImageData.format = GL_RGB;
+			}
+			else if (td.primaryImageData.nrComponents == 4)
+			{
+				td.alphaChannel = true;
+				td.primaryImageData.sizedFormat = GL_RGBA8; // 8 bits per channel x4 channels
+				td.primaryImageData.format = GL_RGBA;
+			}
+
+
 			// create a texture buffer and bind it to context
 			glGenTextures(1, &td.id);
 			glBindTexture(GL_TEXTURE_2D, td.id);

@@ -45,10 +45,10 @@ namespace vel
 		float								animationTime;
 		glm::vec4							screenTint;
 
-		std::unordered_map<std::string, std::unique_ptr<Shader>>	shaders;
-		std::vector<Texture*> 				texturesInUse;
-		std::vector<Material*> 				materialsInUse;
-		std::vector<FontBitmap*> 			fontBitmapsInUse;
+		std::unordered_map<std::string, std::unique_ptr<Shader>>		shaders;
+		std::unordered_map<std::string, std::unique_ptr<Texture>>		textures;
+		std::unordered_map<std::string, std::unique_ptr<Material>>		materials;
+		std::unordered_map<std::string, std::unique_ptr<FontBitmap>>	fontBitmaps;
 		std::vector<std::string>			soundsInUse;
 		
 		double								frameTime;
@@ -58,21 +58,18 @@ namespace vel
 
 		void								setShaderOpts(int opts, std::vector<std::string>& defs, std::string& shaderName);
 
+		std::optional<TextureData>			generateTextureData(const std::string& path);
+		FontGlyphInfo						getFontGlyphInfo(uint32_t character, float offsetX, float offsetY, FontBitmap* fb);
+		float								measureFontHeight(const std::string& text, FontBitmap* fb);
+
 		
 	protected:
 		int									audioGroupKey;
-
-		Texture*							loadTexture(const std::string& name, const std::string& path, int options = 0);
-		FontBitmap*							loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath);
-		FontBitmap*							loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath);
 
 		void								loadBGMSound(const std::string& path);
 		bool								loadSFXSound(const std::string& path);
 
 		Camera*								addCamera(const std::string& name, CameraType type);
-
-		void								addShaderInUse(Shader* s);
-		void								addMaterialInUse(Material* m);
 
 		DiffuseMaterial*					addDiffuseMaterial(const std::string& name, int opts = 0);
 		DiffuseLightmapMaterial*			addDiffuseLightmapMaterial(const std::string& name, int opts = 0);
@@ -91,10 +88,7 @@ namespace vel
 		DiffuseSingleSelectableMaterial*	addDiffuseSingleSelectableMaterial(const std::string& name, int opts = 0);
 		AnimatedBillboardMaterial*			addAnimatedBillboardMaterial(const std::string& name, int opts = 0);
 
-		Texture*							getTexture(const std::string& name);
-		FontBitmap*							getFontBitmap(const std::string& name);
 		Camera*								getCamera(const std::string& name);
-		Material*							getMaterial(const std::string& name);
 
 		TextActor* addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
 			glm::vec4 color, PlaneOrigin originType = PlaneOrigin::LEFT_BOTTOM);
@@ -114,21 +108,34 @@ namespace vel
 		Billboard* addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh);
 
 
-
-
-
 		std::optional<std::string>	loadShaderFile(const std::string& shaderPath);
 		std::string					getTopShaderLines(const std::string& shaderCode, int numLinesToGet);
 		std::string					getBottomShaderLines(const std::string& shaderCode, int numLinesToSkip);
 		Shader*						loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, const std::string& fragFile, std::vector<std::string> defs = {});
 		Shader*						getShader(const std::string& name);
-		void						removeShader(const Shader* pShader);
-
+		void						removeShader(Shader* pShader);
 
 		std::vector<Mesh*>			loadMesh(const std::string& path) override;
 		Mesh*						addMesh(std::unique_ptr<Mesh> m) override;
 		void						updateRenderMesh(Mesh* m);
 		void						removeMesh(Mesh* pMesh) override;
+		std::unique_ptr<Mesh>		loadTextActorMesh(TextActor* ta);
+
+		Texture*					loadTexture(const std::string& name, const std::string& path, int options = 0);
+		Texture*					getTexture(const std::string& name);
+		void						removeTexture(Texture* pTexture);
+
+		Material*					addMaterial(std::unique_ptr<Material> m);
+		Material*					getMaterial(const std::string& name);
+		void						removeMaterial(Material* pMaterial);
+
+		FontBitmap*					loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath); // alias to raw
+		FontBitmap*					loadFontBitmapRaw(const std::string& fontName, int stbFontSize, const std::string& fontPath);
+		FontBitmap*					loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath);
+		FontBitmap*					getFontBitmap(const std::string& name);
+		void						removeFontBitmap(FontBitmap* pFontBitmap);
+
+		
 
 
 

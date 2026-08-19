@@ -1,4 +1,10 @@
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_headers/stb_image.h>
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_headers/stb_truetype.h>
+
 #include <vel/Runtime.h>
 
 namespace vel

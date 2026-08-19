@@ -151,7 +151,7 @@ namespace vel
 		const std::vector<std::string>& preLoadData = this->meshLoader->preload(path);
 		if (preLoadData.size() == 0)
 		{
-			SPDLOG_DEBUG("AssetManager::loadMesh: failed to preload required data for loading of mesh");
+			SPDLOG_DEBUG("HeadlessScene::loadMesh: failed to preload required data for loading of mesh");
 			return {};
 		}
 
@@ -164,9 +164,15 @@ namespace vel
 			auto it = this->meshes.find(pld);
 
 			if (it == this->meshes.end())
+			{
+				SPDLOG_DEBUG("HeadlessScene::loadMesh: new mesh load: {}", pld);
 				requiredData.push_back(pld);
+			}
 			else
+			{
+				SPDLOG_DEBUG("HeadlessScene::loadMesh: existing mesh load bypassed: {}", pld);
 				out.push_back(it->second.get());
+			}
 		}
 
 		std::vector<std::unique_ptr<Mesh>> loadedAssets = this->meshLoader->load(&requiredData);
@@ -202,10 +208,8 @@ namespace vel
 			SPDLOG_ERROR("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
 			return nullptr;
 		}
-		else
-		{
-			return it->second.get();
-		}
+
+		return it->second.get();
 	}
 
 	void HeadlessScene::removeMesh(Mesh* m)
