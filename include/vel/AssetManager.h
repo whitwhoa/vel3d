@@ -5,7 +5,7 @@
 #include <optional>
 
 #include <ozz/animation/runtime/animation.h>
-#include <ozz/animation/runtime/skeleton.h>
+
 
 #include <vel/Render/GPU.h>
 #include <vel/Scene/Stage/Actor/TextActor.h>
@@ -23,13 +23,7 @@ namespace vel
 		std::string													dataDir;
 		GPU*														gpu;
 		
-		std::vector<std::pair<std::unique_ptr<FontBitmap>, int>>	fontBitmaps;
-		
-		std::unordered_map<std::string, std::pair<std::unique_ptr<ozz::animation::Skeleton>, int>> skeletons;
 		std::unordered_map<std::string, std::pair<std::unique_ptr<ozz::animation::Animation>, int>> animations;
-
-		
-		
 
 	public:
 		AssetManager(const std::string& dataDir, GPU* gpu = nullptr);

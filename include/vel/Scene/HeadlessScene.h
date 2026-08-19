@@ -27,9 +27,9 @@ namespace vel
 		std::vector<std::unique_ptr<Stage>>		stages;
 		std::vector<CollisionWorld*> 			collisionWorlds;
 
-		std::unordered_map<std::string, std::unique_ptr<Mesh>> meshes;
+		std::unordered_map<std::string, std::unique_ptr<Mesh>>						meshes;
+		std::unordered_map<std::string, std::unique_ptr<ozz::animation::Skeleton>>	skeletons;
 
-		std::vector<std::string>				skeletonsInUse;
 		std::vector<std::string>				animationsInUse;
 
 
@@ -42,10 +42,11 @@ namespace vel
 		Mesh*									getMesh(const std::string& name);
 		virtual void							removeMesh(Mesh* pMesh);
 
-
-
 		ozz::animation::Skeleton*				loadSkeleton(const std::string& name, const std::string& path);
 		ozz::animation::Skeleton*				getSkeleton(const std::string& name);
+		void									removeSkeleton(const std::string& name);
+
+
 
 		ozz::animation::Animation*				loadAnimation(const std::string& name, const std::string& path);
 		ozz::animation::Animation*				getAnimation(const std::string& name);

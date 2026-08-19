@@ -107,6 +107,11 @@ namespace vel
 	{
 		SPDLOG_DEBUG("Freeing assets for scene: {}", this->id);
 		
+		// TODO: optimize these removals. Just loop and remove what needs to be freed
+		// from gpu, then when scene goes out of scope it clears cpu memory, so there's
+		// no need to be doing a method call that then does a .find() check and another
+		// .erase() lookup
+
 		while (!this->materials.empty())
 			this->removeMaterial(this->materials.begin()->second.get());
 
@@ -119,6 +124,10 @@ namespace vel
 		while (!this->shaders.empty())
 			this->removeShader(this->shaders.begin()->second.get());
 
+		for (auto& m : this->meshes)
+			Runtime::_gpu->clearMesh(m.second.get());
+		
+
 		for (auto& s : this->soundsInUse)
 			Runtime::_audioDevice->removeSound(s);
 
@@ -126,9 +135,6 @@ namespace vel
 		// THESE GO IN HeadlessScene once we transfer the corresponding functionality
 		for (auto& cw : this->collisionWorlds)
 			delete cw;
-
-		for (auto& s : this->skeletonsInUse)
-			Runtime::_assetManager->removeSkeleton(s);
 
 		for (auto& a : this->animationsInUse)
 			Runtime::_assetManager->removeAnimation(a);
@@ -140,10 +146,6 @@ namespace vel
 		this->cameras.clear();
 
 		Runtime::_gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
-
-
-		HeadlessScene::freeAssets();
-
 	}
 
 	void Scene::setScreenTint(glm::vec4 c)
