@@ -29,11 +29,8 @@ namespace vel
 
 		std::unordered_map<std::string, std::unique_ptr<Mesh>>						meshes;
 		std::unordered_map<std::string, std::unique_ptr<ozz::animation::Skeleton>>	skeletons;
+		std::unordered_map<std::string, std::unique_ptr<ozz::animation::Animation>>	animations;
 
-		std::vector<std::string>				animationsInUse;
-
-
-		virtual void							freeAssets();
 
 		int										getCollisionWorldIndex(const std::string& name);
 
@@ -46,10 +43,9 @@ namespace vel
 		ozz::animation::Skeleton*				getSkeleton(const std::string& name);
 		void									removeSkeleton(const std::string& name);
 
-
-
 		ozz::animation::Animation*				loadAnimation(const std::string& name, const std::string& path);
 		ozz::animation::Animation*				getAnimation(const std::string& name);
+		void									removeAnimation(const std::string& name);
 
 		CollisionWorld*							addCollisionWorld(const std::string& name, float gravity = -10.0f);
 		CollisionWorld*							getCollisionWorld(const std::string& name);

@@ -43,7 +43,41 @@ namespace vel
 	
 	Scene::~Scene()
 	{
-		this->freeAssets();
+		SPDLOG_DEBUG("Freeing assets for scene: {}", this->id);
+
+		// Note: we repeat some code here to optimize for destruction. If we called the
+		// explicit removal methods of each asset type, that's an additional method call,
+		// plus validation check, plus logic, plus another hash lookup for the erase. Doing
+		// it this way, we clear only what needs cleared, then let memory be freed when Scene
+		// goes out of scope (ie is removed from App)
+
+		// Note: materials do not require explicit removal
+
+		for (auto& t : this->textures)
+		{
+			Runtime::_gpu->clearTexture(t.second.get());
+
+			if (t.second->options & TXT_OPT_CPU_AND_GPU)
+				for (auto& td : t.second->frames)
+					stbi_image_free(td.primaryImageData.data);
+		}
+		
+		for (auto& fb : this->fontBitmaps)
+			Runtime::_gpu->clearTexture(&fb.second->texture);
+
+		for (auto& s : this->shaders)
+			Runtime::_gpu->clearShader(s.second.get());
+
+		for (auto& m : this->meshes)
+			Runtime::_gpu->clearMesh(m.second.get());
+
+		for (auto& s : this->soundsInUse)
+			Runtime::_audioDevice->removeSound(s);
+
+		for (auto& c : this->cameras)
+			Runtime::_gpu->clearRenderTarget(&c->getRenderTarget());
+
+		Runtime::_gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
 	}
 
 	void Scene::internalImmediateLoop(float frameTime, float renderLerpInterval)
@@ -101,51 +135,6 @@ namespace vel
 		for (auto& c : this->cameras)
 			if (!c->getFixedResolution())
 				c->setResolution(x, y);
-	}
-
-	void Scene::freeAssets()
-	{
-		SPDLOG_DEBUG("Freeing assets for scene: {}", this->id);
-		
-		// TODO: optimize these removals. Just loop and remove what needs to be freed
-		// from gpu, then when scene goes out of scope it clears cpu memory, so there's
-		// no need to be doing a method call that then does a .find() check and another
-		// .erase() lookup
-
-		while (!this->materials.empty())
-			this->removeMaterial(this->materials.begin()->second.get());
-
-		while (!this->textures.empty())
-			this->removeTexture(this->textures.begin()->second.get());
-
-		while (!this->fontBitmaps.empty())
-			this->removeFontBitmap(this->fontBitmaps.begin()->second.get());
-
-		while (!this->shaders.empty())
-			this->removeShader(this->shaders.begin()->second.get());
-
-		for (auto& m : this->meshes)
-			Runtime::_gpu->clearMesh(m.second.get());
-		
-
-		for (auto& s : this->soundsInUse)
-			Runtime::_audioDevice->removeSound(s);
-
-
-		// THESE GO IN HeadlessScene once we transfer the corresponding functionality
-		for (auto& cw : this->collisionWorlds)
-			delete cw;
-
-		for (auto& a : this->animationsInUse)
-			Runtime::_assetManager->removeAnimation(a);
-		// END
-
-
-		for (auto& c : this->cameras)
-			Runtime::_gpu->clearRenderTarget(&c->getRenderTarget());
-		this->cameras.clear();
-
-		Runtime::_gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
 	}
 
 	void Scene::setScreenTint(glm::vec4 c)
@@ -741,7 +730,7 @@ namespace vel
 
 		if (!shaderFile.is_open())
 		{
-			SPDLOG_DEBUG("AssetManager::loadShaderFile(): could not open shader file: {}", shaderPath);
+			SPDLOG_DEBUG("Scene::loadShaderFile(): could not open shader file: {}", shaderPath);
 			return std::nullopt;
 		}
 
@@ -751,7 +740,7 @@ namespace vel
 
 		if (shaderStream.str().empty())
 		{
-			SPDLOG_DEBUG("AssetManager::loadShaderFile(): Shader file is empty: {}", shaderPath);
+			SPDLOG_DEBUG("Scene::loadShaderFile(): Shader file is empty: {}", shaderPath);
 			return std::nullopt;
 		}
 
@@ -795,12 +784,12 @@ namespace vel
 
 		if (this->shaders.contains(name))
 		{
-			SPDLOG_DEBUG("Existing Shader, bypass reload: {}", name);
+			SPDLOG_DEBUG("Scene::loadShader(): Existing Shader, bypass reload: {}", name);
 
 			return this->shaders.at(name).get();
 		}
 
-		SPDLOG_DEBUG("Loading new Shader: {}", name);
+		SPDLOG_DEBUG("Scene::loadShader(): Loading new Shader: {}", name);
 
 
 		// Process vertex shader script
@@ -885,7 +874,7 @@ namespace vel
 
 		if (it == shaders.end())
 		{
-			SPDLOG_DEBUG("AssetManager::getShader(): Attempting to get shader that does not exist: {}", name);
+			SPDLOG_DEBUG("Scene::getShader(): Attempting to get shader that does not exist: {}", name);
 			return nullptr;
 		}
 
@@ -1107,12 +1096,12 @@ namespace vel
 	{
 		if (this->textures.contains(name))
 		{
-			SPDLOG_DEBUG("Existing Texture, bypass reload: {}", name);
+			SPDLOG_DEBUG("Scene::loadTexture(): Existing Texture, bypass reload: {}", name);
 
 			return this->textures.at(name).get();
 		}
 
-		SPDLOG_DEBUG("Loading new Texture: {}", name);
+		SPDLOG_DEBUG("Scene::loadTexture(): Loading new Texture: {}", name);
 
 
 		std::unique_ptr<Texture> texture = std::make_unique<Texture>();
@@ -1133,7 +1122,7 @@ namespace vel
 
 				if (!td)
 				{
-					SPDLOG_DEBUG("AssetManager::loadTexture(): failed to load all files in directory: {}", path);
+					SPDLOG_DEBUG("Scene::loadTexture(): failed to load all files in directory: {}", path);
 					return nullptr;
 				}
 
@@ -1146,7 +1135,7 @@ namespace vel
 
 			if (!td)
 			{
-				SPDLOG_DEBUG("AssetManager::loadTexture(): Unable to load texture at path: {}", path);
+				SPDLOG_DEBUG("Scene::loadTexture(): Unable to load texture at path: {}", path);
 				return nullptr;
 			}
 
@@ -1193,7 +1182,7 @@ namespace vel
 		if (it == this->textures.end())
 			return;
 
-		SPDLOG_DEBUG("Remove Texture: {}", pTexture->name);
+		SPDLOG_DEBUG("Scene::removeTexture(): Remove Texture: {}", pTexture->name);
 
 		Runtime::_gpu->clearTexture(pTexture);
 
@@ -1212,12 +1201,12 @@ namespace vel
 	{
 		if (this->materials.contains(m->getName()))
 		{
-			SPDLOG_DEBUG("Existing Material, bypass reload: {}", m->getName());
+			SPDLOG_DEBUG("Scene::addMaterial(): Existing Material, bypass reload: {}", m->getName());
 
 			return this->materials.at(m->getName()).get();
 		}
 
-		SPDLOG_DEBUG("Loading new Material: {}", m->getName());
+		SPDLOG_DEBUG("Scene::addMaterial(): Loading new Material: {}", m->getName());
 
 		Material* rawPtr = m.get();
 		this->materials.emplace(m->getName(), std::move(m));
@@ -1245,7 +1234,7 @@ namespace vel
 		if (it == this->materials.end())
 			return;
 
-		SPDLOG_DEBUG("Remove Texture: {}", pMaterial->getName());
+		SPDLOG_DEBUG("Scene::removeMaterial(): Remove Material: {}", pMaterial->getName());
 
 		this->materials.erase(pMaterial->getName());
 	}
@@ -1345,18 +1334,18 @@ namespace vel
 	{
 		if (this->fontBitmaps.contains(fontName))
 		{
-			SPDLOG_DEBUG("Existing FontBitmap, bypass reload: {}", fontName);
+			SPDLOG_DEBUG("Scene::loadFontBitmapRaw(): Existing FontBitmap, bypass reload: {}", fontName);
 
 			return this->fontBitmaps.at(fontName).get();
 		}
 
-		SPDLOG_DEBUG("Loading new FontBitmap: {}", fontName);
+		SPDLOG_DEBUG("Scene::loadFontBitmapRaw(): Loading new FontBitmap: {}", fontName);
 
 
 		std::ifstream file(fontPath, std::ios::binary | std::ios::ate);
 		if (!file.is_open())
 		{
-			SPDLOG_DEBUG("Scene::loadFontBitmap(): Failed to open file: {}", fontPath);
+			SPDLOG_DEBUG("Scene::loadFontBitmapRaw(): Failed to open file: {}", fontPath);
 			return nullptr;
 		}
 
@@ -1422,7 +1411,7 @@ namespace vel
 
 			if (!fontInitialized)
 			{
-				SPDLOG_DEBUG("Scene::loadFontBitmap(): Failed to initialize font");
+				SPDLOG_DEBUG("Scene::loadFontBitmapRaw(): Failed to initialize font");
 				return nullptr;
 			}
 
@@ -1441,7 +1430,7 @@ namespace vel
 
 		if (!fontPacked)
 		{
-			SPDLOG_DEBUG("Scene::loadFontBitmap(): Failed to pack font");
+			SPDLOG_DEBUG("Scene::loadFontBitmapRaw(): Failed to pack font");
 			return nullptr;
 		}
 
@@ -1463,12 +1452,12 @@ namespace vel
 	{
 		if (this->fontBitmaps.contains(fontName))
 		{
-			SPDLOG_DEBUG("Existing FontBitmap, bypass reload: {}", fontName);
+			SPDLOG_DEBUG("Scene::loadFontBitmapVisualHeight(): Existing FontBitmap, bypass reload: {}", fontName);
 
 			return this->fontBitmaps.at(fontName).get();
 		}
 
-		SPDLOG_DEBUG("Loading new FontBitmap: {}", fontName);
+		SPDLOG_DEBUG("Scene::loadFontBitmapVisualHeight(): Loading new FontBitmap: {}", fontName);
 
 
 		const std::string referenceText = "Hg";
@@ -1508,7 +1497,7 @@ namespace vel
 		if (it == this->fontBitmaps.end())
 			return;
 
-		SPDLOG_DEBUG("Remove FontBitmap: {}", pFontBitmap->fontName);
+		SPDLOG_DEBUG("Scene::removeFontBitmap(): Remove FontBitmap: {}", pFontBitmap->fontName);
 
 		Runtime::_gpu->clearTexture(&pFontBitmap->texture);
 

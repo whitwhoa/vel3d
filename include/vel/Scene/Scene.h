@@ -54,8 +54,6 @@ namespace vel
 		double								frameTime;
 		double								frameRate;
 
-		void								freeAssets() override;
-
 		void								setShaderOpts(int opts, std::vector<std::string>& defs, std::string& shaderName);
 
 		std::optional<TextureData>			generateTextureData(const std::string& path);

@@ -156,7 +156,7 @@ namespace vel
 		// if current viewport size does not equal the previous tick's viewport size, we have to rebuild the render target
 		if (currentResolution != this->previousResolution)
 		{
-			SPDLOG_DEBUG("Camera::update: viewport size altered");
+			SPDLOG_DEBUG("Camera::update(): viewport size altered");
 
 			RenderTarget rt = Runtime::_gpu->createRenderTarget((this->getName() + "_RT"), currentResolution.x, currentResolution.y);
 			Runtime::_gpu->clearRenderTarget(&this->renderTarget);

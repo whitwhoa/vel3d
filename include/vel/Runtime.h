@@ -5,7 +5,6 @@
 
 #include <vel/Config.h>
 #include <vel/Window.h>
-#include <vel/AssetManager.h>
 #include <vel/AudioDevice.h>
 #include <vel/Render/GPU.h>
 
@@ -39,7 +38,6 @@ namespace vel
         static Config _config;
         static std::unique_ptr<Window> _window;
         static std::unique_ptr<GPU> _gpu;
-        static std::unique_ptr<AssetManager> _assetManager;
         static std::unique_ptr<AudioDevice> _audioDevice;
 
         static std::chrono::steady_clock::time_point _startTime;

@@ -199,7 +199,7 @@ namespace vel
 
 			// ...otherwise loop through all meshes for this node, creating a Mesh for each one
 
-			SPDLOG_DEBUG("Loading new Mesh: {}", nodeName);
+			SPDLOG_DEBUG("AssimpMeshLoader::processNode(): Loading new Mesh: {}", nodeName);
 
 
 			// create one single mesh from all of the aiMeshes

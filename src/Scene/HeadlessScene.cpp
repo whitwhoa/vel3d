@@ -17,13 +17,10 @@ namespace vel
 		meshLoader(std::make_unique<AssimpMeshLoader>())
 	{}
 
-	HeadlessScene::~HeadlessScene() {}
-
-	void HeadlessScene::freeAssets()
+	HeadlessScene::~HeadlessScene() 
 	{
-		//this->meshes.clear();
-		//this->skeletons.clear();
-		// ^^ pointless...duh
+		for (auto& cw : this->collisionWorlds)
+			delete cw;
 	}
 
 	unsigned int HeadlessScene::getId()
@@ -46,20 +43,6 @@ namespace vel
 		for (auto& cw : this->collisionWorlds)
 			if (cw->getIsActive())
 				cw->getDynamicsWorld()->stepSimulation(delta, 0);
-	}
-
-	ozz::animation::Animation* HeadlessScene::loadAnimation(const std::string& name, const std::string& path)
-	{
-		ozz::animation::Animation* s = Runtime::_assetManager->loadAnimation(name, path);
-
-		this->animationsInUse.push_back(name);
-
-		return s;
-	}
-
-	ozz::animation::Animation* HeadlessScene::getAnimation(const std::string& name)
-	{
-		return Runtime::_assetManager->getAnimation(name);
 	}
 
 	CollisionWorld* HeadlessScene::addCollisionWorld(const std::string& name, float gravity)
@@ -128,7 +111,7 @@ namespace vel
 			if (this->stages.at(i)->getName() == name)
 				return this->stages.at(i).get();
 
-		SPDLOG_DEBUG("HeadlessScene::getStage: Attempting to retrive stage that does not exist: {}" + name);
+		SPDLOG_DEBUG("HeadlessScene::getStage(): Attempting to retrive stage that does not exist: {}" + name);
 
 		return nullptr;
 	}
@@ -141,7 +124,7 @@ namespace vel
 		const std::vector<std::string>& preLoadData = this->meshLoader->preload(path);
 		if (preLoadData.size() == 0)
 		{
-			SPDLOG_DEBUG("HeadlessScene::loadMesh: failed to preload required data for loading of mesh");
+			SPDLOG_DEBUG("HeadlessScene::loadMesh(): preload failed");
 			return {};
 		}
 
@@ -155,12 +138,12 @@ namespace vel
 
 			if (it == this->meshes.end())
 			{
-				SPDLOG_DEBUG("HeadlessScene::loadMesh: new mesh load: {}", pld);
+				SPDLOG_DEBUG("HeadlessScene::loadMesh(): new mesh load: {}", pld);
 				requiredData.push_back(pld);
 			}
 			else
 			{
-				SPDLOG_DEBUG("HeadlessScene::loadMesh: existing mesh load bypassed: {}", pld);
+				SPDLOG_DEBUG("HeadlessScene::loadMesh(): existing mesh (load bypassed): {}", pld);
 				out.push_back(it->second.get());
 			}
 		}
@@ -195,7 +178,7 @@ namespace vel
 
 		if (it == this->meshes.end())
 		{
-			SPDLOG_ERROR("AssetManager::getMesh(): Attempting to get mesh that does not exist: {}", name);
+			SPDLOG_ERROR("HeadlessScene::getMesh(): Attempting to get mesh that does not exist: {}", name);
 			return nullptr;
 		}
 
@@ -273,6 +256,67 @@ namespace vel
 		SPDLOG_DEBUG("HeadlessScene::removeSkeleton(): removed skeleton {}", name);
 	}
 
+	/***********************************************************************************************
+	* LOAD ANIMATIONS
+	************************************************************************************************/
+	ozz::animation::Animation* HeadlessScene::loadAnimation(const std::string& name, const std::string& path)
+	{
+		auto it = this->animations.find(name);
+		if (it != this->animations.end())
+		{
+			SPDLOG_DEBUG("HeadlessScene::loadAnimation(): Existing Animation, bypass reload: {}", name);
+
+			return it->second.get();
+		}
+
+		SPDLOG_DEBUG("HeadlessScene::loadAnimation(): Load new Animation: {}", name);
+
+
+		std::unique_ptr<ozz::animation::Animation> anim = std::make_unique<ozz::animation::Animation>();
+
+		ozz::io::File file(path.c_str(), "rb");
+		if (!file.opened())
+		{
+			SPDLOG_DEBUG("HeadlessScene::loadAnimation(): failed to load file: {}", path);
+			return nullptr;
+		}
+
+		ozz::io::IArchive archive(&file);
+		if (!archive.TestTag<ozz::animation::Animation>())
+		{
+			SPDLOG_DEBUG("HeadlessScene::loadAnimation(): failed to load animation instance from file: {}", path);
+			return nullptr;
+		}
+
+		// Once the tag is validated ^^, reading cannot fail.
+		archive >> *anim;
+
+		ozz::animation::Animation* rawAnimPtr = anim.get();
+		this->animations.emplace(name, std::move(anim));
+
+		return rawAnimPtr;
+	}
+
+	ozz::animation::Animation* HeadlessScene::getAnimation(const std::string& name)
+	{
+		auto it = this->animations.find(name);
+		if (it != this->animations.end())
+			return it->second.get();
+
+		SPDLOG_DEBUG("HeadlessScene::getAnimation(): attempting to get animation that does not exist: {}", name);
+		return nullptr;
+	}
+
+	void HeadlessScene::removeAnimation(const std::string& name)
+	{
+		auto it = this->animations.find(name);
+		if (it == this->animations.end())
+			return;
+
+		this->animations.erase(name);
+
+		SPDLOG_DEBUG("HeadlessScene::removeAnimation(): removed animation {}", name);
+	}
 
 
 

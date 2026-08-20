@@ -66,7 +66,7 @@ namespace vel
 
 	void App::removeScene(unsigned int id)
 	{
-		SPDLOG_DEBUG("App::removeScene: Removing Scene: {}", id);
+		SPDLOG_DEBUG("App::removeScene(): Removing Scene: {}", id);
 
 		size_t i = 0;
 		for (auto& s : this->scenes)
@@ -82,7 +82,7 @@ namespace vel
 
 	void App::swapScene(unsigned int id)
 	{
-		SPDLOG_DEBUG("App::swapScene: Swapping to Scene: {}", id);
+		SPDLOG_DEBUG("App::swapScene(): Swapping to Scene: {}", id);
 
 		for (auto& s : this->scenes)
 		{
@@ -107,7 +107,7 @@ namespace vel
 
     bool App::addScene(std::unique_ptr<Scene> scene, bool makeActive)
     {
-		SPDLOG_DEBUG("App::addScene: Adding new Scene");
+		SPDLOG_DEBUG("App::addScene(): Adding new Scene");
 		
 		this->scenes.push_back(std::move(scene));
 

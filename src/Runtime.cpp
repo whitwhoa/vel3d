@@ -13,7 +13,6 @@ namespace vel
 
     std::unique_ptr<Window> Runtime::_window = nullptr;
     std::unique_ptr<GPU> Runtime::_gpu = nullptr;
-    std::unique_ptr<AssetManager> Runtime::_assetManager = nullptr;
     std::unique_ptr<AudioDevice> Runtime::_audioDevice = nullptr;
 
     std::chrono::steady_clock::time_point Runtime::_startTime{};
@@ -36,18 +35,13 @@ namespace vel
         _frameRate = 0.0;
 
         if (_config.headless)
-        {
-            _assetManager = std::make_unique<AssetManager>(_config.dataDir, nullptr);
             return true;
-        }
 
         _window = std::make_unique<Window>();
         if (!_window->init(_config))
             return false;
 
         _gpu = std::make_unique<GPU>(_config.fxaa);
-
-        _assetManager = std::make_unique<AssetManager>(_config.dataDir, _gpu.get());
 
         _audioDevice = std::make_unique<AudioDevice>();
         if (!_audioDevice->init())
@@ -60,7 +54,6 @@ namespace vel
     void Runtime::shutdown()
     {
         _audioDevice.reset();
-        _assetManager.reset();
         _gpu.reset();
         _window.reset();
 

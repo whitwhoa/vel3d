@@ -2,7 +2,6 @@
 
 #include <spdlog/spdlog.h>
 
-#include <vel/AssetManager.h>
 #include <vel/Render/Camera.h>
 #include <vel/Scene/Stage/Actor/TextActor.h>
 #include <vel/Scene/Stage/Actor/LineActor.h>
