@@ -114,7 +114,7 @@ namespace vel
 	{
 		if (!(width > 0.0f && height > 0.0f))
 		{
-			SPDLOG_DEBUG("Mesh::initBillboardQuad: Billboard width and height must be positive.");
+			SPDLOG_DEBUG("Mesh::initBillboardQuad(): Billboard width and height must be positive.");
 			return false;
 		}
 
