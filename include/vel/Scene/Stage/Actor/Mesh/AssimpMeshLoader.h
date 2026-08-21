@@ -21,11 +21,12 @@ namespace vel
 	private:
 		Assimp::Importer						aiImporter;
 		const aiScene*							impScene;
-		std::string								currentAssetFile;
-		std::vector<std::string>				meshesInFile;
+
+		std::vector<std::pair<std::string, VtxLayout>> preloadData; // <mesh name, vertex layout>
+
 		std::string								armatureInFile;
-		const std::vector<std::string>*			meshesToLoad;
-		std::vector<std::unique_ptr<Mesh>>		meshes;
+		std::vector<std::pair<std::string, GeoPool*>>* meshesToLoad;
+		std::vector<std::unique_ptr<Mesh>>		meshes; // TF? this is a private member but it's later returned using std::move()
 		unsigned int							currentMeshTextureId;
 
 		void			preProcessNode(aiNode* node);
@@ -42,8 +43,8 @@ namespace vel
 		AssimpMeshLoader();
 		~AssimpMeshLoader() {};
 
-		const std::vector<std::string>&		preload(const std::string& filePath);
-		std::vector<std::unique_ptr<Mesh>>	load(const std::vector<std::string>* loadables);
+		const std::vector<std::pair<std::string, VtxLayout>>& preload(const std::string& filePath);
+		std::vector<std::unique_ptr<Mesh>> load(std::vector<std::pair<std::string, GeoPool*>>* loadables);
 
 		void reset();
 	};

@@ -7,6 +7,7 @@
 #include <vel/Runtime.h>
 #include <vel/Scene/HeadlessScene.h>
 #include <vel/Scene/Stage/Actor/Mesh/AssimpMeshLoader.h>
+//#include <vel/Scene/Stage/Actor/Mesh/VtxLayout.h>
 
 namespace vel
 {
@@ -15,7 +16,14 @@ namespace vel
 	HeadlessScene::HeadlessScene() :
 		id(HeadlessScene::nextSceneId++),
 		meshLoader(std::make_unique<AssimpMeshLoader>())
-	{}
+	{
+	
+		this->geoPools.emplace(VtxLayout::VTX_POS_NRML, std::make_unique<GeoPoolT<VtxPosNrml>>());
+		this->geoPools.emplace(VtxLayout::VTX_POS_NRML_TX, std::make_unique<GeoPoolT<VtxPosNrmlTx>>());
+		this->geoPools.emplace(VtxLayout::VTX_POS_NRML_TX_LM, std::make_unique<GeoPoolT<VtxPosNrmlTxLm>>());
+		this->geoPools.emplace(VtxLayout::VTX_POS_NRML_TX_SKN, std::make_unique<GeoPoolT<VtxPosNrmlTxSkn>>());
+
+	}
 
 	HeadlessScene::~HeadlessScene() 
 	{
@@ -119,9 +127,9 @@ namespace vel
 	/***********************************************************************************************
 	* LOAD MESHES
 	************************************************************************************************/
-	std::vector<Mesh*> HeadlessScene::loadMesh(const std::string& path)
+	std::vector<Mesh*> HeadlessScene::loadMesh(const std::string& path, bool standaloneGeometry = false)
 	{
-		const std::vector<std::string>& preLoadData = this->meshLoader->preload(path);
+		const std::vector<std::pair<std::string, VtxLayout>>& preLoadData = this->meshLoader->preload(path);
 		if (preLoadData.size() == 0)
 		{
 			SPDLOG_DEBUG("HeadlessScene::loadMesh(): preload failed");
@@ -131,15 +139,37 @@ namespace vel
 		std::vector<Mesh*> out;
 
 		// check for duplicates
-		std::vector<std::string> requiredData;
+		std::vector<std::pair<std::string, GeoPool*>> requiredData;
 		for (auto& pld : preLoadData)
 		{
-			auto it = this->meshes.find(pld);
+			auto it = this->meshes.find(pld.first);
 
 			if (it == this->meshes.end())
 			{
 				SPDLOG_DEBUG("HeadlessScene::loadMesh(): new mesh load: {}", pld);
-				requiredData.push_back(pld);
+
+				if (!standaloneGeometry)
+				{
+					requiredData.push_back({pld.first, this->geoPools[pld.second].get()});
+				}
+				else
+				{
+					std::unique_ptr<GeoPool> standAlonePool = nullptr;
+					if (pld.second == VtxLayout::VTX_POS_NRML)
+						standAlonePool = std::make_unique<GeoPoolT<VtxPosNrml>>(true);
+					else if (pld.second == VtxLayout::VTX_POS_NRML_TX)
+						standAlonePool = std::make_unique<GeoPoolT<VtxPosNrmlTx>>(true);
+					else if (pld.second == VtxLayout::VTX_POS_NRML_TX_LM)
+						standAlonePool = std::make_unique<GeoPoolT<VtxPosNrmlTxLm>>(true);
+					else if (pld.second == VtxLayout::VTX_POS_NRML_TX_SKN)
+						standAlonePool = std::make_unique<GeoPoolT<VtxPosNrmlTxSkn>>(true);
+
+					GeoPool* standAlonePoolRawPtr = standAlonePool.get();
+
+					this->standaloneGeos.push_back(std::move(standAlonePool));
+
+					requiredData.push_back({pld.first, standAlonePoolRawPtr});
+				}				
 			}
 			else
 			{
@@ -164,7 +194,7 @@ namespace vel
 	}
 
 	// This method assumes that the caller understands no duplication checks are occuring
-	Mesh* HeadlessScene::addMesh(std::unique_ptr<Mesh> m)
+	Mesh* HeadlessScene::addMesh(std::unique_ptr<Mesh> m, bool standaloneGeometry = false)
 	{
 		Mesh* rawPtr = m.get();
 		this->meshes.emplace(m->getName(), std::move(m));

@@ -10,7 +10,7 @@ namespace vel
 {
 	AssimpMeshLoader::AssimpMeshLoader() :
 		impScene(nullptr),
-		currentAssetFile(""),
+		meshesToLoad(nullptr),
 		currentMeshTextureId(0)
 	{
 		
@@ -20,8 +20,7 @@ namespace vel
 	{
 		this->aiImporter.FreeScene();
 		this->impScene = nullptr;
-		this->currentAssetFile = "";
-		this->meshesInFile.clear();
+		this->preloadData.clear();
 		this->meshes.clear();
 		this->currentMeshTextureId = 0;
 	}
@@ -31,17 +30,46 @@ namespace vel
 		std::string nodeName = node->mName.C_Str();
 
 		if (nodeName != "RootNode" && node->mNumMeshes > 0)
-			this->meshesInFile.push_back(nodeName);
+		{
+			bool hasTexture = false;
+			bool hasLightMap = false;
+			bool hasBones = false;
+
+			for (unsigned int i = 0; i < node->mNumMeshes; ++i)
+			{
+				const aiMesh* mesh = this->impScene->mMeshes[node->mMeshes[i]];
+
+				hasTexture |= mesh->HasTextureCoords(0);
+				hasLightMap |= mesh->HasTextureCoords(1);
+				hasBones |= mesh->HasBones();
+			}
+
+			VtxLayout vtxl;
+			if (!hasTexture && !hasLightMap && !hasBones)
+				vtxl = VtxLayout::VTX_POS_NRML;
+			else if (hasTexture && !hasLightMap && !hasBones)
+				vtxl = VtxLayout::VTX_POS_NRML_TX;
+			else if (hasTexture && hasLightMap && !hasBones)
+				vtxl = VtxLayout::VTX_POS_NRML_TX_LM;
+			else if (hasTexture && !hasLightMap && hasBones)
+				vtxl = VtxLayout::VTX_POS_NRML_TX_SKN;
+			else
+			{
+				SPDLOG_ERROR("AssimpMeshLoader::preProcessNode(): unsupported vertex layout type. Using default");
+				vtxl = VtxLayout::VTX_POS_NRML;
+			}
+
+			this->preloadData.push_back(std::pair<std::string, VtxLayout>(nodeName, vtxl));
+		}
+			
 
 		for (unsigned int i = 0; i < node->mNumChildren; i++)
 			this->preProcessNode(node->mChildren[i]);
 	}
 
-	const std::vector<std::string>& AssimpMeshLoader::preload(const std::string& filePath)
+	const std::vector<std::pair<std::string, VtxLayout>>& AssimpMeshLoader::preload(const std::string& filePath)
 	{
-		this->currentAssetFile = filePath;
-
-		this->impScene = this->aiImporter.ReadFile(this->currentAssetFile, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+		this->impScene = this->aiImporter.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
 		if (!this->impScene || !this->impScene->mRootNode)
 		{
@@ -52,10 +80,10 @@ namespace vel
 			this->preProcessNode(this->impScene->mRootNode);
 		}
 
-		return this->meshesInFile;
+		return this->preloadData;
 	}
 
-	std::vector<std::unique_ptr<Mesh>> AssimpMeshLoader::load(const std::vector<std::string>* loadables)
+	std::vector<std::unique_ptr<Mesh>> AssimpMeshLoader::load(std::vector<std::pair<std::string, GeoPool*>>* loadables)
 	{
 		this->meshesToLoad = loadables;
 
@@ -185,9 +213,9 @@ namespace vel
 			// use node name for mesh name...
 
 			bool shouldLoadMesh = false;
-			for (auto& mn : *this->meshesToLoad)
+			for (auto& m : *this->meshesToLoad)
 			{
-				if (mn == nodeName)
+				if (m.first == nodeName)
 				{
 					shouldLoadMesh = true;
 					break;
@@ -233,6 +261,13 @@ namespace vel
 
 			// reset mesh texture id... this was a fun little bug to figure out
 			this->currentMeshTextureId = 0;
+
+			// TODO: init Mesh here. Set it's index values from sizes of GeoPool buffers. Hold tmp count of indices
+
+			// TODO: instead of having processMesh() take references to buffers, take GeoPool*, might still need meshBones passed as ref
+
+			// TODO: processMesh() updates GeoPool* in place, when finished, calculate number of indices using current size - cached prev size
+
 
 			// process all custom material meshes
 			for (auto& cm : customMaterialMeshes)

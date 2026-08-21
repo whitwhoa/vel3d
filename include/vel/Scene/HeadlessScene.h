@@ -9,6 +9,7 @@
 
 #include <vel/Scene/Stage/Stage.h>
 #include <vel/Scene/Stage/Actor/Mesh/MeshLoaderInterface.h>
+#include <vel/Scene/Stage/Actor/Mesh/GeoPool.h>
 #include <vel/Physics/CollisionWorld.h>
 
 
@@ -27,6 +28,9 @@ namespace vel
 		std::vector<std::unique_ptr<Stage>>		stages;
 		std::vector<CollisionWorld*> 			collisionWorlds;
 
+		std::unordered_map<VtxLayout, std::unique_ptr<GeoPool>> geoPools;
+		std::vector<std::unique_ptr<GeoPool>>					standaloneGeos;
+
 		std::unordered_map<std::string, std::unique_ptr<Mesh>>						meshes;
 		std::unordered_map<std::string, std::unique_ptr<ozz::animation::Skeleton>>	skeletons;
 		std::unordered_map<std::string, std::unique_ptr<ozz::animation::Animation>>	animations;
@@ -34,8 +38,8 @@ namespace vel
 
 		int										getCollisionWorldIndex(const std::string& name);
 
-		virtual std::vector<Mesh*>				loadMesh(const std::string& path);
-		virtual Mesh*							addMesh(std::unique_ptr<Mesh> m);
+		virtual std::vector<Mesh*>				loadMesh(const std::string& path, bool standaloneGeometry = false);
+		virtual Mesh*							addMesh(std::unique_ptr<Mesh> m, bool standaloneGeometry = false);
 		Mesh*									getMesh(const std::string& name);
 		virtual void							removeMesh(Mesh* pMesh);
 

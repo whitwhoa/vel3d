@@ -895,7 +895,7 @@ namespace vel
 	/***********************************************************************************************
 	* LOAD MESHES
 	************************************************************************************************/
-	std::vector<Mesh*> Scene::loadMesh(const std::string& path)
+	std::vector<Mesh*> Scene::loadMesh(const std::string& path, bool standaloneGeometry)
 	{
 		std::vector<Mesh*> out = HeadlessScene::loadMesh(path);
 		for(auto& m : out)
@@ -906,7 +906,7 @@ namespace vel
 	}
 
 	// This method assumes that the caller understands no duplication checks are occuring
-	Mesh* Scene::addMesh(std::unique_ptr<Mesh> m)
+	Mesh* Scene::addMesh(std::unique_ptr<Mesh> m, bool standaloneGeometry)
 	{
 		Mesh* rawPtr = HeadlessScene::addMesh(std::move(m));
 		Runtime::_gpu->loadMesh(rawPtr);

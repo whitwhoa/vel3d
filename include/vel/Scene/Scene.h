@@ -113,8 +113,8 @@ namespace vel
 		Shader*						getShader(const std::string& name);
 		void						removeShader(Shader* pShader);
 
-		std::vector<Mesh*>			loadMesh(const std::string& path) override;
-		Mesh*						addMesh(std::unique_ptr<Mesh> m) override;
+		std::vector<Mesh*>			loadMesh(const std::string& path, bool standaloneGeometry = false) override;
+		Mesh*						addMesh(std::unique_ptr<Mesh> m, bool standaloneGeometry = false) override;
 		void						updateRenderMesh(Mesh* m);
 		void						removeMesh(Mesh* pMesh) override;
 		std::unique_ptr<Mesh>		loadTextActorMesh(TextActor* ta);
