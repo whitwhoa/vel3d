@@ -14,7 +14,6 @@
 #include <vel/Physics/CollisionObjectTemplate.h>
 #include <vel/Scene/Scene.h>
 #include <vel/Scene/Stage/Actor/Material/MaterialOptions.h>
-#include <vel/Scene/Stage/Actor/Mesh/Vertex.h>
 #include <vel/Scene/Stage/Actor/Material/Texture/Texture.h>
 
 using json = nlohmann::json;
@@ -928,7 +927,7 @@ namespace vel
 
 		Runtime::_gpu->clearMesh(m);
 
-		this->meshes.erase(m->getName());
+		this->meshes.erase(it);
 	}
 
 	std::unique_ptr<Mesh> Scene::loadTextActorMesh(TextActor* ta)

@@ -27,9 +27,7 @@ namespace vel
 
 	void AssimpMeshLoader::preProcessNode(aiNode* node)
 	{
-		std::string nodeName = node->mName.C_Str();
-
-		if (nodeName != "RootNode" && node->mNumMeshes > 0)
+		if (node != this->impScene->mRootNode && node->mNumMeshes > 0)
 		{
 			bool hasTexture = false;
 			bool hasLightMap = false;
@@ -59,7 +57,7 @@ namespace vel
 				vtxl = VtxLayout::VTX_POS_NRML;
 			}
 
-			this->preloadData.push_back(std::pair<std::string, VtxLayout>(nodeName, vtxl));
+			this->preloadData.push_back(std::pair<std::string, VtxLayout>(node->mName.C_Str(), vtxl));
 		}
 			
 
@@ -69,7 +67,13 @@ namespace vel
 
 	const std::vector<std::pair<std::string, VtxLayout>>& AssimpMeshLoader::preload(const std::string& filePath)
 	{
-		this->impScene = this->aiImporter.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+		this->impScene = this->aiImporter.ReadFile(filePath, 
+			aiProcess_Triangulate
+			| aiProcess_FlipUVs
+			| aiProcess_JoinIdenticalVertices
+			| aiProcess_LimitBoneWeights // default is 4, which is our max supported
+			| aiProcess_GenSmoothNormals // generate smooth normals, when normals not provided
+		);
 
 		if (!this->impScene || !this->impScene->mRootNode)
 		{
@@ -92,61 +96,152 @@ namespace vel
 		return std::move(this->meshes);
 	}
 
-	void AssimpMeshLoader::processMesh(aiMesh* aiMesh, std::vector<Vertex>& meshVertices, 
-		std::vector<unsigned int>& meshIndices, std::vector<MeshBone>& meshBones)
+	void AssimpMeshLoader::processVtxPosNrml(aiMesh* aiMesh, Mesh* mesh)
 	{
-		unsigned int indiceOffset = meshVertices.size();
+		std::vector<VtxPosNrml>& verts = static_cast<GeoPoolT<VtxPosNrml>*>(mesh->gp)->vertices;
 
-		// walk through each of the aimesh's vertices
 		for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
 		{
-			Vertex vertex;
-			glm::vec3 vector;
+			VtxPosNrml vtx;
+			
+			vtx.position = { aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z };
+			vtx.normal = { aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z };
 
-			// position
-			vector.x = aiMesh->mVertices[i].x;
-			vector.y = aiMesh->mVertices[i].y;
-			vector.z = aiMesh->mVertices[i].z;
-			vertex.position = vector;
+			verts.push_back(vtx);
+		}
+	}
 
-			// normal
-			vector.x = aiMesh->mNormals[i].x;
-			vector.y = aiMesh->mNormals[i].y;
-			vector.z = aiMesh->mNormals[i].z;
-			vertex.normal = vector;
+	void AssimpMeshLoader::processVtxPosNrmlTx(aiMesh* aiMesh, Mesh* mesh)
+	{
+		std::vector<VtxPosNrmlTx>& verts = static_cast<GeoPoolT<VtxPosNrmlTx>*>(mesh->gp)->vertices;
 
-			// texture coordinates
-			if (aiMesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
-			{
-				glm::vec2 vec;
-				// a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
-				// use models where a vertex can have more than 2 texture coordinates.
-				vec.x = aiMesh->mTextureCoords[0][i].x;
-				vec.y = aiMesh->mTextureCoords[0][i].y;
-				vertex.textureCoordinates = vec;
+		for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
+		{
+			VtxPosNrmlTx vtx;
 
-				// assign this mesh's textureid to each vertex
-				vertex.materialUBOIndex = this->currentMeshTextureId;
-			}
+			vtx.position = { aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z };
+			vtx.normal = { aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z };
+
+			if (aiMesh->HasTextureCoords(0))
+				vtx.textureCoords = { aiMesh->mTextureCoords[0][i].x, aiMesh->mTextureCoords[0][i].y };
 			else
-			{
-				vertex.textureCoordinates = glm::vec2(0.0f, 0.0f);
-			}
+				vtx.textureCoords = { 0.f, 0.f };
 
-			// secondary texture coordinates
-			if (aiMesh->mTextureCoords[1])
-			{
-				glm::vec2 vec;
-				vec.x = aiMesh->mTextureCoords[1][i].x;
-				vec.y = aiMesh->mTextureCoords[1][i].y;
-				vertex.lightmapCoordinates = vec;
-			}
+			vtx.materialUBOIndex = this->currentMeshTextureId;
+
+			verts.push_back(vtx);
+		}
+	}
+
+	void AssimpMeshLoader::processVtxPosNrmlTxLm(aiMesh* aiMesh, Mesh* mesh)
+	{
+		std::vector<VtxPosNrmlTxLm>& verts = static_cast<GeoPoolT<VtxPosNrmlTxLm>*>(mesh->gp)->vertices;
+
+		for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
+		{
+			VtxPosNrmlTxLm vtx;
+
+			vtx.position = { aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z };
+			vtx.normal = { aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z };
+
+			if (aiMesh->HasTextureCoords(0))
+				vtx.textureCoords = { aiMesh->mTextureCoords[0][i].x, aiMesh->mTextureCoords[0][i].y };
 			else
+				vtx.textureCoords = { 0.f, 0.f };
+
+			if (aiMesh->HasTextureCoords(1))
+				vtx.lightmapCoords = { aiMesh->mTextureCoords[1][i].x, aiMesh->mTextureCoords[1][i].y };
+			else
+				vtx.lightmapCoords = { 0.f, 0.f };
+
+			vtx.materialUBOIndex = this->currentMeshTextureId;
+
+			verts.push_back(vtx);
+		}
+	}
+
+	void AssimpMeshLoader::processVtxPosNrmlTxSkn(aiMesh* aiMesh, Mesh* mesh, unsigned int offset)
+	{
+		std::vector<VtxPosNrmlTxSkn>& verts = static_cast<GeoPoolT<VtxPosNrmlTxSkn>*>(mesh->gp)->vertices;
+
+		for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
+		{
+			VtxPosNrmlTxSkn vtx;
+
+			vtx.position = { aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z };
+			vtx.normal = { aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z };
+
+			if (aiMesh->HasTextureCoords(0))
+				vtx.textureCoords = { aiMesh->mTextureCoords[0][i].x, aiMesh->mTextureCoords[0][i].y };
+			else
+				vtx.textureCoords = { 0.f, 0.f };
+
+			vtx.materialUBOIndex = this->currentMeshTextureId;
+
+			verts.push_back(vtx);
+		}
+
+		for (unsigned int i = 0; i < aiMesh->mNumBones; i++)
+		{
+			if (aiMesh->mBones[i]->mNumWeights == 0)
+				continue;
+
+			std::string aBoneName = aiMesh->mBones[i]->mName.C_Str();
+			unsigned int boneIndex;
+			bool foundExistingBone = false;
+			for (unsigned int k = 0; k < mesh->bones.size(); k++)
 			{
-				vertex.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+				if (mesh->bones[k].name == aBoneName)
+				{
+					boneIndex = k;
+					foundExistingBone = true;
+					break;
+				}
 			}
 
-			meshVertices.push_back(vertex);
+			if (!foundExistingBone)
+			{
+				MeshBone b = MeshBone();
+				b.name = aiMesh->mBones[i]->mName.C_Str();
+				b.offsetMatrix = this->aiMatrix4x4ToGlm(aiMesh->mBones[i]->mOffsetMatrix);
+				mesh->bones.push_back(b);
+				boneIndex = mesh->bones.size() - 1;
+			}
+
+			for (unsigned int j = 0; j < aiMesh->mBones[i]->mNumWeights; j++)
+			{
+				unsigned int tmpVertInd = mesh->baseVertex + offset + aiMesh->mBones[i]->mWeights[j].mVertexId;
+				for (unsigned int m = 0; m < (sizeof(verts[tmpVertInd].boneIds) / sizeof(verts[tmpVertInd].boneIds[0])); m++)
+				{
+					if (verts[tmpVertInd].boneWeights[m] == 0.0f)
+					{
+						verts[tmpVertInd].boneIds[m] = boneIndex;
+						verts[tmpVertInd].boneWeights[m] = aiMesh->mBones[i]->mWeights[j].mWeight;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	void AssimpMeshLoader::processMesh(aiMesh* aiMesh, Mesh* mesh)
+	{
+		unsigned int indiceOffset = mesh->gp->vertexCount() - mesh->baseVertex;
+
+		switch (mesh->gp->vtxLayout)
+		{
+		case VtxLayout::VTX_POS_NRML:
+			this->processVtxPosNrml(aiMesh, mesh);
+			break;
+		case VtxLayout::VTX_POS_NRML_TX:
+			this->processVtxPosNrmlTx(aiMesh, mesh);
+			break;
+		case VtxLayout::VTX_POS_NRML_TX_LM:
+			this->processVtxPosNrmlTxLm(aiMesh, mesh);
+			break;
+		case VtxLayout::VTX_POS_NRML_TX_SKN:
+			this->processVtxPosNrmlTxSkn(aiMesh, mesh, indiceOffset);
+			break;
 		}
 
 		for (unsigned int i = 0; i < aiMesh->mNumFaces; i++)
@@ -154,139 +249,87 @@ namespace vel
 			aiFace face = aiMesh->mFaces[i];
 
 			for (unsigned int j = 0; j < face.mNumIndices; j++)
-				meshIndices.push_back(face.mIndices[j] + indiceOffset);
-		}
-
-		if (aiMesh->HasBones())
-		{
-			for (unsigned int i = 0; i < aiMesh->mNumBones; i++)
-			{
-				if (aiMesh->mBones[i]->mNumWeights == 0)
-					continue;
-
-				std::string aBoneName = aiMesh->mBones[i]->mName.C_Str();
-				unsigned int boneIndex;
-				bool foundExistingBone = false;
-				for (unsigned int k = 0; k < meshBones.size(); k++)
-				{
-					if (meshBones.at(k).name == aBoneName)
-					{
-						boneIndex = k;
-						foundExistingBone = true;
-						break;
-					}
-				}
-
-				if (!foundExistingBone)
-				{
-					auto b = MeshBone();
-					b.name = aiMesh->mBones[i]->mName.C_Str();
-					b.offsetMatrix = this->aiMatrix4x4ToGlm(aiMesh->mBones[i]->mOffsetMatrix);
-					meshBones.push_back(b);
-					boneIndex = meshBones.size() - 1;
-				}
-
-				for (unsigned int j = 0; j < aiMesh->mBones[i]->mNumWeights; j++)
-				{
-					unsigned int tmpVertInd = aiMesh->mBones[i]->mWeights[j].mVertexId + indiceOffset;
-					for (unsigned int m = 0; m < (sizeof(meshVertices.at(tmpVertInd).weights.ids) / sizeof(meshVertices.at(tmpVertInd).weights.ids[0])); m++)
-					{
-						if (meshVertices.at(tmpVertInd).weights.weights[m] == 0.0f)
-						{
-							meshVertices.at(tmpVertInd).weights.ids[m] = boneIndex;
-							meshVertices.at(tmpVertInd).weights.weights[m] = aiMesh->mBones[i]->mWeights[j].mWeight;
-							break;
-						}
-					}
-				}
-			}
+				mesh->gp->indices.push_back(indiceOffset + face.mIndices[j]);
 		}
 	}
 
 	void AssimpMeshLoader::processNode(aiNode* node)
 	{
-		std::string nodeName = node->mName.C_Str();
-
-		// If this is not the RootNode
-		if (nodeName != "RootNode")
+		if (node != this->impScene->mRootNode)
 		{
 			// use node name for mesh name...
+			std::string nodeName = node->mName.C_Str();
 
-			bool shouldLoadMesh = false;
+			GeoPool* gp = nullptr;
 			for (auto& m : *this->meshesToLoad)
 			{
 				if (m.first == nodeName)
 				{
-					shouldLoadMesh = true;
+					gp = m.second;
 					break;
 				}
 			}
 
-			if (!shouldLoadMesh)
-				return;
-
-			// ...otherwise loop through all meshes for this node, creating a Mesh for each one
-
-			SPDLOG_DEBUG("AssimpMeshLoader::processNode(): Loading new Mesh: {}", nodeName);
-
-
-			// create one single mesh from all of the aiMeshes
-
-			std::vector<MeshBone> meshBones = {};
-
-			unsigned int meshCount = node->mNumMeshes;
-
-			// if more than one mesh then we need to sort these meshes by the names of their
-			// materials, unless the name of their material is "DefaultMaterial", then we process
-			// those after the named material meshes
-			std::vector<aiMesh*> defaultMaterialMeshes;
-			std::vector<std::pair<std::string, aiMesh*>> customMaterialMeshes;
-			for (unsigned int i = 0; i < meshCount; i++)
+			if (gp)
 			{
-				auto tmpMesh = this->impScene->mMeshes[node->mMeshes[(i)]];
-				auto matName = this->impScene->mMaterials[tmpMesh->mMaterialIndex]->GetName().C_Str();
-				if (matName == "DefaultMaterial")
+				// join all aiMeshes of this node into a single Mesh object
+
+				SPDLOG_DEBUG("AssimpMeshLoader::processNode(): Loading new Mesh: {}", nodeName);
+
+
+				// create one single mesh from all of the aiMeshes
+				unsigned int meshCount = node->mNumMeshes;
+
+				// if more than one mesh then we need to sort these meshes by the names of their
+				// materials, unless the name of their material is "DefaultMaterial", then we process
+				// those after the named material meshes
+				std::vector<aiMesh*> defaultMaterialMeshes;
+				std::vector<std::pair<std::string, aiMesh*>> customMaterialMeshes;
+				for (unsigned int i = 0; i < meshCount; i++)
 				{
-					defaultMaterialMeshes.push_back(tmpMesh);
-					continue;
+					aiMesh* tmpMesh = this->impScene->mMeshes[node->mMeshes[(i)]];
+					std::string matName = this->impScene->mMaterials[tmpMesh->mMaterialIndex]->GetName().C_Str();
+					if (matName == "DefaultMaterial")
+					{
+						defaultMaterialMeshes.push_back(tmpMesh);
+						continue;
+					}
+
+					customMaterialMeshes.push_back(std::pair<std::string, aiMesh*>(matName, tmpMesh));
 				}
 
-				customMaterialMeshes.push_back(std::pair<std::string, aiMesh*>(matName, tmpMesh));
+				// now sort meshes based on material names
+				std::sort(customMaterialMeshes.begin(), customMaterialMeshes.end());
+
+				// reset mesh texture id... this was a fun little bug to figure out
+				this->currentMeshTextureId = 0;
+
+				// init Mesh here. Set it's index values from sizes of GeoPool buffers. Hold tmp count of indices
+				std::unique_ptr<Mesh> finalMesh = std::make_unique<Mesh>(nodeName);
+				finalMesh->gp = gp;
+				finalMesh->firstIndex = gp->indices.size();
+				finalMesh->baseVertex = gp->vertexCount();
+				unsigned int prevIndexCount = gp->indices.size();
+
+				// process all custom material meshes
+				for (auto& cm : customMaterialMeshes)
+				{
+					this->processMesh(cm.second, finalMesh.get());
+					this->currentMeshTextureId++;
+				}
+
+				// process all "DefaultMaterial" meshes
+				for (auto& dm : defaultMaterialMeshes)
+				{
+					this->processMesh(dm, finalMesh.get());
+					this->currentMeshTextureId++;
+				}
+
+				finalMesh->indexCount = finalMesh->gp->indices.size() - prevIndexCount;
+
+				this->meshes.push_back(std::move(finalMesh));
+
 			}
-
-			// now sort meshes based on material names
-			std::sort(customMaterialMeshes.begin(), customMaterialMeshes.end());
-
-			// reset mesh texture id... this was a fun little bug to figure out
-			this->currentMeshTextureId = 0;
-
-			// TODO: init Mesh here. Set it's index values from sizes of GeoPool buffers. Hold tmp count of indices
-			std::unique_ptr<Mesh> finalMesh = std::make_unique<Mesh>(nodeName);
-
-
-			// TODO: instead of having processMesh() take references to buffers, take GeoPool*, might still need meshBones passed as ref
-
-			// TODO: processMesh() updates GeoPool* in place, when finished, calculate number of indices using current size - cached prev size
-
-
-			// process all custom material meshes
-			for (auto& cm : customMaterialMeshes)
-			{
-				this->processMesh(cm.second, meshVertices, meshIndices, meshBones);
-				this->currentMeshTextureId++;
-			}
-
-			// process all "DefaultMaterial" meshes
-			for (auto& dm : defaultMaterialMeshes)
-			{
-				this->processMesh(dm, meshVertices, meshIndices, meshBones);
-				this->currentMeshTextureId++;
-			}
-
-			finalMesh->setBones(meshBones);
-
-			this->meshes.push_back(std::move(finalMesh));
-			
 		}
 
 		// Do the same for each of its children
@@ -303,18 +346,6 @@ namespace vel
 		to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
 		to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
 		return to;
-	}
-
-	aiMatrix4x4 AssimpMeshLoader::glmToAssImpMat4(glm::mat4 mat)
-	{
-		const float* glmMat = (const float*)glm::value_ptr(mat);
-
-		return aiMatrix4x4(
-			glmMat[0], glmMat[1], glmMat[2], glmMat[3],
-			glmMat[4], glmMat[5], glmMat[6], glmMat[7],
-			glmMat[8], glmMat[9], glmMat[10], glmMat[11],
-			glmMat[12], glmMat[13], glmMat[14], glmMat[15]
-		);
 	}
 
 }

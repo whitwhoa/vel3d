@@ -18,10 +18,12 @@ namespace vel
     {
     public:
         VtxLayout vtxLayout;
+        std::vector<unsigned int> indices;
         std::optional<GpuGeoPool> gpuGeoPool;
         bool standalone;
 
         virtual ~GeoPool() = default;
+        virtual unsigned int vertexCount() = 0;
 
     protected:
         GeoPool(VtxLayout layout, bool standalone) :
@@ -36,10 +38,14 @@ namespace vel
     {
     public:
         std::vector<T> vertices;
-        std::vector<unsigned int> indices;
-
+        
         GeoPoolT(bool standalone = false) :
-            GeoPool(T::layout, standalone),
+            GeoPool(T::layout, standalone)
         {}
+
+        unsigned int vertexCount() override
+        {
+            return this->vertices.size();
+        }
     };
 }

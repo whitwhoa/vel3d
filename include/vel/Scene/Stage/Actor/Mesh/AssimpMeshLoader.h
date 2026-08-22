@@ -31,10 +31,14 @@ namespace vel
 		void			preProcessNode(aiNode* node);
 
 		void			processNode(aiNode* node);
-		void			processMesh(aiMesh* aiMesh, std::vector<Vertex>& meshVertices, std::vector<unsigned int>& meshIndices, std::vector<MeshBone>& meshBones);
+		void			processMesh(aiMesh* aiMesh, Mesh* mesh);
+
+		void			processVtxPosNrml(aiMesh* aiMesh, Mesh* mesh);
+		void			processVtxPosNrmlTx(aiMesh* aiMesh, Mesh* mesh);
+		void			processVtxPosNrmlTxLm(aiMesh* aiMesh, Mesh* mesh);
+		void			processVtxPosNrmlTxSkn(aiMesh* aiMesh, Mesh* mesh, unsigned int offset);
 
 		glm::mat4		aiMatrix4x4ToGlm(const aiMatrix4x4& from);
-		aiMatrix4x4		glmToAssImpMat4(glm::mat4 mat);
 
 		
 

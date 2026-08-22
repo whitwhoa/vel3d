@@ -183,7 +183,7 @@ namespace vel
 		for (auto& m : loadedAssets)
 		{
 			Mesh* rawPtr = m.get();
-			this->meshes.emplace(m->getName(), std::move(m));
+			this->meshes.emplace(m->name, std::move(m));
 
 			out.push_back(rawPtr);
 		}
@@ -197,7 +197,7 @@ namespace vel
 	Mesh* HeadlessScene::addMesh(std::unique_ptr<Mesh> m, bool standaloneGeometry = false)
 	{
 		Mesh* rawPtr = m.get();
-		this->meshes.emplace(m->getName(), std::move(m));
+		this->meshes.emplace(m->name, std::move(m));
 
 		return rawPtr;
 	}
@@ -217,12 +217,12 @@ namespace vel
 
 	void HeadlessScene::removeMesh(Mesh* m)
 	{
-		auto it = this->meshes.find(m->getName());
+		auto it = this->meshes.find(m->name);
 
 		if (it == this->meshes.end())
 			return;
 
-		this->meshes.erase(m->getName());
+		this->meshes.erase(it);
 	}
 
 	/***********************************************************************************************
