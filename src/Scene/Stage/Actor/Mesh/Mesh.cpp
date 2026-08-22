@@ -5,26 +5,13 @@
 
 namespace vel
 {
-
     Mesh::Mesh(std::string name) :
-        name(name),
-		aabbStale(true)
+        name(name)
     {}
 
-	AABB& Mesh::getAABB()
+	void Mesh::refreshAABB()
 	{
-		if (this->aabb.has_value() && !this->aabbStale)
-			return this->aabb.value();
-
-		this->aabb = AABB(this->getVertices());
-		this->aabbStale = false;
-
-		return this->aabb.value();
-	}
-
-	const std::vector<MeshBone>& Mesh::getBones() const
-	{
-		return this->bones;
+		// TODO: implement
 	}
 
 	MeshBone* Mesh::getBone(std::string boneName)
@@ -37,129 +24,9 @@ namespace vel
 		return nullptr;
 	}
 
-	MeshBone& Mesh::getBone(size_t index)
+	bool Mesh::isRenderable() const
 	{
-		return this->bones.at(index);
-	}
-
-	const bool Mesh::hasBones() const
-	{
-		if (this->bones.size() > 0)
-			return true;
-
-		return false;
-	}
-
-	void Mesh::setVertices(const std::vector<Vertex>& vertices)
-	{
-		this->vertices = vertices;
-		this->aabbStale = true;
-	}
-
-	void Mesh::setIndices(const std::vector<unsigned int>& indices)
-	{
-		this->indices = indices;
-	}
-
-	void Mesh::setBones(const std::vector<MeshBone>& bones)
-	{
-		this->bones = bones;
-	}
-
-    void Mesh::setGpuMesh(GpuMesh gm)
-    {
-		this->gpuMesh = gm;
-    }
-
-    const std::vector<Vertex>& Mesh::getVertices() const
-    {
-        return this->vertices;
-    }
-
-	std::vector<Vertex>& Mesh::getMutableVertices()
-	{
-		this->aabbStale = true;
-		return this->vertices;
-	}
-
-    std::vector<unsigned int>& Mesh::getIndices()
-    {
-        return this->indices;
-    }
-
-    const std::string Mesh::getName() const
-    {
-        return this->name;
-    }
-
-    const bool Mesh::isRenderable() const
-    {
-        return this->gpuMesh.has_value();
-    }
-
-    std::optional<GpuMesh>& Mesh::getGpuMesh()
-    {
-        return this->gpuMesh;
-    }
-
-	// utility function for when we use a mesh object to store a group of vertices
-	// for the purpose of generating an AABB
-	void Mesh::appendVertices(const std::vector<Vertex>& vs)
-	{
-		this->vertices.reserve(this->vertices.size() + vs.size());
-		this->vertices.insert(this->vertices.end(), vs.begin(), vs.end());
-	}
-
-	bool Mesh::initBillboardQuad(float width, float height)
-	{
-		if (!(width > 0.0f && height > 0.0f))
-		{
-			SPDLOG_DEBUG("Mesh::initBillboardQuad(): Billboard width and height must be positive.");
-			return false;
-		}
-
-		const float halfWidth = width * 0.5f;
-		const float halfHeight = height * 0.5f;
-
-		// Front face is toward -Z (matches billboard code using forward = -dir)
-		const glm::vec3 n(0.0f, 0.0f, -1.0f);
-
-		Vertex v0;
-		v0.position = glm::vec3(-halfWidth, halfHeight, 0.0f);
-		v0.normal = n;
-		v0.textureCoordinates = glm::vec2(0.0f, 0.0f);
-		v0.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-		v0.materialUBOIndex = 0;
-
-		Vertex v1;
-		v1.position = glm::vec3(-halfWidth, -halfHeight, 0.0f);
-		v1.normal = n;
-		v1.textureCoordinates = glm::vec2(0.0f, 1.0f);
-		v1.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-		v1.materialUBOIndex = 0;
-
-		Vertex v2;
-		v2.position = glm::vec3(halfWidth, -halfHeight, 0.0f);
-		v2.normal = n;
-		v2.textureCoordinates = glm::vec2(1.0f, 1.0f);
-		v2.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-		v2.materialUBOIndex = 0;
-
-		Vertex v3;
-		v3.position = glm::vec3(halfWidth, halfHeight, 0.0f);
-		v3.normal = n;
-		v3.textureCoordinates = glm::vec2(1.0f, 0.0f);
-		v3.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-		v3.materialUBOIndex = 0;
-
-		std::vector<Vertex> vs = { v0, v1, v2, v3 };
-		this->setVertices(vs);
-
-		// Flip indices so -Z is front (CCW when viewed from -Z)
-		std::vector<unsigned int> is = { 0, 2, 1, 0, 3, 2 };
-		this->setIndices(is);
-
-		return true;
+		return this->gp->gpuGeoPool.has_value();
 	}
 
 }

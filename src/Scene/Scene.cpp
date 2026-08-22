@@ -1072,6 +1072,61 @@ namespace vel
 		return m;
 	}
 
+	//
+	// TODO: this used to be part of Mesh. Need refactored to work here with new vertex logic
+	// 
+	//bool Mesh::initBillboardQuad(float width, float height)
+	//{
+	//	if (!(width > 0.0f && height > 0.0f))
+	//	{
+	//		SPDLOG_DEBUG("Mesh::initBillboardQuad(): Billboard width and height must be positive.");
+	//		return false;
+	//	}
+
+	//	const float halfWidth = width * 0.5f;
+	//	const float halfHeight = height * 0.5f;
+
+	//	// Front face is toward -Z (matches billboard code using forward = -dir)
+	//	const glm::vec3 n(0.0f, 0.0f, -1.0f);
+
+	//	Vertex v0;
+	//	v0.position = glm::vec3(-halfWidth, halfHeight, 0.0f);
+	//	v0.normal = n;
+	//	v0.textureCoordinates = glm::vec2(0.0f, 0.0f);
+	//	v0.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+	//	v0.materialUBOIndex = 0;
+
+	//	Vertex v1;
+	//	v1.position = glm::vec3(-halfWidth, -halfHeight, 0.0f);
+	//	v1.normal = n;
+	//	v1.textureCoordinates = glm::vec2(0.0f, 1.0f);
+	//	v1.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+	//	v1.materialUBOIndex = 0;
+
+	//	Vertex v2;
+	//	v2.position = glm::vec3(halfWidth, -halfHeight, 0.0f);
+	//	v2.normal = n;
+	//	v2.textureCoordinates = glm::vec2(1.0f, 1.0f);
+	//	v2.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+	//	v2.materialUBOIndex = 0;
+
+	//	Vertex v3;
+	//	v3.position = glm::vec3(halfWidth, halfHeight, 0.0f);
+	//	v3.normal = n;
+	//	v3.textureCoordinates = glm::vec2(1.0f, 0.0f);
+	//	v3.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+	//	v3.materialUBOIndex = 0;
+
+	//	std::vector<Vertex> vs = { v0, v1, v2, v3 };
+	//	this->setVertices(vs);
+
+	//	// Flip indices so -Z is front (CCW when viewed from -Z)
+	//	std::vector<unsigned int> is = { 0, 2, 1, 0, 3, 2 };
+	//	this->setIndices(is);
+
+	//	return true;
+	//}
+
 	/***********************************************************************************************
 	* LOAD TEXTURES
 	************************************************************************************************/

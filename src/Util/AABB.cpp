@@ -2,23 +2,27 @@
 
 namespace vel
 {
+	AABB::AABB() :
+		minEdge(glm::vec3(0.f)),
+		maxEdge(glm::vec3(0.f))
+	{}
+
+
 	AABB::AABB(glm::vec3 min, glm::vec3 max) :
-		firstPass(true),
 		minEdge(min),
 		maxEdge(max)
-	{
+	{}
 
-	}
-
-	AABB::AABB(const std::vector<glm::vec3>& inputVectors) :
-		firstPass(true)
+	AABB::AABB(const std::vector<glm::vec3>& inputVectors)
 	{
+		bool firstPass = true;
+
 		// find min/max edge vectors
 		for (auto& v : inputVectors)
 		{
-			if (this->firstPass)
+			if (firstPass)
 			{
-				this->firstPass = false;
+				firstPass = false;
 				this->minEdge = v;
 				this->maxEdge = v;
 				continue;
@@ -37,47 +41,6 @@ namespace vel
 				minEdge.y = v.y;
 			if (v.z < minEdge.z)
 				minEdge.z = v.z;
-		}
-
-		// calculate all eight corner vectors
-		this->corners.push_back(maxEdge);
-		this->corners.push_back(minEdge);
-		this->corners.push_back(glm::vec3(minEdge.x, maxEdge.y, maxEdge.z));
-		this->corners.push_back(glm::vec3(minEdge.x, minEdge.y, maxEdge.z));
-		this->corners.push_back(glm::vec3(maxEdge.x, minEdge.y, maxEdge.z));
-		this->corners.push_back(glm::vec3(maxEdge.x, maxEdge.y, minEdge.z));
-		this->corners.push_back(glm::vec3(minEdge.x, maxEdge.y, minEdge.z));
-		this->corners.push_back(glm::vec3(maxEdge.x, minEdge.y, minEdge.z));
-
-	};
-
-	AABB::AABB(const std::vector<Vertex>& inputVertices) :
-		firstPass(true)
-	{
-		// find min/max edge vectors
-		for (auto& v : inputVertices)
-		{
-			if (this->firstPass)
-			{
-				this->firstPass = false;
-				this->minEdge = v.position;
-				this->maxEdge = v.position;
-				continue;
-			}
-
-			if (v.position.x > maxEdge.x)
-				maxEdge.x = v.position.x;
-			if (v.position.y > maxEdge.y)
-				maxEdge.y = v.position.y;
-			if (v.position.z > maxEdge.z)
-				maxEdge.z = v.position.z;
-
-			if (v.position.x < minEdge.x)
-				minEdge.x = v.position.x;
-			if (v.position.y < minEdge.y)
-				minEdge.y = v.position.y;
-			if (v.position.z < minEdge.z)
-				minEdge.z = v.position.z;
 		}
 
 		// calculate all eight corner vectors

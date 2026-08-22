@@ -10,7 +10,6 @@
 #include <assimp/postprocess.h>
 
 #include <vel/Scene/Stage/Actor/Mesh/Mesh.h>
-#include <vel/Scene/Stage/Actor/Mesh/VertexBoneData.h>
 #include <vel/Scene/Stage/Actor/Mesh/MeshLoaderInterface.h>
 
 

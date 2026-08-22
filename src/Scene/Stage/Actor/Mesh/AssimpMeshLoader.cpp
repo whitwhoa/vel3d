@@ -232,8 +232,6 @@ namespace vel
 
 			// create one single mesh from all of the aiMeshes
 
-			std::vector<Vertex> meshVertices = {};
-			std::vector<unsigned int> meshIndices = {};
 			std::vector<MeshBone> meshBones = {};
 
 			unsigned int meshCount = node->mNumMeshes;
@@ -263,6 +261,8 @@ namespace vel
 			this->currentMeshTextureId = 0;
 
 			// TODO: init Mesh here. Set it's index values from sizes of GeoPool buffers. Hold tmp count of indices
+			std::unique_ptr<Mesh> finalMesh = std::make_unique<Mesh>(nodeName);
+
 
 			// TODO: instead of having processMesh() take references to buffers, take GeoPool*, might still need meshBones passed as ref
 
@@ -283,9 +283,6 @@ namespace vel
 				this->currentMeshTextureId++;
 			}
 
-			std::unique_ptr<Mesh> finalMesh = std::make_unique<Mesh>(nodeName);
-			finalMesh->setVertices(meshVertices);
-			finalMesh->setIndices(meshIndices);
 			finalMesh->setBones(meshBones);
 
 			this->meshes.push_back(std::move(finalMesh));
