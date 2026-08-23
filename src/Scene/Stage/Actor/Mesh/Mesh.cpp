@@ -5,7 +5,7 @@
 
 namespace vel
 {
-    Mesh::Mesh(std::string name) :
+    Mesh::Mesh(const std::string& name) :
         name(name)
     {}
 
@@ -14,7 +14,7 @@ namespace vel
 		// TODO: implement
 	}
 
-	MeshBone* Mesh::getBone(std::string boneName)
+	MeshBone* Mesh::getBone(const std::string& boneName)
 	{
 		for (auto& b : this->bones)
 		{

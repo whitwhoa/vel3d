@@ -113,7 +113,7 @@ namespace vel
 		Shader*						getShader(const std::string& name);
 		void						removeShader(Shader* pShader);
 
-		std::vector<Mesh*>			loadMesh(const std::string& path, bool standaloneGeometry = false) override;
+		//std::vector<Mesh*>			loadMesh(const std::string& path, bool standaloneGeometry = false) override;
 		Mesh*						addMesh(std::unique_ptr<Mesh> m, bool standaloneGeometry = false) override;
 		void						updateRenderMesh(Mesh* m);
 		void						removeMesh(Mesh* pMesh) override;
@@ -146,6 +146,7 @@ namespace vel
 		~Scene();
 		virtual void						internalImmediateLoop(float frameTime, float renderLerpInterval);
 		virtual void						immediateLoop(float frameTime, float renderLerpInterval) = 0;
+		bool								internalLoad() override;
 
 		void								lerpAnimators(float alpha);
 		void								draw(float frameTime, float alpha);

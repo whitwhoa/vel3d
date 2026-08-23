@@ -79,6 +79,15 @@ namespace vel
 		Runtime::_gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
 	}
 
+	bool Scene::internalLoad()
+	{
+		if (HeadlessScene::internalLoad())
+		{
+			//for(auto& geoPoolKV : this->geoPools)
+
+		}
+	}
+
 	void Scene::internalImmediateLoop(float frameTime, float renderLerpInterval)
 	{
 		this->immediateLoop(frameTime, renderLerpInterval);
