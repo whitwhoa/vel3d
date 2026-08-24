@@ -21,6 +21,7 @@ namespace vel
 	{
 		MESHFLAG_NONE = 0,
 		MESHFLAG_RENDERABLE = 1 << 0,
+		MESHFLAG_POOLED = 1 << 1
 	};
 
 	struct Mesh
@@ -37,7 +38,6 @@ namespace vel
 
 					Mesh(const std::string& name);
 
-		bool		isRenderable() const;
 		MeshBone*	getBone(const std::string& boneName);
 		void		refreshAABB(); // must be called manually when mesh geometry is updated
 

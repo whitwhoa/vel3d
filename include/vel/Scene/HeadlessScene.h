@@ -29,7 +29,7 @@ namespace vel
 		std::vector<CollisionWorld*> 			collisionWorlds;
 
 		std::unordered_map<VtxLayout, std::unique_ptr<GeoPool>> geoPools;
-		std::vector<std::unique_ptr<GeoPool>>					standaloneGeos;
+		std::vector<std::unique_ptr<GeoPool>>					soloGeos;
 
 		std::unordered_map<std::string, std::unique_ptr<Mesh>>						meshes;
 		std::unordered_map<std::string, std::unique_ptr<ozz::animation::Skeleton>>	skeletons;

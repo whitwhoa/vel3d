@@ -41,18 +41,21 @@ namespace vel
 	private:
 		std::vector<std::unique_ptr<Camera>>	cameras; // TODO: why ptr?
 		std::unique_ptr<FinalRenderTarget>		sceneRenderTarget; // TODO: why ptr?
+		glm::vec4								screenTint; // TODO: rename?
 
-		float								animationTime;
-		glm::vec4							screenTint;
+		float									animationTime; // TODO: unused?
+		
 
 		std::unordered_map<std::string, std::unique_ptr<Shader>>		shaders;
 		std::unordered_map<std::string, std::unique_ptr<Texture>>		textures;
 		std::unordered_map<std::string, std::unique_ptr<Material>>		materials;
 		std::unordered_map<std::string, std::unique_ptr<FontBitmap>>	fontBitmaps;
 		std::vector<std::string>			soundsInUse;
+
+		std::vector<std::unique_ptr<GeoPool>> noRenderSoloGeos;
 		
-		double								frameTime;
-		double								frameRate;
+		double								frameTime; // TODO: unused?
+		double								frameRate; // TODO: unused?
 
 		void								setShaderOpts(int opts, std::vector<std::string>& defs, std::string& shaderName);
 
@@ -113,7 +116,7 @@ namespace vel
 		Shader*						getShader(const std::string& name);
 		void						removeShader(Shader* pShader);
 
-		//std::vector<Mesh*>			loadMesh(const std::string& path, bool standaloneGeometry = false) override;
+		std::vector<Mesh*>			loadMesh(const std::string& path, bool standaloneGeometry = false) override;
 		Mesh*						addMesh(std::unique_ptr<Mesh> m, bool standaloneGeometry = false) override;
 		void						updateRenderMesh(Mesh* m);
 		void						removeMesh(Mesh* pMesh) override;
