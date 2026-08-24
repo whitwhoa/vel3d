@@ -16,7 +16,7 @@ namespace vel
 
 	void HeadlessApp::addScene(std::unique_ptr<HeadlessScene> scene, bool makeActive)
 	{
-		SPDLOG_DEBUG("HeadlessApp::addScene: Adding new HeadlessScene");
+		SPDLOG_DEBUG("HeadlessApp::addScene(): Adding new HeadlessScene");
 
 		this->scenes.push_back(std::move(scene));
 
@@ -29,7 +29,7 @@ namespace vel
 
 	void HeadlessApp::removeScene(unsigned int id)
 	{
-		SPDLOG_DEBUG("HeadlessApp::removeScene: Removing Scene: {}", id);
+		SPDLOG_DEBUG("HeadlessApp::removeScene(): Removing Scene: {}", id);
 
 		size_t i = 0;
 		for (auto& s : this->scenes)
@@ -45,7 +45,7 @@ namespace vel
 
 	void HeadlessApp::swapScene(unsigned int id)
 	{
-		SPDLOG_DEBUG("HeadlessScene::swapScene: Swapping to Scene: {}", id);
+		SPDLOG_DEBUG("HeadlessScene::swapScene(): Swapping to Scene: {}", id);
 
 		for (auto& s : this->scenes)
 			if (s->getId() == id)
