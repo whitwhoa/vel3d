@@ -28,7 +28,7 @@ namespace vel
 		std::vector<std::unique_ptr<Stage>>		stages;
 		std::vector<CollisionWorld*> 			collisionWorlds;
 
-		std::vector<std::unique_ptr<GeoPool>>	soloGeoPools;
+		std::unordered_map<std::string, std::unique_ptr<GeoPool>> soloGeoPools;
 
 		std::unordered_map<std::string, std::unique_ptr<Mesh>>						meshes;
 		std::unordered_map<std::string, std::unique_ptr<ozz::animation::Skeleton>>	skeletons;

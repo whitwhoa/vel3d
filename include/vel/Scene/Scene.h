@@ -53,7 +53,7 @@ namespace vel
 		std::vector<std::string>			soundsInUse;
 
 		std::unordered_map<VtxLayout, std::unique_ptr<GeoPool>>			renderGeoPools;
-		std::vector<std::unique_ptr<GeoPool>>							renderSoloGeoPools;
+		std::unordered_map<std::string, std::unique_ptr<GeoPool>>		renderSoloGeoPools;
 		
 		double								frameTime; // TODO: unused?
 		double								frameRate; // TODO: unused?

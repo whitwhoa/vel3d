@@ -108,7 +108,7 @@ namespace vel
 		void								debugDrawCollisionWorld(CollisionDebugDrawer* cdd);
 
 		void								clearShader(Shader* s);
-		void								clearMesh(Mesh* m);
+		void								clearMesh(GpuGeoPool ggp);
 		void								clearTexture(Texture* t);
 
 		void								updateBonesUBO(const std::vector<std::pair<unsigned int, glm::mat4>>& boneData); // first = bone array index, second = bone matrix

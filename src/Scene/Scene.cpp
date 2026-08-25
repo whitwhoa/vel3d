@@ -74,7 +74,10 @@ namespace vel
 			Runtime::_gpu->clearShader(s.second.get());
 
 		for (auto& m : this->meshes)
-			Runtime::_gpu->clearMesh(m.second.get());
+		{
+			if ((m.second->flags & MESHFLAG_RENDERABLE) && !(m.second->flags & MESHFLAG_POOLED))
+				Runtime::_gpu->clearMesh(m.second->gp->gpuGeoPool.value());
+		}
 
 		for (auto& s : this->soundsInUse)
 			Runtime::_audioDevice->removeSound(s);
@@ -962,7 +965,7 @@ namespace vel
 
 					GeoPool* standAlonePoolRawPtr = renderSoloGeoPool.get();
 
-					this->renderSoloGeoPools.push_back(std::move(renderSoloGeoPool));
+					this->renderSoloGeoPools.emplace(pld.first, std::move(renderSoloGeoPool));
 
 					requiredData.push_back({ pld.first, standAlonePoolRawPtr });
 				}
@@ -1005,20 +1008,21 @@ namespace vel
 
 	void Scene::removeMesh(Mesh* m)
 	{
-		auto it = this->meshes.find(m->getName());
+		auto it = this->meshes.find(m->name);
 
 		if (it == this->meshes.end())
 			return;
 
-		Runtime::_gpu->clearMesh(m);
+		if ((m->flags & MESHFLAG_RENDERABLE) && !(m->flags & MESHFLAG_POOLED))
+			Runtime::_gpu->clearMesh(m->gp->gpuGeoPool.value());
 
 		this->meshes.erase(it);
 	}
 
 	std::unique_ptr<Mesh> Scene::loadTextActorMesh(TextActor* ta)
 	{
-		std::vector<Vertex> meshVertices = {};
-		std::vector<unsigned int> meshIndices = {};
+		std::unique_ptr<GeoPoolT<VtxPosNrmlTx>> gp = std::make_unique<GeoPoolT<VtxPosNrmlTx>>();
+
 		ta->caretPositions.clear();
 
 		unsigned int lastIndex = 0;
@@ -1049,41 +1053,41 @@ namespace vel
 			offsetX = glyphInfo.offsetX;
 			offsetY = glyphInfo.offsetY;
 
-			Vertex v1;
+			VtxPosNrmlTx v1;
 			v1.position = glyphInfo.positions[0];
 			v1.normal = glm::vec3(0.0f, 0.0f, 1.0f);
-			v1.textureCoordinates = glyphInfo.uvs[0];
+			v1.textureCoords = glyphInfo.uvs[0];
 			v1.materialUBOIndex = 0;
-			meshVertices.push_back(v1);
+			gp->vertices.push_back(v1);
 
-			Vertex v2;
+			VtxPosNrmlTx v2;
 			v2.position = glyphInfo.positions[1];
 			v2.normal = glm::vec3(0.0f, 0.0f, 1.0f);
-			v2.textureCoordinates = glyphInfo.uvs[1];
+			v2.textureCoords = glyphInfo.uvs[1];
 			v2.materialUBOIndex = 0;
-			meshVertices.push_back(v2);
+			gp->vertices.push_back(v2);
 
-			Vertex v3;
+			VtxPosNrmlTx v3;
 			v3.position = glyphInfo.positions[2];
 			v3.normal = glm::vec3(0.0f, 0.0f, 1.0f);
-			v3.textureCoordinates = glyphInfo.uvs[2];
+			v3.textureCoords = glyphInfo.uvs[2];
 			v3.materialUBOIndex = 0;
-			meshVertices.push_back(v3);
+			gp->vertices.push_back(v3);
 
-			Vertex v4;
+			VtxPosNrmlTx v4;
 			v4.position = glyphInfo.positions[3];
 			v4.normal = glm::vec3(0.0f, 0.0f, 1.0f);
-			v4.textureCoordinates = glyphInfo.uvs[3];
+			v4.textureCoords = glyphInfo.uvs[3];
 			v4.materialUBOIndex = 0;
-			meshVertices.push_back(v4);
+			gp->vertices.push_back(v4);
 
 			// Add indices with correct winding
-			meshIndices.push_back(lastIndex + 1); // 1
-			meshIndices.push_back(lastIndex); // 0
-			meshIndices.push_back(lastIndex + 3); // 3
-			meshIndices.push_back(lastIndex + 1); // 1
-			meshIndices.push_back(lastIndex + 3); // 3
-			meshIndices.push_back(lastIndex + 2); // 2
+			gp->indices.push_back(lastIndex + 1); // 1
+			gp->indices.push_back(lastIndex); // 0
+			gp->indices.push_back(lastIndex + 3); // 3
+			gp->indices.push_back(lastIndex + 1); // 1
+			gp->indices.push_back(lastIndex + 3); // 3
+			gp->indices.push_back(lastIndex + 2); // 2
 
 			lastIndex += 4;
 
@@ -1091,13 +1095,11 @@ namespace vel
 		}
 
 		std::unique_ptr<Mesh> m = std::make_unique<Mesh>(ta->name + "_mesh");
-		m->setVertices(meshVertices);
-		m->setIndices(meshIndices);
+		m->gp = gp.get();
+		m->refreshAABB();
 
-		AABB maabb = m->getAABB();
-
-		float minX = maabb.getMinEdge().x;
-		float maxX = maabb.getMaxEdge().x;
+		float minX = m->aabb.getMinEdge().x;
+		float maxX = m->aabb.getMaxEdge().x;
 		float logicalMaxY = ta->fontBitmap->ascent;
 		float logicalMinY = ta->fontBitmap->descent - static_cast<float>(lineCount - 1) * ta->fontBitmap->lineHeight;
 
@@ -1136,7 +1138,7 @@ namespace vel
 			yOffset = logicalMinY;
 		}
 
-		for (auto& v : m->getMutableVertices())
+		for (auto& v : gp->vertices)
 		{
 			v.position.x -= xOffset;
 			v.position.y -= yOffset;
@@ -1152,6 +1154,10 @@ namespace vel
 		if (offsetX > ta->logicalWidth)
 			ta->logicalWidth = offsetX;
 		//ta->logicalWidth = maabb.getSize().x;
+
+
+
+		this->renderSoloGeoPools.emplace(m->name, std::move(gp));
 
 		return m;
 	}

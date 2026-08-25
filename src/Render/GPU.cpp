@@ -455,14 +455,11 @@ namespace vel
 		glDeleteProgram(s->id);
 	}
 
-	void GPU::clearMesh(Mesh* m)
+	void GPU::clearMesh(GpuGeoPool ggp)
 	{
-		if (m->getGpuMesh())
-		{
-			glDeleteVertexArrays(1, &m->getGpuMesh().value().VAO);
-			glDeleteBuffers(1, &m->getGpuMesh().value().VBO);
-			glDeleteBuffers(1, &m->getGpuMesh().value().EBO);
-		}
+		glDeleteVertexArrays(1, &ggp.VAO);
+		glDeleteBuffers(1, &ggp.VBO);
+		glDeleteBuffers(1, &ggp.EBO);
 	}
 
 	void GPU::clearTexture(Texture* t)
