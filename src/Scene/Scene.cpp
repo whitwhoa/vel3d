@@ -30,6 +30,12 @@ namespace vel
 		frameTime(0.0),
 		frameRate(0.0)
 	{
+		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML, std::make_unique<GeoPoolT<VtxPosNrml>>());
+		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML_TX, std::make_unique<GeoPoolT<VtxPosNrmlTx>>());
+		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML_TX_LM, std::make_unique<GeoPoolT<VtxPosNrmlTxLm>>());
+		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML_TX_SKN, std::make_unique<GeoPoolT<VtxPosNrmlTxSkn>>());
+
+
 		this->sceneRenderTarget = Runtime::_gpu->createFinalRenderTarget(
 			"sceneRenderTarget_" + this->id,
 			Runtime::_window->getWindowSize().x,
@@ -83,9 +89,20 @@ namespace vel
 	{
 		if (HeadlessScene::internalLoad())
 		{
-			//for(auto& geoPoolKV : this->geoPools)
+			for (auto& renderGeoPoolKV : this->renderGeoPools)
+			{
+				// TODO:: gpu things
+			}
 
+			for (auto& renderSoloGeoPoolKV : this->renderSoloGeoPools)
+			{
+				// TODO: gpu things
+			}
+
+			return true;
 		}
+
+		return false;
 	}
 
 	void Scene::internalImmediateLoop(float frameTime, float renderLerpInterval)
@@ -903,18 +920,77 @@ namespace vel
 	/***********************************************************************************************
 	* LOAD MESHES
 	************************************************************************************************/
-	std::vector<Mesh*> Scene::loadMesh(const std::string& path, bool standaloneGeometry)
+	std::vector<Mesh*> Scene::loadMesh(const std::string& path, uint32_t meshFlags)
 	{
-		std::vector<Mesh*> out = HeadlessScene::loadMesh(path);
-		for(auto& m : out)
-			if(!m->getGpuMesh())
-				Runtime::_gpu->loadMesh(m);
+		if (!(meshFlags & MESHFLAG_RENDERABLE))
+			return HeadlessScene::loadMesh(path, meshFlags);
+
+		const std::vector<std::pair<std::string, VtxLayout>>& preLoadData = this->meshLoader->preload(path);
+		if (preLoadData.size() == 0)
+		{
+			SPDLOG_DEBUG("Scene::loadMesh(): preload failed");
+			return {};
+		}
+
+		std::vector<Mesh*> out;
+
+		// check for duplicates
+		std::vector<std::pair<std::string, GeoPool*>> requiredData;
+		for (auto& pld : preLoadData)
+		{
+			auto it = this->meshes.find(pld.first);
+
+			if (it == this->meshes.end())
+			{
+				SPDLOG_DEBUG("Scene::loadMesh(): new mesh load: {}", pld);
+
+				if (meshFlags & MESHFLAG_POOLED)
+				{
+					requiredData.push_back({ pld.first, this->renderGeoPools[pld.second].get() });
+				}
+				else
+				{
+					std::unique_ptr<GeoPool> renderSoloGeoPool = nullptr;
+					if (pld.second == VtxLayout::VTX_POS_NRML)
+						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrml>>(true);
+					else if (pld.second == VtxLayout::VTX_POS_NRML_TX)
+						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrmlTx>>(true);
+					else if (pld.second == VtxLayout::VTX_POS_NRML_TX_LM)
+						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrmlTxLm>>(true);
+					else if (pld.second == VtxLayout::VTX_POS_NRML_TX_SKN)
+						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrmlTxSkn>>(true);
+
+					GeoPool* standAlonePoolRawPtr = renderSoloGeoPool.get();
+
+					this->renderSoloGeoPools.push_back(std::move(renderSoloGeoPool));
+
+					requiredData.push_back({ pld.first, standAlonePoolRawPtr });
+				}
+			}
+			else
+			{
+				SPDLOG_DEBUG("Scene::loadMesh(): existing mesh (load bypassed): {}", pld);
+				out.push_back(it->second.get());
+			}
+		}
+
+		std::vector<std::unique_ptr<Mesh>> loadedAssets = this->meshLoader->load(&requiredData);
+
+		for (auto& m : loadedAssets)
+		{
+			Mesh* rawPtr = m.get();
+			this->meshes.emplace(m->name, std::move(m));
+
+			out.push_back(rawPtr);
+		}
+
+		this->meshLoader->reset();
 
 		return out;
 	}
 
 	// This method assumes that the caller understands no duplication checks are occuring
-	Mesh* Scene::addMesh(std::unique_ptr<Mesh> m, bool standaloneGeometry)
+	Mesh* Scene::addMesh(std::unique_ptr<Mesh> m)
 	{
 		Mesh* rawPtr = HeadlessScene::addMesh(std::move(m));
 		Runtime::_gpu->loadMesh(rawPtr);

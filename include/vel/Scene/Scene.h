@@ -52,7 +52,8 @@ namespace vel
 		std::unordered_map<std::string, std::unique_ptr<FontBitmap>>	fontBitmaps;
 		std::vector<std::string>			soundsInUse;
 
-		std::vector<std::unique_ptr<GeoPool>> noRenderSoloGeos;
+		std::unordered_map<VtxLayout, std::unique_ptr<GeoPool>>			renderGeoPools;
+		std::vector<std::unique_ptr<GeoPool>>							renderSoloGeoPools;
 		
 		double								frameTime; // TODO: unused?
 		double								frameRate; // TODO: unused?
@@ -116,8 +117,8 @@ namespace vel
 		Shader*						getShader(const std::string& name);
 		void						removeShader(Shader* pShader);
 
-		std::vector<Mesh*>			loadMesh(const std::string& path, bool standaloneGeometry = false) override;
-		Mesh*						addMesh(std::unique_ptr<Mesh> m, bool standaloneGeometry = false) override;
+		std::vector<Mesh*>			loadMesh(const std::string& path, uint32_t meshFlags = MESHFLAG_POOLED | MESHFLAG_RENDERABLE) override;
+		Mesh*						addMesh(std::unique_ptr<Mesh> m) override;
 		void						updateRenderMesh(Mesh* m);
 		void						removeMesh(Mesh* pMesh) override;
 		std::unique_ptr<Mesh>		loadTextActorMesh(TextActor* ta);

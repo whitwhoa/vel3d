@@ -28,8 +28,7 @@ namespace vel
 		std::vector<std::unique_ptr<Stage>>		stages;
 		std::vector<CollisionWorld*> 			collisionWorlds;
 
-		std::unordered_map<VtxLayout, std::unique_ptr<GeoPool>> geoPools;
-		std::vector<std::unique_ptr<GeoPool>>					soloGeos;
+		std::vector<std::unique_ptr<GeoPool>>	soloGeoPools;
 
 		std::unordered_map<std::string, std::unique_ptr<Mesh>>						meshes;
 		std::unordered_map<std::string, std::unique_ptr<ozz::animation::Skeleton>>	skeletons;
@@ -38,8 +37,8 @@ namespace vel
 
 		int										getCollisionWorldIndex(const std::string& name);
 
-		virtual std::vector<Mesh*>				loadMesh(const std::string& path, bool standaloneGeometry = false);
-		virtual Mesh*							addMesh(std::unique_ptr<Mesh> m, bool standaloneGeometry = false);
+		virtual std::vector<Mesh*>				loadMesh(const std::string& path, uint32_t meshFlags = MESHFLAG_NONE);
+		virtual Mesh*							addMesh(std::unique_ptr<Mesh> m);
 		Mesh*									getMesh(const std::string& name);
 		virtual void							removeMesh(Mesh* pMesh);
 

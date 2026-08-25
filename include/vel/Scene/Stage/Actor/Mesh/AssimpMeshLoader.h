@@ -18,21 +18,23 @@ namespace vel
 	class AssimpMeshLoader : public MeshLoaderInterface
 	{
 	private:
-		Assimp::Importer						aiImporter;
-		const aiScene*							impScene;
+		Assimp::Importer									aiImporter;
+		const aiScene*										impScene;
 
-		std::vector<std::pair<std::string, VtxLayout>> preloadData; // <mesh name, vertex layout>
+		std::vector<std::pair<std::string, VtxLayout>>		preloadData; // <mesh name, vertex layout>
 
-		std::string								armatureInFile;
-		std::vector<std::pair<std::string, GeoPool*>>* meshesToLoad;
-		std::vector<std::unique_ptr<Mesh>>		meshes; // TF? this is a private member but it's later returned using std::move()
-		unsigned int							currentMeshTextureId;
+		std::string											armatureInFile;
+		std::vector<std::pair<std::string, GeoPool*>>*		meshesToLoad;
+		std::vector<std::unique_ptr<Mesh>>					meshes; // TF? this is a private member but it's later returned using std::move()
+		unsigned int										currentMeshTextureId;
+		
 
 		void			preProcessNode(aiNode* node);
 
 		void			processNode(aiNode* node);
 		void			processMesh(aiMesh* aiMesh, Mesh* mesh);
 
+		void			processVtxPos(aiMesh* aiMesh, Mesh* mesh);
 		void			processVtxPosNrml(aiMesh* aiMesh, Mesh* mesh);
 		void			processVtxPosNrmlTx(aiMesh* aiMesh, Mesh* mesh);
 		void			processVtxPosNrmlTxLm(aiMesh* aiMesh, Mesh* mesh);
@@ -46,9 +48,10 @@ namespace vel
 		AssimpMeshLoader();
 		~AssimpMeshLoader() {};
 
-		const std::vector<std::pair<std::string, VtxLayout>>& preload(const std::string& filePath);
-		std::vector<std::unique_ptr<Mesh>> load(std::vector<std::pair<std::string, GeoPool*>>* loadables);
+		const std::vector<std::pair<std::string, VtxLayout>>& preload(const std::string& filePath) override;
+		std::vector<std::unique_ptr<Mesh>> load(std::vector<std::pair<std::string, GeoPool*>>* loadables) override;
 
-		void reset();
+		void reset() override;
+
 	};
 }

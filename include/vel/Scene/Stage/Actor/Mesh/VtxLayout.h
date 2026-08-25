@@ -8,10 +8,18 @@ namespace vel
 {
     enum VtxLayout : uint32_t
     {
-        VTX_POS_NRML = 0,
+        VTX_POS = 0,
+        VTX_POS_NRML,
         VTX_POS_NRML_TX,
         VTX_POS_NRML_TX_LM,
         VTX_POS_NRML_TX_SKN
+    };
+
+    struct VtxPos
+    {
+        static constexpr VtxLayout layout = VTX_POS;
+
+        glm::vec3 position;
     };
 
     struct VtxPosNrml

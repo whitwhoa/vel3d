@@ -13,6 +13,8 @@ namespace vel
 
 	class MeshLoaderInterface
 	{
+	private:
+		bool inHeadlessMode = false;
 	public:
 		MeshLoaderInterface() {}
 		virtual ~MeshLoaderInterface(){}
@@ -28,5 +30,7 @@ namespace vel
 
 		// Called from calling class if required
 		virtual void reset() {};
+		bool headlessMode() { return this->inHeadlessMode; }
+		void setHeadlessMode(bool b) { this->inHeadlessMode = b; }
 	};
 }

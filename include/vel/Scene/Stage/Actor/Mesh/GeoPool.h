@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <variant>
 
 #include <vel/Scene/Stage/Actor/Mesh/VtxLayout.h>
 
@@ -17,18 +18,16 @@ namespace vel
     class GeoPool
     {
     public:
-        VtxLayout vtxLayout;
-        std::vector<unsigned int> indices;
-        std::optional<GpuGeoPool> gpuGeoPool;
-        bool standalone;
+        std::vector<unsigned int>   indices;
+        std::optional<GpuGeoPool>   gpuGeoPool;
+        VtxLayout                   vtxLayout;
 
         virtual ~GeoPool() = default;
         virtual unsigned int vertexCount() = 0;
 
     protected:
-        GeoPool(VtxLayout layout, bool standalone) :
-            vtxLayout(layout),
-            standalone(standalone)
+        GeoPool(VtxLayout layout) :
+            vtxLayout(layout)
         {}
     };
 
@@ -39,8 +38,8 @@ namespace vel
     public:
         std::vector<T> vertices;
         
-        GeoPoolT(bool standalone = false) :
-            GeoPool(T::layout, standalone)
+        GeoPoolT() :
+            GeoPool(T::layout)
         {}
 
         unsigned int vertexCount() override

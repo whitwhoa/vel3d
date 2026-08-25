@@ -43,18 +43,25 @@ namespace vel
 			}
 
 			VtxLayout vtxl;
-			if (!hasTexture && !hasLightMap && !hasBones)
-				vtxl = VtxLayout::VTX_POS_NRML;
-			else if (hasTexture && !hasLightMap && !hasBones)
-				vtxl = VtxLayout::VTX_POS_NRML_TX;
-			else if (hasTexture && hasLightMap && !hasBones)
-				vtxl = VtxLayout::VTX_POS_NRML_TX_LM;
-			else if (hasTexture && !hasLightMap && hasBones)
-				vtxl = VtxLayout::VTX_POS_NRML_TX_SKN;
+			if (this->headlessMode())
+			{
+				vtxl = VtxLayout::VTX_POS;
+			}
 			else
 			{
-				SPDLOG_ERROR("AssimpMeshLoader::preProcessNode(): unsupported vertex layout type. Using default");
-				vtxl = VtxLayout::VTX_POS_NRML;
+				if (!hasTexture && !hasLightMap && !hasBones)
+					vtxl = VtxLayout::VTX_POS_NRML;
+				else if (hasTexture && !hasLightMap && !hasBones)
+					vtxl = VtxLayout::VTX_POS_NRML_TX;
+				else if (hasTexture && hasLightMap && !hasBones)
+					vtxl = VtxLayout::VTX_POS_NRML_TX_LM;
+				else if (hasTexture && !hasLightMap && hasBones)
+					vtxl = VtxLayout::VTX_POS_NRML_TX_SKN;
+				else
+				{
+					SPDLOG_ERROR("AssimpMeshLoader::preProcessNode(): unsupported vertex layout type. Using default");
+					vtxl = VtxLayout::VTX_POS;
+				}
 			}
 
 			this->preloadData.push_back(std::pair<std::string, VtxLayout>(node->mName.C_Str(), vtxl));
@@ -96,6 +103,19 @@ namespace vel
 		return std::move(this->meshes);
 	}
 
+	void AssimpMeshLoader::processVtxPos(aiMesh* aiMesh, Mesh* mesh)
+	{
+		std::vector<VtxPos>& verts = static_cast<GeoPoolT<VtxPos>*>(mesh->gp)->vertices;
+
+		for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
+		{
+			VtxPos vtx;
+			vtx.position = { aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z };
+
+			verts.push_back(vtx);
+		}
+	}
+
 	void AssimpMeshLoader::processVtxPosNrml(aiMesh* aiMesh, Mesh* mesh)
 	{
 		std::vector<VtxPosNrml>& verts = static_cast<GeoPoolT<VtxPosNrml>*>(mesh->gp)->vertices;
@@ -103,7 +123,6 @@ namespace vel
 		for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
 		{
 			VtxPosNrml vtx;
-			
 			vtx.position = { aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z };
 			vtx.normal = { aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z };
 
@@ -118,7 +137,6 @@ namespace vel
 		for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
 		{
 			VtxPosNrmlTx vtx;
-
 			vtx.position = { aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z };
 			vtx.normal = { aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z };
 
@@ -140,7 +158,6 @@ namespace vel
 		for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
 		{
 			VtxPosNrmlTxLm vtx;
-
 			vtx.position = { aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z };
 			vtx.normal = { aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z };
 
@@ -167,7 +184,6 @@ namespace vel
 		for (unsigned int i = 0; i < aiMesh->mNumVertices; i++)
 		{
 			VtxPosNrmlTxSkn vtx;
-
 			vtx.position = { aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z };
 			vtx.normal = { aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z };
 
@@ -230,6 +246,9 @@ namespace vel
 
 		switch (mesh->gp->vtxLayout)
 		{
+		case VtxLayout::VTX_POS:
+			this->processVtxPos(aiMesh, mesh);
+			break;
 		case VtxLayout::VTX_POS_NRML:
 			this->processVtxPosNrml(aiMesh, mesh);
 			break;
@@ -257,7 +276,9 @@ namespace vel
 	{
 		if (node != this->impScene->mRootNode)
 		{
-			// use node name for mesh name...
+			//
+			// Of the meshes to be loaded, find the GeoPool associated with the mesh we are currently loading
+			//
 			std::string nodeName = node->mName.C_Str();
 
 			GeoPool* gp = nullptr;
@@ -270,6 +291,9 @@ namespace vel
 				}
 			}
 
+			//
+			// If we found a GeoPool (meaning provided mesh name was valid), process data for this mesh
+			//
 			if (gp)
 			{
 				// join all aiMeshes of this node into a single Mesh object
@@ -328,7 +352,6 @@ namespace vel
 				finalMesh->indexCount = finalMesh->gp->indices.size() - prevIndexCount;
 
 				this->meshes.push_back(std::move(finalMesh));
-
 			}
 		}
 
