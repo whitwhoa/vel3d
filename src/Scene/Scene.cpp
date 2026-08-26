@@ -603,11 +603,11 @@ namespace vel
 
 	void Scene::updateTextActor(TextActor* ta)
 	{
-		std::unique_ptr<Mesh> updatedMesh = std::move(this->loadTextActorMesh(ta));
-		ta->actor->getMesh()->setVertices(updatedMesh->getVertices());
-		ta->actor->getMesh()->setIndices(updatedMesh->getIndices());
+		Mesh* m = ta->actor->getMesh();
 
-		Runtime::_gpu->updateMesh(ta->actor->getMesh());
+		this->buildTextActorGeometry(ta, m);
+
+		Runtime::_gpu->updateMesh(m); // TODO: should be _gpu->updateGeoPool()
 
 		ta->requiresUpdate = false;
 	}
@@ -1016,9 +1016,12 @@ namespace vel
 		this->meshes.erase(it);
 	}
 
-	std::unique_ptr<Mesh> Scene::loadTextActorMesh(TextActor* ta)
+	void Scene::buildTextActorGeometry(TextActor* ta, Mesh* mesh)
 	{
-		std::unique_ptr<GeoPoolT<VtxPosNrmlTx>> gp = std::make_unique<GeoPoolT<VtxPosNrmlTx>>();
+		GeoPoolT<VtxPosNrmlTx>* gp = static_cast<GeoPoolT<VtxPosNrmlTx>*>(mesh->gp);
+		gp->vertices.clear();
+		gp->indices.clear();
+
 
 		ta->caretPositions.clear();
 		ta->logicalWidth = 0.0f;
@@ -1092,16 +1095,11 @@ namespace vel
 			ta->caretPositions.push_back({ offsetX, -offsetY });
 		}
 
-		std::unique_ptr<Mesh> m = std::make_unique<Mesh>(ta->name + "_mesh");
-		m->gp = gp.get();
-		m->firstIndex = 0;
-		m->baseVertex = 0;
-		m->indexCount = gp->indices.size();
-		m->flags = MESHFLAG_RENDERABLE;
-		m->refreshAABB();
+		mesh->indexCount = gp->indices.size();
+		mesh->refreshAABB();
 
-		float minX = m->aabb.getMinEdge().x;
-		float maxX = m->aabb.getMaxEdge().x;
+		float minX = mesh->aabb.getMinEdge().x;
+		float maxX = mesh->aabb.getMaxEdge().x;
 		float logicalMaxY = ta->fontBitmap->ascent;
 		float logicalMinY = ta->fontBitmap->descent - static_cast<float>(lineCount - 1) * ta->fontBitmap->lineHeight;
 
@@ -1145,7 +1143,7 @@ namespace vel
 			v.position.x -= xOffset;
 			v.position.y -= yOffset;
 		}
-		m->refreshAABB();
+		mesh->refreshAABB();
 
 		for (auto& p : ta->caretPositions)
 		{
@@ -1157,8 +1155,19 @@ namespace vel
 		if (offsetX > ta->logicalWidth)
 			ta->logicalWidth = offsetX;
 		//ta->logicalWidth = maabb.getSize().x;
+	}
 
+	std::unique_ptr<Mesh> Scene::loadTextActorMesh(TextActor* ta)
+	{
+		std::unique_ptr<GeoPoolT<VtxPosNrmlTx>> gp = std::make_unique<GeoPoolT<VtxPosNrmlTx>>();
 
+		std::unique_ptr<Mesh> m = std::make_unique<Mesh>(ta->name + "_mesh");
+		m->gp = gp.get();
+		m->firstIndex = 0;
+		m->baseVertex = 0;
+		m->flags = MESHFLAG_RENDERABLE;
+		
+		this->buildTextActorGeometry(ta, m.get());
 
 		this->renderSoloGeoPools.emplace(m->name, std::move(gp));
 

@@ -778,6 +778,9 @@ namespace vel
 		m->setGpuMesh(gm);
 	}
 
+	//
+	// TODO: needs to be _gpu->updateGeoPool(gp*)
+	//
 	void GPU::updateMesh(Mesh* m)
 	{
 		auto& gm = m->getGpuMesh().value();

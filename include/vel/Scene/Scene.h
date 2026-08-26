@@ -63,6 +63,7 @@ namespace vel
 		std::optional<TextureData>			generateTextureData(const std::string& path);
 		FontGlyphInfo						getFontGlyphInfo(uint32_t character, float offsetX, float offsetY, FontBitmap* fb);
 		float								measureFontHeight(const std::string& text, FontBitmap* fb);
+		void								buildTextActorGeometry(TextActor* ta, Mesh* mesh);
 
 		
 	protected:

@@ -31,15 +31,10 @@ namespace vel
 		Transform										transform;
 		Transform										previousTransform;
 
-		/*
-			> If parentActor is not null, this actor is a child of the actor pointed to by parentActor
-			> TODO: add statement about bone when we flesh out the rest of the logic
-			> If childActors.size() > 0, this actor is a parent pointed to by all Actors within childActors
-			> Both of the above statements can be true, meaning that any Actor can be both child and parent
-		*/
-		Actor*											parentActor;
+
+		Actor*											parentActor; // If not null, this actor is a child of the actor pointed to by parentActor
 		int												parentActorBone;
-		std::vector<Actor*>								childActors;
+		std::vector<Actor*>								childActors; // If size() > 0, this actor is a parent pointed to by all contained Actors
 
 		SkelAnimator*										animator;
 		std::vector<std::pair<unsigned int, unsigned int>>	activeBones; // the bones from the armature that are actually used by the mesh, 
