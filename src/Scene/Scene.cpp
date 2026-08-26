@@ -576,10 +576,7 @@ namespace vel
 	Billboard* Scene::addBillboard(Stage* stage, const std::string& name, vel::Material* material, vel::Camera* parentCamera, float width, float height)
 	{
 		// generate mesh, send it to gpu, track it for managment by scene
-		std::unique_ptr<Mesh> tmpM = std::make_unique<Mesh>(name + "_mesh");
-		tmpM->initBillboardQuad(width, height);
-
-		Mesh* m = this->addMesh(std::move(tmpM));
+		Mesh* m = this->addMesh(std::move(this->loadBillboardMesh(name + "_mesh", width, height)));
 
 		// create actor
 		Actor* a = stage->addActor(name, m, material);
@@ -1024,6 +1021,7 @@ namespace vel
 		std::unique_ptr<GeoPoolT<VtxPosNrmlTx>> gp = std::make_unique<GeoPoolT<VtxPosNrmlTx>>();
 
 		ta->caretPositions.clear();
+		ta->logicalWidth = 0.0f;
 
 		unsigned int lastIndex = 0;
 		unsigned int lineCount = 1;
@@ -1096,6 +1094,10 @@ namespace vel
 
 		std::unique_ptr<Mesh> m = std::make_unique<Mesh>(ta->name + "_mesh");
 		m->gp = gp.get();
+		m->firstIndex = 0;
+		m->baseVertex = 0;
+		m->indexCount = gp->indices.size();
+		m->flags = MESHFLAG_RENDERABLE;
 		m->refreshAABB();
 
 		float minX = m->aabb.getMinEdge().x;
@@ -1143,6 +1145,7 @@ namespace vel
 			v.position.x -= xOffset;
 			v.position.y -= yOffset;
 		}
+		m->refreshAABB();
 
 		for (auto& p : ta->caretPositions)
 		{
@@ -1162,60 +1165,72 @@ namespace vel
 		return m;
 	}
 
-	//
-	// TODO: this used to be part of Mesh. Need refactored to work here with new vertex logic
-	// 
-	//bool Mesh::initBillboardQuad(float width, float height)
-	//{
-	//	if (!(width > 0.0f && height > 0.0f))
-	//	{
-	//		SPDLOG_DEBUG("Mesh::initBillboardQuad(): Billboard width and height must be positive.");
-	//		return false;
-	//	}
+	std::unique_ptr<Mesh> Scene::loadBillboardMesh(std::string name, float width, float height)
+	{
+		if (!(width > 0.0f && height > 0.0f))
+		{
+			SPDLOG_DEBUG("Scene::loadBillboardMesh(): Billboard width and height must be positive.");
+			return nullptr;
+		}
 
-	//	const float halfWidth = width * 0.5f;
-	//	const float halfHeight = height * 0.5f;
+		GeoPoolT<VtxPosNrmlTx>* gp = static_cast<GeoPoolT<VtxPosNrmlTx>*>(this->renderGeoPools[VTX_POS_NRML_TX].get());
 
-	//	// Front face is toward -Z (matches billboard code using forward = -dir)
-	//	const glm::vec3 n(0.0f, 0.0f, -1.0f);
+		std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>(name);
+		mesh->gp = gp;
+		mesh->firstIndex = gp->indices.size();
+		mesh->baseVertex = gp->vertexCount();
+		mesh->flags = MESHFLAG_RENDERABLE | MESHFLAG_POOLED;
 
-	//	Vertex v0;
-	//	v0.position = glm::vec3(-halfWidth, halfHeight, 0.0f);
-	//	v0.normal = n;
-	//	v0.textureCoordinates = glm::vec2(0.0f, 0.0f);
-	//	v0.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-	//	v0.materialUBOIndex = 0;
 
-	//	Vertex v1;
-	//	v1.position = glm::vec3(-halfWidth, -halfHeight, 0.0f);
-	//	v1.normal = n;
-	//	v1.textureCoordinates = glm::vec2(0.0f, 1.0f);
-	//	v1.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-	//	v1.materialUBOIndex = 0;
+		const float halfWidth = width * 0.5f;
+		const float halfHeight = height * 0.5f;
 
-	//	Vertex v2;
-	//	v2.position = glm::vec3(halfWidth, -halfHeight, 0.0f);
-	//	v2.normal = n;
-	//	v2.textureCoordinates = glm::vec2(1.0f, 1.0f);
-	//	v2.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-	//	v2.materialUBOIndex = 0;
+		// Front face is toward -Z (matches billboard code using forward = -dir)
+		const glm::vec3 n(0.0f, 0.0f, -1.0f);
 
-	//	Vertex v3;
-	//	v3.position = glm::vec3(halfWidth, halfHeight, 0.0f);
-	//	v3.normal = n;
-	//	v3.textureCoordinates = glm::vec2(1.0f, 0.0f);
-	//	v3.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
-	//	v3.materialUBOIndex = 0;
+		VtxPosNrmlTx v0;
+		v0.position = glm::vec3(-halfWidth, halfHeight, 0.0f);
+		v0.normal = n;
+		v0.textureCoords = glm::vec2(0.0f, 0.0f);
+		v0.materialUBOIndex = 0;
+		gp->vertices.push_back(v0);
 
-	//	std::vector<Vertex> vs = { v0, v1, v2, v3 };
-	//	this->setVertices(vs);
+		VtxPosNrmlTx v1;
+		v1.position = glm::vec3(-halfWidth, -halfHeight, 0.0f);
+		v1.normal = n;
+		v1.textureCoords = glm::vec2(0.0f, 1.0f);
+		v1.materialUBOIndex = 0;
+		gp->vertices.push_back(v1);
 
-	//	// Flip indices so -Z is front (CCW when viewed from -Z)
-	//	std::vector<unsigned int> is = { 0, 2, 1, 0, 3, 2 };
-	//	this->setIndices(is);
+		VtxPosNrmlTx v2;
+		v2.position = glm::vec3(halfWidth, -halfHeight, 0.0f);
+		v2.normal = n;
+		v2.textureCoords = glm::vec2(1.0f, 1.0f);
+		v2.materialUBOIndex = 0;
+		gp->vertices.push_back(v2);
 
-	//	return true;
-	//}
+		VtxPosNrmlTx v3;
+		v3.position = glm::vec3(halfWidth, halfHeight, 0.0f);
+		v3.normal = n;
+		v3.textureCoords = glm::vec2(1.0f, 0.0f);
+		v3.materialUBOIndex = 0;
+		gp->vertices.push_back(v3);
+
+		// Flip indices so -Z is front (CCW when viewed from -Z)
+		gp->indices.push_back(0);
+		gp->indices.push_back(2);
+		gp->indices.push_back(1);
+		gp->indices.push_back(0);
+		gp->indices.push_back(3);
+		gp->indices.push_back(2);
+
+
+		mesh->indexCount = mesh->gp->indices.size() - mesh->firstIndex;
+
+		mesh->refreshAABB();
+
+		return mesh;
+	}
 
 	/***********************************************************************************************
 	* LOAD TEXTURES

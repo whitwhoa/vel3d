@@ -333,7 +333,6 @@ namespace vel
 				finalMesh->gp = gp;
 				finalMesh->firstIndex = gp->indices.size();
 				finalMesh->baseVertex = gp->vertexCount();
-				unsigned int prevIndexCount = gp->indices.size();
 
 				// process all custom material meshes
 				for (auto& cm : customMaterialMeshes)
@@ -349,7 +348,7 @@ namespace vel
 					this->currentMeshTextureId++;
 				}
 
-				finalMesh->indexCount = finalMesh->gp->indices.size() - prevIndexCount;
+				finalMesh->indexCount = finalMesh->gp->indices.size() - finalMesh->firstIndex;
 
 				this->meshes.push_back(std::move(finalMesh));
 			}

@@ -122,6 +122,7 @@ namespace vel
 		void						updateRenderMesh(Mesh* m);
 		void						removeMesh(Mesh* pMesh) override;
 		std::unique_ptr<Mesh>		loadTextActorMesh(TextActor* ta);
+		std::unique_ptr<Mesh>		loadBillboardMesh(std::string name, float width, float height);
 
 		Texture*					loadTexture(const std::string& name, const std::string& path, int options = 0);
 		Texture*					getTexture(const std::string& name);
