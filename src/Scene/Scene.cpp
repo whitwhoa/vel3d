@@ -76,7 +76,7 @@ namespace vel
 		for (auto& m : this->meshes)
 		{
 			if ((m.second->flags & MESHFLAG_RENDERABLE) && !(m.second->flags & MESHFLAG_POOLED))
-				Runtime::_gpu->clearMesh(m.second->gp->gpuGeoPool.value());
+				Runtime::_gpu->clearGeoPool(m.second->gp->gpuGeoPool.value());
 		}
 
 		for (auto& s : this->soundsInUse)
@@ -93,14 +93,10 @@ namespace vel
 		if (HeadlessScene::internalLoad())
 		{
 			for (auto& renderGeoPoolKV : this->renderGeoPools)
-			{
-				// TODO:: gpu things
-			}
+				Runtime::_gpu->loadGeoPool(renderGeoPoolKV.second.get());
 
 			for (auto& renderSoloGeoPoolKV : this->renderSoloGeoPools)
-			{
-				// TODO: gpu things
-			}
+				Runtime::_gpu->loadGeoPool(renderSoloGeoPoolKV.second.get());
 
 			return true;
 		}
@@ -607,7 +603,7 @@ namespace vel
 
 		this->buildTextActorGeometry(ta, m);
 
-		Runtime::_gpu->updateMesh(m); // TODO: should be _gpu->updateGeoPool()
+		Runtime::_gpu->updateGeoPool(m->gp);
 
 		ta->requiresUpdate = false;
 	}
@@ -993,14 +989,9 @@ namespace vel
 	Mesh* Scene::addMesh(std::unique_ptr<Mesh> m)
 	{
 		Mesh* rawPtr = HeadlessScene::addMesh(std::move(m));
-		Runtime::_gpu->loadMesh(rawPtr);
+		Runtime::_gpu->loadGeoPool(rawPtr->gp);
 
 		return rawPtr;
-	}
-
-	void Scene::updateRenderMesh(Mesh* m)
-	{
-		Runtime::_gpu->updateMesh(m);
 	}
 
 	void Scene::removeMesh(Mesh* m)
@@ -1011,7 +1002,7 @@ namespace vel
 			return;
 
 		if ((m->flags & MESHFLAG_RENDERABLE) && !(m->flags & MESHFLAG_POOLED))
-			Runtime::_gpu->clearMesh(m->gp->gpuGeoPool.value());
+			Runtime::_gpu->clearGeoPool(m->gp->gpuGeoPool.value());
 
 		this->meshes.erase(it);
 	}

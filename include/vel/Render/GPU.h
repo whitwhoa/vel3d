@@ -35,6 +35,7 @@ namespace vel
 		glm::vec4							activeClearColorValues;
 
 		std::unique_ptr<Mesh>				screenSpaceMesh;
+		std::unique_ptr<GeoPoolT<VtxPosNrmlTx>>	screenSpaceMeshGeoPool;
 		std::unique_ptr<Shader>				screenShader;
 		std::unique_ptr<Shader>				postShader;
 		std::unique_ptr<Shader>				compositeShader;
@@ -59,6 +60,13 @@ namespace vel
 
 		void								bindFrameBuffer(unsigned int fbo);
 
+
+		void								genVtxPosBuffer(GeoPoolT<VtxPos>* gp);
+		void								genVtxPosNrmlBuffer(GeoPoolT<VtxPosNrml>* gp);
+		void								genVtxPosNrmlTxBuffer(GeoPoolT<VtxPosNrmlTx>* gp);
+		void								genVtxPosNrmlTxLmBuffer(GeoPoolT<VtxPosNrmlTxLm>* gp);
+		void								genVtxPosNrmlTxSknBuffer(GeoPoolT<VtxPosNrmlTxSkn>* gp);
+
 	public:
 		GPU(bool fxaa = false);
 		~GPU();
@@ -75,8 +83,8 @@ namespace vel
 
 
 		bool								loadShader(Shader* s);
-		void								loadMesh(Mesh* m);
-		void								updateMesh(Mesh* m);
+		void								loadGeoPool(GeoPool* gp);
+		void								updateGeoPool(GeoPool* m);
 		void								loadTexture(Texture* t);
 		void								loadFontBitmapTexture(FontBitmap* fb);
 
@@ -108,7 +116,7 @@ namespace vel
 		void								debugDrawCollisionWorld(CollisionDebugDrawer* cdd);
 
 		void								clearShader(Shader* s);
-		void								clearMesh(GpuGeoPool ggp);
+		void								clearGeoPool(GpuGeoPool ggp);
 		void								clearTexture(Texture* t);
 
 		void								updateBonesUBO(const std::vector<std::pair<unsigned int, glm::mat4>>& boneData); // first = bone array index, second = bone matrix

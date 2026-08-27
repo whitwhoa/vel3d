@@ -3,18 +3,11 @@
 #include <optional>
 #include <variant>
 
+#include <vel/Render/GpuGeoPool.h>
 #include <vel/Scene/Stage/Actor/Mesh/VtxLayout.h>
 
 namespace vel
 {
-    struct GpuGeoPool
-    {
-        unsigned int VAO;
-        unsigned int VBO;
-        unsigned int EBO;
-    };
-
-
     class GeoPool
     {
     public:

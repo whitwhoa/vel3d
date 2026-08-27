@@ -120,7 +120,6 @@ namespace vel
 
 		std::vector<Mesh*>			loadMesh(const std::string& path, uint32_t meshFlags = MESHFLAG_POOLED | MESHFLAG_RENDERABLE) override;
 		Mesh*						addMesh(std::unique_ptr<Mesh> m) override;
-		void						updateRenderMesh(Mesh* m);
 		void						removeMesh(Mesh* pMesh) override;
 		std::unique_ptr<Mesh>		loadTextActorMesh(TextActor* ta);
 		std::unique_ptr<Mesh>		loadBillboardMesh(std::string name, float width, float height);

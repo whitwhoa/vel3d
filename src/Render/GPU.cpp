@@ -16,7 +16,6 @@
 
 #include <vel/Render/GPU.h>
 #include <vel/Util/functions.h>
-#include <vel/Scene/Stage/Actor/Mesh/Vertex.h>
 
 
 
@@ -29,6 +28,7 @@ namespace vel
 		activeClearColorValues(glm::vec4(0.0f)),
 
 		screenSpaceMesh(std::make_unique<Mesh>("screenSpaceMesh")),
+		screenSpaceMeshGeoPool(std::make_unique<GeoPoolT<VtxPosNrmlTx>>()),
 		screenShader(std::make_unique<Shader>()),
 		postShader(std::make_unique<Shader>()),
 		compositeShader(std::make_unique<Shader>()),
@@ -60,7 +60,7 @@ namespace vel
 
 	GPU::~GPU()
 	{
-		this->clearMesh(this->screenSpaceMesh.get());
+		this->clearGeoPool(this->screenSpaceMeshGeoPool->gpuGeoPool.value());
 
 		glDeleteBuffers(1, &this->bonesUBO);
 		glDeleteBuffers(1, &this->texturesUBO);
@@ -330,45 +330,58 @@ namespace vel
 
 	void GPU::initScreenSpaceMesh()
 	{
+		this->screenSpaceMesh->gp = this->screenSpaceMeshGeoPool.get();
+		this->screenSpaceMesh->firstIndex = this->screenSpaceMeshGeoPool->indices.size();
+		this->screenSpaceMesh->baseVertex = this->screenSpaceMeshGeoPool->vertexCount();
+		this->screenSpaceMesh->flags = MESHFLAG_RENDERABLE;
+
+
 		// top left
-		Vertex v0;
+		VtxPosNrmlTx v0;
 		v0.position = glm::vec3(-1.0f, 1.0f, 0.0f);
 		v0.normal = glm::vec3(0.0f, 0.0f, 1.0f);
-		v0.textureCoordinates = glm::vec2(0.0f, 1.0f);
-		v0.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+		v0.textureCoords = glm::vec2(0.0f, 1.0f);
 		v0.materialUBOIndex = 0;
+		this->screenSpaceMeshGeoPool->vertices.push_back(v0);
 
 		// bottom left
-		Vertex v1;
+		VtxPosNrmlTx v1;
 		v1.position = glm::vec3(-1.0f, -1.0f, 0.0f);
 		v1.normal = glm::vec3(0.0f, 0.0f, 1.0f);
-		v1.textureCoordinates = glm::vec2(0.0f, 0.0f);
-		v1.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+		v1.textureCoords = glm::vec2(0.0f, 0.0f);
 		v1.materialUBOIndex = 0;
+		this->screenSpaceMeshGeoPool->vertices.push_back(v1);
 
 		// bottom right
-		Vertex v2;
+		VtxPosNrmlTx v2;
 		v2.position = glm::vec3(1.0f, -1.0f, 0.0f);
 		v2.normal = glm::vec3(0.0f, 0.0f, 1.0f);
-		v2.textureCoordinates = glm::vec2(1.0f, 0.0f);
-		v2.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+		v2.textureCoords = glm::vec2(1.0f, 0.0f);
 		v2.materialUBOIndex = 0;
+		this->screenSpaceMeshGeoPool->vertices.push_back(v2);
 
 		// top right
-		Vertex v3;
+		VtxPosNrmlTx v3;
 		v3.position = glm::vec3(1.0f, 1.0f, 0.0f);
 		v3.normal = glm::vec3(0.0f, 0.0f, 1.0f);
-		v3.textureCoordinates = glm::vec2(1.0f, 1.0f);
-		v3.lightmapCoordinates = glm::vec2(0.0f, 0.0f);
+		v3.textureCoords = glm::vec2(1.0f, 1.0f);
 		v3.materialUBOIndex = 0;
-
-		std::vector<Vertex> vs = { v0, v1, v2, v3 };
-		this->screenSpaceMesh->setVertices(vs);
+		this->screenSpaceMeshGeoPool->vertices.push_back(v3);
 
 		std::vector<unsigned int> is = { 0,1,2,0,2,3 };
-		this->screenSpaceMesh->setIndices(is);
 
-		this->loadMesh(this->screenSpaceMesh.get());
+		this->screenSpaceMeshGeoPool->indices.push_back(0);
+		this->screenSpaceMeshGeoPool->indices.push_back(1);
+		this->screenSpaceMeshGeoPool->indices.push_back(2);
+		this->screenSpaceMeshGeoPool->indices.push_back(0);
+		this->screenSpaceMeshGeoPool->indices.push_back(2);
+		this->screenSpaceMeshGeoPool->indices.push_back(3);
+
+		this->screenSpaceMesh->indexCount = this->screenSpaceMesh->gp->indices.size() - this->screenSpaceMesh->firstIndex;
+
+		this->screenSpaceMesh->refreshAABB();
+
+		this->loadGeoPool(this->screenSpaceMeshGeoPool.get());
 	}
 
 	void GPU::enableBackfaceCulling()
@@ -455,7 +468,7 @@ namespace vel
 		glDeleteProgram(s->id);
 	}
 
-	void GPU::clearMesh(GpuGeoPool ggp)
+	void GPU::clearGeoPool(GpuGeoPool ggp)
 	{
 		glDeleteVertexArrays(1, &ggp.VAO);
 		glDeleteBuffers(1, &ggp.VBO);
@@ -721,81 +734,224 @@ namespace vel
 		return true;
 	}
 
-	void GPU::loadMesh(Mesh* m)
+	void GPU::genVtxPosBuffer(GeoPoolT<VtxPos>* gp)
 	{
-		GpuMesh gm = GpuMesh();
-		gm.indiceCount = (GLsizei)m->getIndices().size();
+		GpuGeoPool ggp = GpuGeoPool();
+
+		glGenVertexArrays(1, &ggp.VAO);
+		glBindVertexArray(ggp.VAO);
+
+		glGenBuffers(1, &ggp.VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, ggp.VBO);
+		glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPos), &gp->vertices[0], GL_STATIC_DRAW);
+
+		glGenBuffers(1, &ggp.EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ggp.EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, gp->indices.size() * sizeof(unsigned int), &gp->indices[0], GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VtxPos), (void*)0);
+
+		glBindVertexArray(0);
+
+		gp->gpuGeoPool = ggp;
+	}
+
+	void GPU::genVtxPosNrmlBuffer(GeoPoolT<VtxPosNrml>* gp)
+	{
+		GpuGeoPool ggp = GpuGeoPool();
+
+		glGenVertexArrays(1, &ggp.VAO);
+		glBindVertexArray(ggp.VAO);
+
+		glGenBuffers(1, &ggp.VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, ggp.VBO);
+		glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrml), &gp->vertices[0], GL_STATIC_DRAW);
+
+		glGenBuffers(1, &ggp.EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ggp.EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, gp->indices.size() * sizeof(unsigned int), &gp->indices[0], GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrml), (void*)0);
+
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrml), (void*)offsetof(VtxPosNrml, normal));
+
+		glBindVertexArray(0);
+
+		gp->gpuGeoPool = ggp;
+	}
+
+	void GPU::genVtxPosNrmlTxBuffer(GeoPoolT<VtxPosNrmlTx>* gp)
+	{
+		GpuGeoPool ggp = GpuGeoPool();
+
+		glGenVertexArrays(1, &ggp.VAO);
+		glBindVertexArray(ggp.VAO);
+
+		glGenBuffers(1, &ggp.VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, ggp.VBO);
+		glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTx), &gp->vertices[0], GL_STATIC_DRAW);
+
+		glGenBuffers(1, &ggp.EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ggp.EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, gp->indices.size() * sizeof(unsigned int), &gp->indices[0], GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTx), (void*)0);
+
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTx), (void*)offsetof(VtxPosNrmlTx, normal));
+
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTx), (void*)offsetof(VtxPosNrmlTx, textureCoords));
+
+		glEnableVertexAttribArray(3);
+		glVertexAttribIPointer(3, 1, GL_INT, sizeof(VtxPosNrmlTxLm), (void*)offsetof(VtxPosNrmlTxLm, materialUBOIndex));
+
+		glBindVertexArray(0);
+
+		gp->gpuGeoPool = ggp;
+	}
+
+	void GPU::genVtxPosNrmlTxLmBuffer(GeoPoolT<VtxPosNrmlTxLm>* gp)
+	{
+		GpuGeoPool ggp = GpuGeoPool();
+
+		glGenVertexArrays(1, &ggp.VAO);
+		glBindVertexArray(ggp.VAO);
+
+		glGenBuffers(1, &ggp.VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, ggp.VBO);
+		glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTxLm), &gp->vertices[0], GL_STATIC_DRAW);
+
+		glGenBuffers(1, &ggp.EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ggp.EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, gp->indices.size() * sizeof(unsigned int), &gp->indices[0], GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxLm), (void*)0);
+
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxLm), (void*)offsetof(VtxPosNrmlTxLm, normal));
+
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxLm), (void*)offsetof(VtxPosNrmlTxLm, textureCoords));
+
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxLm), (void*)offsetof(VtxPosNrmlTxLm, lightmapCoords));
+
+		glEnableVertexAttribArray(4);
+		glVertexAttribIPointer(4, 1, GL_INT, sizeof(VtxPosNrmlTxLm), (void*)offsetof(VtxPosNrmlTxLm, materialUBOIndex));
+
+		glBindVertexArray(0);
+
+		gp->gpuGeoPool = ggp;
+	}
+
+	void GPU::genVtxPosNrmlTxSknBuffer(GeoPoolT<VtxPosNrmlTxSkn>* gp)
+	{
+		GpuGeoPool ggp = GpuGeoPool();
 
 		// Generate and bind vertex attribute array
-		glGenVertexArrays(1, &gm.VAO);
-		glBindVertexArray(gm.VAO);
+		glGenVertexArrays(1, &ggp.VAO);
+		glBindVertexArray(ggp.VAO);
 
 		// Generate and bind vertex buffer object
-		glGenBuffers(1, &gm.VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, gm.VBO);
-		glBufferData(GL_ARRAY_BUFFER, m->getVertices().size() * sizeof(Vertex), &m->getVertices()[0], GL_STATIC_DRAW);
+		glGenBuffers(1, &ggp.VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, ggp.VBO);
+		glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTxSkn), &gp->vertices[0], GL_STATIC_DRAW);
 
 		// Generate and bind element buffer object
-		glGenBuffers(1, &gm.EBO);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gm.EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, m->getIndices().size() * sizeof(unsigned int), &m->getIndices()[0], GL_STATIC_DRAW);
+		glGenBuffers(1, &ggp.EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ggp.EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, gp->indices.size() * sizeof(unsigned int), &gp->indices[0], GL_STATIC_DRAW);
 
 		// Assign vertex positions to location = 0
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxSkn), (void*)0);
 
 		// Assign vertex normals to location = 1
 		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, normal));
 
 		// Assign vertex texture coordinates to location = 2
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, textureCoordinates));
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, textureCoords));
 
-		// Assign vertex lightmap texture coordinates to location = 3
+		// Assign vertex bone ids to location = 3
 		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, lightmapCoordinates));
+		glVertexAttribIPointer(3, 4, GL_INT, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, boneIds));
 
-		// Assign texture id to location = 4
+		// Assign vertex weights to location = 4
 		glEnableVertexAttribArray(4);
-		glVertexAttribIPointer(4, 1, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, materialUBOIndex));
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, boneWeights));
 
-		// Assign vertex bone ids to location = 5 (and 6 for second array element)
+		// Assign texture id to location = 5
 		glEnableVertexAttribArray(5);
-		glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, weights.ids));
-		glEnableVertexAttribArray(6);
-		glVertexAttribIPointer(6, 4, GL_INT, sizeof(Vertex), (void*)(offsetof(Vertex, weights.ids) + 16));
-
-		// Assign vertex weights to location = 7 (and 8 for second array element)
-		glEnableVertexAttribArray(7);
-		glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, weights.weights));
-		glEnableVertexAttribArray(8);
-		glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(offsetof(Vertex, weights.weights) + 16));
+		glVertexAttribIPointer(5, 1, GL_INT, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, materialUBOIndex));
 
 		// Unbind the vertex array to prevent accidental operations
 		glBindVertexArray(0);
 
-		m->setGpuMesh(gm);
+		gp->gpuGeoPool = ggp;
 	}
 
-	//
-	// TODO: needs to be _gpu->updateGeoPool(gp*)
-	//
-	void GPU::updateMesh(Mesh* m)
+	void GPU::loadGeoPool(GeoPool* gp)
 	{
-		auto& gm = m->getGpuMesh().value();
-		gm.indiceCount = (GLsizei)m->getIndices().size();
+		switch (gp->vtxLayout)
+		{
+		case VtxLayout::VTX_POS:
+			this->genVtxPosBuffer(static_cast<GeoPoolT<VtxPos>*>(gp));
+			break;
+		case VtxLayout::VTX_POS_NRML:
+			this->genVtxPosNrmlBuffer(static_cast<GeoPoolT<VtxPosNrml>*>(gp));
+			break;
+		case VtxLayout::VTX_POS_NRML_TX:
+			this->genVtxPosNrmlTxBuffer(static_cast<GeoPoolT<VtxPosNrmlTx>*>(gp));
+			break;
+		case VtxLayout::VTX_POS_NRML_TX_LM:
+			this->genVtxPosNrmlTxLmBuffer(static_cast<GeoPoolT<VtxPosNrmlTxLm>*>(gp));
+			break;
+		case VtxLayout::VTX_POS_NRML_TX_SKN:
+			this->genVtxPosNrmlTxSknBuffer(static_cast<GeoPoolT<VtxPosNrmlTxSkn>*>(gp));
+			break;
+		}
+	}
+
+	void GPU::updateGeoPool(GeoPool* gp)
+	{
+		GpuGeoPool& ggp = gp->gpuGeoPool.value();
 
 		// Generate and bind vertex attribute array
-		glBindVertexArray(gm.VAO);
+		glBindVertexArray(ggp.VAO);
 
 		// Bind and update vertex buffer
-		glBindBuffer(GL_ARRAY_BUFFER, gm.VBO);
-		glBufferData(GL_ARRAY_BUFFER, m->getVertices().size() * sizeof(Vertex), &m->getVertices()[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, ggp.VBO);
+
+		switch (gp->vtxLayout)
+		{
+		case VtxLayout::VTX_POS:
+			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPos), &static_cast<GeoPoolT<VtxPos>*>(gp)[0], GL_STATIC_DRAW);
+			break;
+		case VtxLayout::VTX_POS_NRML:
+			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrml), &static_cast<GeoPoolT<VtxPosNrml>*>(gp)[0], GL_STATIC_DRAW);
+			break;
+		case VtxLayout::VTX_POS_NRML_TX:
+			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTx), &static_cast<GeoPoolT<VtxPosNrmlTx>*>(gp)[0], GL_STATIC_DRAW);
+			break;
+		case VtxLayout::VTX_POS_NRML_TX_LM:
+			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTxLm), &static_cast<GeoPoolT<VtxPosNrmlTxLm>*>(gp)[0], GL_STATIC_DRAW);
+			break;
+		case VtxLayout::VTX_POS_NRML_TX_SKN:
+			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTxSkn), &static_cast<GeoPoolT<VtxPosNrmlTxSkn>*>(gp)[0], GL_STATIC_DRAW);
+			break;
+		}
 
 		// Bind and update indices buffer
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gm.EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, m->getIndices().size() * sizeof(unsigned int), &m->getIndices()[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ggp.EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, gp->indices.size() * sizeof(unsigned int), &gp->indices[0], GL_STATIC_DRAW);
 
 		// Unbind the vertex array to prevent accidental operations
 		glBindVertexArray(0);
