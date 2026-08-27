@@ -11,7 +11,7 @@
 
 namespace vel
 {
-	unsigned int HeadlessScene::nextSceneId = 0;
+	unsigned int HeadlessScene::nextSceneId = 1;
 
 	HeadlessScene::HeadlessScene() :
 		id(HeadlessScene::nextSceneId++),

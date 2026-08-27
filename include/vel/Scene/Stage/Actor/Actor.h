@@ -15,44 +15,36 @@
 
 namespace vel
 {
-	class	CollisionWorld;
-	class	Material;
-
+	class	Material; // TODO: probably not required after we drastically alter what a Material even is
 
 	class Actor
 	{
 	private:
-		std::string										name;
-		bool											visible;
-		bool											dynamic;
-		bool											lerpable;
-
-		uint32_t										lastTransformUpdateTick;
-		Transform										transform;
-		Transform										previousTransform;
-
-
-		Actor*											parentActor; // If not null, this actor is a child of the actor pointed to by parentActor
-		int												parentActorBone;
-		std::vector<Actor*>								childActors; // If size() > 0, this actor is a parent pointed to by all contained Actors
-
-		SkelAnimator*										animator;
-		std::vector<std::pair<unsigned int, unsigned int>>	activeBones; // the bones from the armature that are actually used by the mesh, 
-																		// the glue between an armature and a mesh
-																		// pair::first == armature bone index, pair::second == mesh bone index
-		Mesh*												mesh;
-
+		static unsigned int			nextActorId;
+		Transform					transform;
+		Transform					previousTransform;
+		std::vector<Actor*>			childActors; // If size() > 0, this actor is a parent pointed to by all contained Actors
+		std::vector<std::pair<unsigned int, unsigned int>> activeBones; // the bones from the armature used by the mesh, .first = animator.renderModelMatrices index, .second = mesh.bones index
+		Actor*						parentActor; // If not null, this actor is a child of the actor pointed to by parentActor
+		SkelAnimator*				animator;
+		Mesh*						mesh;
+		//
+		// TODO: this could change after we re-work material system
+		// 
 		// std::unique_ptr<Material> so we can have polymorphism, copy constructor and copy assignment operators overwritten to perform clone
 		// as each actor needs it's own copy of it's material
-		std::unique_ptr<Material>						material; // actor must own it's own copy of a material because of animators
-		
-		void*											userPointer;
+		std::unique_ptr<Material>	material; // actor must own it's own copy of a material because of animators
+		void*						userPointer;
+		uint32_t					lastTransformUpdateTick;
+		unsigned int				id;
+		int							parentActorBone; // Used in conjunction with parentActor, when present (> -1)
+		bool						visible;
+		bool						dynamic;
+		bool						lerpable;
 
-
-		void											_removeParentActor();
-		void											_removeChildActor(Actor* child);
-
-		void											_updatePrevTransform();
+		void						_removeParentActor();
+		void						_removeChildActor(Actor* child);
+		void						_updatePrevTransform();
 		
 
 	public:
@@ -66,9 +58,6 @@ namespace vel
 
 		void											setDynamic(bool dynamic, bool lerpable = true);
 
-		void											setName(std::string newName);
-		const std::string								getName() const;
-
 		void											setMesh(Mesh* m);
 		Mesh*											getMesh();
 		Mesh*											getMesh() const;
@@ -76,20 +65,16 @@ namespace vel
 		bool											setAnimator(SkelAnimator* a);
 		SkelAnimator*									getAnimator();
 
-
 		void											setMaterial(Material* m);
 		Material*										getMaterial();
 		Material*										getMaterial() const;
 		
-
-
 		void											setVisible(bool v);
 		bool											isVisible() const;
 		bool											isAnimated() const;
 		bool											isDynamic() const;
 		bool											isLerpable() const;
 		
-
 		const std::vector<std::pair<unsigned int, unsigned int>>& getActiveBones() const;
 		void											setActiveBones(std::vector<std::pair<unsigned int, unsigned int>> activeBones);
 

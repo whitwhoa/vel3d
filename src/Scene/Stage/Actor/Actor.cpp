@@ -8,8 +8,10 @@
 
 namespace vel
 {
+	unsigned int Actor::nextActorId = 1;
+
 	Actor::Actor(const std::string& name) :
-		name(name),
+		id(Actor::nextActorId++),
 		visible(true),
 		dynamic(false),
 		lerpable(false),
@@ -25,7 +27,7 @@ namespace vel
 	{}
 
 	Actor::Actor(const Actor& a) :
-		name(a.getName()),
+		id(Actor::nextActorId++),
 		visible(a.isVisible()),
 		dynamic(a.isDynamic()),
 		lerpable(a.isLerpable()),
@@ -45,8 +47,8 @@ namespace vel
 	{
 		if (this == &a)
 			return *this; // handle self-assignment
-
-		this->name = a.getName();
+		
+		this->id = Actor::nextActorId++;
 		this->visible = a.isVisible();
 		this->dynamic = a.isDynamic();
 		this->lerpable = a.isLerpable();
@@ -180,11 +182,6 @@ namespace vel
 		child->_removeParentActor();
 	}
 	// --------------------------------------------------------------------------
-
-	void Actor::setName(std::string newName)
-	{
-		this->name = newName;
-	}
 
 	void Actor::setMesh(Mesh* m)
 	{
@@ -355,11 +352,6 @@ namespace vel
 
 		for (auto& ca : this->childActors)
 			ca->setVisible(v);
-	}
-
-	const std::string Actor::getName() const
-	{
-		return this->name;
 	}
 
 	bool Actor::isAnimated() const
