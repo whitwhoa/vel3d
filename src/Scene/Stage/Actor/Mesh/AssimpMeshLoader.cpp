@@ -10,8 +10,7 @@ namespace vel
 {
 	AssimpMeshLoader::AssimpMeshLoader() :
 		impScene(nullptr),
-		meshesToLoad(nullptr),
-		currentMeshTextureId(0)
+		meshesToLoad(nullptr)
 	{
 		
 	}
@@ -22,7 +21,6 @@ namespace vel
 		this->impScene = nullptr;
 		this->preloadData.clear();
 		this->meshes.clear();
-		this->currentMeshTextureId = 0;
 	}
 
 	void AssimpMeshLoader::preProcessNode(aiNode* node)
@@ -145,8 +143,6 @@ namespace vel
 			else
 				vtx.textureCoords = { 0.f, 0.f };
 
-			vtx.materialUBOIndex = this->currentMeshTextureId;
-
 			verts.push_back(vtx);
 		}
 	}
@@ -171,8 +167,6 @@ namespace vel
 			else
 				vtx.lightmapCoords = { 0.f, 0.f };
 
-			vtx.materialUBOIndex = this->currentMeshTextureId;
-
 			verts.push_back(vtx);
 		}
 	}
@@ -191,8 +185,6 @@ namespace vel
 				vtx.textureCoords = { aiMesh->mTextureCoords[0][i].x, aiMesh->mTextureCoords[0][i].y };
 			else
 				vtx.textureCoords = { 0.f, 0.f };
-
-			vtx.materialUBOIndex = this->currentMeshTextureId;
 
 			verts.push_back(vtx);
 		}
@@ -304,6 +296,9 @@ namespace vel
 				// create one single mesh from all of the aiMeshes
 				unsigned int meshCount = node->mNumMeshes;
 
+				// to insure we don't have duplicate slots for the same material
+				std::unordered_map<unsigned int, uint32_t> materialSlots;
+
 				// if more than one mesh then we need to sort these meshes by the names of their
 				// materials, unless the name of their material is "DefaultMaterial", then we process
 				// those after the named material meshes
@@ -325,27 +320,37 @@ namespace vel
 				// now sort meshes based on material names
 				std::sort(customMaterialMeshes.begin(), customMaterialMeshes.end());
 
-				// reset mesh texture id... this was a fun little bug to figure out
-				this->currentMeshTextureId = 0;
-
 				// init Mesh here. Set it's index values from sizes of GeoPool buffers. Hold tmp count of indices
 				std::unique_ptr<Mesh> finalMesh = std::make_unique<Mesh>(nodeName);
 				finalMesh->gp = gp;
 				finalMesh->firstIndex = gp->indices.size();
 				finalMesh->baseVertex = gp->vertexCount();
 
+				unsigned int sectionFirstIndex = finalMesh->firstIndex;
+				unsigned int sectionIndexCount = 0;
+
 				// process all custom material meshes
 				for (auto& cm : customMaterialMeshes)
 				{
+					sectionFirstIndex = sectionFirstIndex + sectionIndexCount;
 					this->processMesh(cm.second, finalMesh.get());
-					this->currentMeshTextureId++;
+					sectionIndexCount = finalMesh->gp->indices.size() - sectionFirstIndex;
+
+					auto it= materialSlots.try_emplace(cm.second->mMaterialIndex, static_cast<uint32_t>(materialSlots.size())).first;
+
+					finalMesh->sections.emplace_back(sectionFirstIndex, sectionIndexCount, it->second);
 				}
 
 				// process all "DefaultMaterial" meshes
 				for (auto& dm : defaultMaterialMeshes)
 				{
+					sectionFirstIndex = sectionFirstIndex + sectionIndexCount;
 					this->processMesh(dm, finalMesh.get());
-					this->currentMeshTextureId++;
+					sectionIndexCount = finalMesh->gp->indices.size() - sectionFirstIndex;
+
+					auto it = materialSlots.try_emplace(dm->mMaterialIndex, static_cast<uint32_t>(materialSlots.size())).first;
+
+					finalMesh->sections.emplace_back(sectionFirstIndex, sectionIndexCount, it->second);
 				}
 
 				finalMesh->indexCount = finalMesh->gp->indices.size() - finalMesh->firstIndex;

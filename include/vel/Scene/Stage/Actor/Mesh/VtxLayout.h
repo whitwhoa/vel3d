@@ -37,7 +37,6 @@ namespace vel
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec2 textureCoords;
-        unsigned int materialUBOIndex = 0;
     };
 
     struct VtxPosNrmlTxLm
@@ -48,7 +47,6 @@ namespace vel
         glm::vec3 normal;
         glm::vec2 textureCoords;
         glm::vec2 lightmapCoords;
-        unsigned int materialUBOIndex = 0;
     };
 
     struct VtxPosNrmlTxSkn
@@ -60,7 +58,6 @@ namespace vel
         glm::vec2 textureCoords;
         unsigned int boneIds[4] = {0,0,0,0}; // 4 bones allowed per vertex
         float boneWeights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-        unsigned int materialUBOIndex = 0;
     };
 
 }

@@ -26,7 +26,6 @@ namespace vel
 		std::string											armatureInFile;
 		std::vector<std::pair<std::string, GeoPool*>>*		meshesToLoad;
 		std::vector<std::unique_ptr<Mesh>>					meshes; // TF? this is a private member but it's later returned using std::move()
-		unsigned int										currentMeshTextureId;
 		
 
 		void			preProcessNode(aiNode* node);
