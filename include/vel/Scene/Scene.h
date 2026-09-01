@@ -14,6 +14,7 @@
 #include <vel/Scene/Stage/Actor/LineActor.h>
 #include <vel/Scene/Stage/Actor/Billboard.h>
 #include <vel/Scene/Stage/Actor/Mesh/Mesh.h>
+#include <vel/Scene/Stage/Actor/Mesh/MeshFlag.h>
 #include <vel/Scene/Stage/Actor/Font/FontBitmap.h>
 #include <vel/Scene/Stage/Actor/Font/FontGlyphInfo.h>
 #include <vel/Scene/Stage/Actor/Material/DiffuseMaterial.h>
