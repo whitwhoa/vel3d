@@ -6,8 +6,8 @@
 
 #include <vel/Runtime.h>
 #include <vel/Scene/HeadlessScene.h>
-#include <vel/Scene/Stage/Actor/Mesh/AssimpMeshLoader.h>
-//#include <vel/Scene/Stage/Actor/Mesh/VtxLayout.h>
+#include <vel/Scene/Mesh/AssimpMeshLoader.h>
+
 
 namespace vel
 {

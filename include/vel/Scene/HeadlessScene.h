@@ -8,9 +8,11 @@
 #include <ozz/animation//runtime/animation.h>
 
 #include <vel/Scene/Stage/Stage.h>
-#include <vel/Scene/Stage/Actor/Mesh/MeshLoaderInterface.h>
-#include <vel/Scene/Stage/Actor/Mesh/GeoPool.h>
-#include <vel/Physics/CollisionWorld.h>
+#include <vel/Scene/Mesh/MeshLoaderInterface.h>
+#include <vel/Scene/Mesh/MeshFlag.h>
+#include <vel/Scene/GeoPool/GeoPool.h>
+#include <vel/Scene/CollisionWorld/CollisionWorld.h>
+#include <vel/Scene/Animation/SkelAnimator.h>
 
 
 namespace vel
@@ -25,7 +27,6 @@ namespace vel
 		unsigned int							id;
 		std::unique_ptr<MeshLoaderInterface>	meshLoader;
 
-		std::vector<std::unique_ptr<Stage>>		stages;
 		std::vector<CollisionWorld*> 			collisionWorlds;
 
 		std::unordered_map<std::string, std::unique_ptr<GeoPool>> soloGeoPools;
@@ -33,6 +34,12 @@ namespace vel
 		std::unordered_map<std::string, std::unique_ptr<Mesh>>						meshes;
 		std::unordered_map<std::string, std::unique_ptr<ozz::animation::Skeleton>>	skeletons;
 		std::unordered_map<std::string, std::unique_ptr<ozz::animation::Animation>>	animations;
+
+		//
+		// TODO: Actors go here...in a slot_map
+		//
+
+		std::vector<std::unique_ptr<SkelAnimator>> animators;
 
 
 		int										getCollisionWorldIndex(const std::string& name);

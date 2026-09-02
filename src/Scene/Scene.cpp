@@ -11,10 +11,9 @@
 
 #include <vel/Runtime.h>
 #include <vel/Util/functions.h>
-#include <vel/Physics/CollisionObjectTemplate.h>
+#include <vel/Scene/CollisionWorld/CollisionObjectTemplate.h>
 #include <vel/Scene/Scene.h>
-#include <vel/Scene/Stage/Actor/Material/MaterialOptions.h>
-#include <vel/Scene/Stage/Actor/Material/Texture/Texture.h>
+#include <vel/Scene/Texture/Texture.h>
 
 using json = nlohmann::json;
 
@@ -25,7 +24,6 @@ namespace vel
 		HeadlessScene(),
 		sceneRenderTarget(nullptr),
 		audioGroupKey(-1),
-		animationTime(0.0f),
 		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)),
 		frameTime(0.0),
 		frameRate(0.0)

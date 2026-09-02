@@ -6,7 +6,7 @@
 #include <vel/Config.h>
 #include <vel/Window.h>
 #include <vel/AudioDevice.h>
-#include <vel/Render/GPU.h>
+#include <vel/GPU.h>
 
 /*
 
