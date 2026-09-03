@@ -17,7 +17,7 @@ namespace vel
 		lastTransformUpdateTick(0),
 		transform(Transform()),
 		previousTransform(Transform()),
-		parentActor(nullptr),
+		parentActor(std::nullopt),
 		parentActorBone(-1),
 		animator(nullptr),
 		mesh(nullptr),
@@ -27,17 +27,17 @@ namespace vel
 
 	Actor::Actor(const Actor& a) :
 		id(Actor::nextActorId++),
-		visible(a.isVisible()),
-		dynamic(a.isDynamic()),
-		lerpable(a.isLerpable()),
+		visible(a.visible),
+		dynamic(a.dynamic),
+		lerpable(a.lerpable),
 		lastTransformUpdateTick(0),
 		transform(a.getTransform()),
 		previousTransform(a.getPreviousTransform()),
-		parentActor(nullptr),
+		parentActor(std::nullopt),
 		parentActorBone(-1),
 		animator(nullptr),
 		mesh(a.mesh),
-		material(std::make_unique<Material>(a.material)),
+		material(a.material),
 		userPointer(nullptr)
 	{}
 
@@ -48,12 +48,12 @@ namespace vel
 			return *this; // handle self-assignment
 		
 		this->id = Actor::nextActorId++;
-		this->visible = a.isVisible();
-		this->dynamic = a.isDynamic();
-		this->lerpable = a.isLerpable();
+		this->visible = a.visible;
+		this->dynamic = a.dynamic;
+		this->lerpable = a.lerpable;
 		this->transform = a.getTransform();
 		this->mesh = a.mesh;
-		this->material = std::make_unique<Material>(a.material);
+		this->material = a.material;
 
 		return *this;
 	}
@@ -221,16 +221,6 @@ namespace vel
 		this->lerpable = lerpable;
 	}
 
-	bool Actor::isDynamic() const
-	{
-		return this->dynamic;
-	}
-
-	bool Actor::isLerpable() const
-	{
-		return this->lerpable;
-	}
-
 	void Actor::setParentActor(Actor* a)
 	{
 		// set the parent relationship
@@ -244,11 +234,6 @@ namespace vel
 		{
 			this->removeParentActor();
 		}		
-	}
-
-	std::vector<Actor*>& Actor::getChildActors()
-	{
-		return this->childActors;
 	}
 
 	void Actor::setParentActorBone(Actor* a, int boneId)
@@ -293,11 +278,6 @@ namespace vel
 	const Transform& Actor::getPreviousTransform() const
 	{
 		return this->previousTransform;
-	}
-
-	bool Actor::isVisible() const
-	{
-		return this->visible;
 	}
 
 	void Actor::setVisible(bool v)

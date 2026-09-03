@@ -97,39 +97,32 @@ namespace vel
 		FontBitmap*					getFontBitmap(const std::string& name);
 		void						removeFontBitmap(FontBitmap* pFontBitmap);
 
-		
-
-
-
-
-
-		
 
 	public:
 		Scene();
 		~Scene();
-		virtual void						internalImmediateLoop(float frameTime, float renderLerpInterval);
-		virtual void						immediateLoop(float frameTime, float renderLerpInterval) = 0;
-		bool								internalLoad() override;
+		virtual void				internalImmediateLoop(float frameTime, float renderLerpInterval);
+		virtual void				immediateLoop(float frameTime, float renderLerpInterval) = 0;
+		bool						internalLoad() override;
 
-		void								lerpAnimators(float alpha);
-		void								draw(float frameTime, float alpha);
+		void						lerpAnimators(float alpha);
+		void						draw(float frameTime, float alpha);
 
-		void								clearAllRenderTargetBuffers();
+		void						clearAllRenderTargetBuffers();
 
-		void								updateTextActor(TextActor* ta);
-		void								updateTextActors();
+		void						updateTextActor(TextActor* ta);
+		void						updateTextActors();
 
-		void								setScreenTint(glm::vec4 c);
-		void								clearScreenTint();
+		void						setScreenTint(glm::vec4 c);
+		void						clearScreenTint();
 
-		int									getAudioDeviceGroupKey();
+		int							getAudioDeviceGroupKey();
 		
-		FinalRenderTarget*					getSceneRenderTarget();
+		FinalRenderTarget*			getSceneRenderTarget();
 
-		void								updateBillboards();
+		void						updateBillboards();
 
-		void								updateAllCameraResolutions(int x, int y);
+		void						updateAllCameraResolutions(int x, int y);
 
 	};
 
