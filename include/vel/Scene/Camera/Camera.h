@@ -12,8 +12,6 @@
 
 namespace vel
 {
-	class GPU;
-
 	enum class CameraType {
 		ORTHOGRAPHIC,
 		SCREEN_SPACE,
@@ -40,8 +38,6 @@ namespace vel
 		glm::vec3			    position;
 		glm::vec3			    lookAt;
 		glm::vec3			    up;
-		//glm::mat4			    viewMatrix;
-		//glm::mat4			    projectionMatrix;
 		CameraGpuData			gpuData;
 		bool					finalRenderCam;
 		bool					resolutionFixed;

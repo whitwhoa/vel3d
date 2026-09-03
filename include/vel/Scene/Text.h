@@ -8,7 +8,7 @@
 
 namespace vel 
 {
-	struct TextActor 
+	struct Text
 	{
 		std::string					name;
 		std::string 				text;

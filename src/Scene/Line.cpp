@@ -1,18 +1,18 @@
 
 
-#include <vel/Scene/LineActor.h>
+#include <vel/Scene/Line.h>
 #include <vel/Scene/Mesh/Mesh.h>
 
 
 namespace vel
 {
-	LineActor::LineActor(const std::string& name) :
+	Line::Line(const std::string& name) :
 		name(name),
 		actor(nullptr),
 		requiresUpdate(false)
 	{}
 
-	std::unique_ptr<Mesh> LineActor::pointsToMesh(const std::string& name, const std::vector<glm::vec2>& points)
+	std::unique_ptr<Mesh> Line::pointsToMesh(const std::string& name, const std::vector<glm::vec2>& points)
 	{
 		std::vector<Vertex> meshVertices = {};
 
@@ -42,7 +42,7 @@ namespace vel
 		return m;
 	}
 
-	std::unique_ptr<Mesh> LineActor::segmentsToMesh(const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points)
+	std::unique_ptr<Mesh> Line::segmentsToMesh(const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points)
 	{
 		std::vector<Vertex> meshVertices = {};
 
@@ -69,7 +69,7 @@ namespace vel
 		return m;
 	}
 
-	void LineActor::setThickness(float t)
+	void Line::setThickness(float t)
 	{
 		reinterpret_cast<RGBALineMaterial*>(this->actor->getMaterial())->setLineThickness(t);
 	}

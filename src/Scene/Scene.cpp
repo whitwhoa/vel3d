@@ -23,11 +23,9 @@ namespace vel
 	Scene::Scene() :
 		HeadlessScene(),
 		sceneRenderTarget(nullptr),
-		audioGroupKey(-1),
-		screenTint(glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)),
-		frameTime(0.0),
-		frameRate(0.0)
+		audioGroupKey(-1)
 	{
+		// TODO: did we forget one?
 		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML, std::make_unique<GeoPoolT<VtxPosNrml>>());
 		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML_TX, std::make_unique<GeoPoolT<VtxPosNrmlTx>>());
 		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML_TX_LM, std::make_unique<GeoPoolT<VtxPosNrmlTxLm>>());
@@ -107,11 +105,6 @@ namespace vel
 		this->immediateLoop(frameTime, renderLerpInterval);
 	}
 
-	FinalRenderTarget* Scene::getSceneRenderTarget()
-	{
-		return this->sceneRenderTarget.get();
-	}
-
 	void Scene::loadBGMSound(const std::string& path)
 	{
 		this->soundsInUse.push_back(Runtime::_audioDevice->loadBGM(path));
@@ -157,16 +150,6 @@ namespace vel
 		for (auto& c : this->cameras)
 			if (!c->getFixedResolution())
 				c->setResolution(x, y);
-	}
-
-	void Scene::setScreenTint(glm::vec4 c)
-	{
-		this->screenTint = c;
-	}
-
-	void Scene::clearScreenTint()
-	{
-		this->screenTint = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
 	}
 
 	void Scene::setShaderOpts(int opts, std::vector<std::string>& defs, std::string& shaderName)
@@ -490,40 +473,37 @@ namespace vel
 		return static_cast<AnimatedBillboardMaterial*>(pMaterial);
 	}
 
-	TextActor* Scene::addTextActor(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
+	Text* Scene::addText(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
 		glm::vec4 color, PlaneOrigin originType)
 	{
-		std::unique_ptr<TextActor> ta = std::make_unique<TextActor>();
-		ta->name = name;
-		ta->text = theText;
-		ta->fontBitmap = fb;
-		ta->originType = originType;
+		std::unique_ptr<Text> t = std::make_unique<Text>();
+		t->name = name;
+		t->text = theText;
+		t->fontBitmap = fb;
+		t->originType = originType;
 
 		// create the mesh using provided FontBitmap and text string
-		Mesh* pTam = this->addMesh(std::move(this->loadTextActorMesh(ta.get())));
+		Mesh* mesh = this->addMesh(std::move(this->loadTextMesh(t.get())));
 
 		// create material
-		Material* taMaterial = this->addTextMaterial(name + "_material", MTRL_OPT_TRANSLUCENT);
-		taMaterial->addTexture(&fb->texture);
-		taMaterial->setColor(color);
+		Material* tMaterial = this->addTextMaterial(name + "_material", MTRL_OPT_TRANSLUCENT);
+		tMaterial->addTexture(&fb->texture);
+		tMaterial->setColor(color);
 
-		// create actor
-		Actor* pTextActor = stage->addActor(name, pTam, taMaterial);
-
-		// add actor pointer to TextActor.actor
-		ta->actor = pTextActor;
+		// add actor pointer to Text.actor
+		t->actor = stage->addActor(name, mesh, tMaterial);
 
 		// add new text actor to stage and return pointer
-		return stage->addTextActor(std::move(ta));
+		return stage->addText(std::move(t));
 	}
 
-	LineActor* Scene::addLineActor(Stage* stage, const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points, std::vector<glm::vec4> colors)
+	Line* Scene::addLine(Stage* stage, const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points, std::vector<glm::vec4> colors)
 	{
-		// create the LineActor
-		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);
+		// create the Line
+		std::unique_ptr<Line> la = std::make_unique<Line>(name);
 
 		// create the mesh
-		Mesh* pMesh = this->addMesh(std::move(LineActor::segmentsToMesh(name, points)));
+		Mesh* pMesh = this->addMesh(std::move(Line::segmentsToMesh(name, points)));
 
 		bool hasAlpha = false;
 		for (auto& c : colors)
@@ -543,17 +523,17 @@ namespace vel
 		// create actor
 		Actor* pActor = stage->addActor(name, pMesh, pMaterial);
 
-		// add actor pointer to LineActor
+		// add actor pointer to Line
 		la->actor = pActor;
 
-		return stage->addLineActor(std::move(la));
+		return stage->addLine(std::move(la));
 	}
 
-	LineActor* Scene::addContinuousLineActor(Stage* stage, const std::string& name, const std::vector<glm::vec2>& points, glm::vec4 color)
+	Line* Scene::addContinuousLine(Stage* stage, const std::string& name, const std::vector<glm::vec2>& points, glm::vec4 color)
 	{
-		std::unique_ptr<LineActor> la = std::make_unique<LineActor>(name);
+		std::unique_ptr<Line> la = std::make_unique<Line>(name);
 
-		Mesh* pMesh = this->addMesh(std::move(LineActor::pointsToMesh(name, points)));
+		Mesh* pMesh = this->addMesh(std::move(Line::pointsToMesh(name, points)));
 
 		bool hasAlpha = color.w < 0.999f;
 
@@ -564,11 +544,17 @@ namespace vel
 
 		la->actor = pActor;
 
-		return stage->addLineActor(std::move(la));
+		return stage->addLine(std::move(la));
 	}
 
 	Billboard* Scene::addBillboard(Stage* stage, const std::string& name, vel::Material* material, vel::Camera* parentCamera, float width, float height)
 	{
+		// version of addBillboard that accepts a pointer to an existing mesh instead of creating one (so that for example
+		// if we have 100 enemies that all use the same size billboard, they can all use the same mesh, and we don't have to 
+		// make 100 extra calls into the graphics driver to swap vaos)
+		
+		// TODO: Not even sure this makes sense with the new geoPool logic. MUST REVIEW
+		
 		// generate mesh, send it to gpu, track it for managment by scene
 		Mesh* m = this->addMesh(std::move(this->loadBillboardMesh(name + "_mesh", width, height)));
 
@@ -588,6 +574,27 @@ namespace vel
 		return stage->addBillboard(std::make_unique<Billboard>(a, parentCamera));
 	}
 
+	Stage* Scene::addStage(int pos)
+	{
+		std::unique_ptr<Stage> s = std::make_unique<Stage>();
+		Stage* stage = s.get();
+
+		if (pos == -1 || pos >= static_cast<int>(this->stages.size()))
+		{
+			this->stages.push_back(std::move(s));
+		}
+		else if (pos >= 0)
+		{
+			this->stages.insert(this->stages.begin() + pos, std::move(s));
+		}
+		else
+		{
+			SPDLOG_ERROR("Scene::addStage(): invalid stage position {}", pos);
+			return nullptr;
+		}
+
+		return stage;
+	}
 
 	void Scene::lerpAnimators(float alpha)
 	{
@@ -595,27 +602,27 @@ namespace vel
 			s->lerpAnimators(alpha);
 	}
 
-	void Scene::updateTextActor(TextActor* ta)
+	void Scene::updateText(Text* t)
 	{
-		Mesh* m = ta->actor->getMesh();
+		Mesh* m = t->actor->getMesh();
 
-		this->buildTextActorGeometry(ta, m);
+		this->buildTextGeometry(t, m);
 
 		Runtime::_gpu->updateGeoPool(m->gp);
 
-		ta->requiresUpdate = false;
+		t->requiresUpdate = false;
 	}
 
-	void Scene::updateTextActors()
+	void Scene::updateTexts()
 	{
 		for (auto& s : this->stages)
 		{
-			for (auto& ta : s->getTextActors())
+			for (auto& t : s->getTexts())
 			{
-				if (!ta->requiresUpdate)
+				if (!t->requiresUpdate)
 					continue;
 
-				this->updateTextActor(ta.get());
+				this->updateText(t.get());
 			}
 		}
 	}
@@ -732,12 +739,6 @@ namespace vel
 		}
 		
 		Runtime::_gpu->clearFinalRenderTarget(this->sceneRenderTarget.get(), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-
-		// calling this here SOMEHOW allowed the cleared color to bleed into the final render whenever the update rate was
-		// uncapped, and the screen window size was small. Moving it into the gpu::drawToScreen() method seems to have
-		// resolved the issue. However, I'm not really satisfied with not knowing 100% why this was happening (hince this
-		// comment). 
-		//gpu->clearScreenBuffer(0.0f, 1.0f, 0.0f, 1.0f); 
 	}
 
 	/***********************************************************************************************
@@ -1005,7 +1006,7 @@ namespace vel
 		this->meshes.erase(it);
 	}
 
-	void Scene::buildTextActorGeometry(TextActor* ta, Mesh* mesh)
+	void Scene::buildTextGeometry(Text* ta, Mesh* mesh)
 	{
 		GeoPoolT<VtxPosNrmlTx>* gp = static_cast<GeoPoolT<VtxPosNrmlTx>*>(mesh->gp);
 		gp->vertices.clear();
@@ -1146,7 +1147,7 @@ namespace vel
 		//ta->logicalWidth = maabb.getSize().x;
 	}
 
-	std::unique_ptr<Mesh> Scene::loadTextActorMesh(TextActor* ta)
+	std::unique_ptr<Mesh> Scene::loadTextMesh(Text* ta)
 	{
 		std::unique_ptr<GeoPoolT<VtxPosNrmlTx>> gp = std::make_unique<GeoPoolT<VtxPosNrmlTx>>();
 
@@ -1156,7 +1157,7 @@ namespace vel
 		m->baseVertex = 0;
 		m->flags = MESHFLAG_RENDERABLE;
 		
-		this->buildTextActorGeometry(ta, m.get());
+		this->buildTextGeometry(ta, m.get());
 
 		this->renderSoloGeoPools.emplace(m->name, std::move(gp));
 

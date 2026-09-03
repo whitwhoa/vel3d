@@ -271,7 +271,7 @@ namespace vel
 
 			this->activeScene->internalImmediateLoop(dt, renderLerp);
 
-			this->activeScene->updateTextActors();
+			this->activeScene->updateTexts();
 
 			// --------------------------------------------------------------------
 			// 6) Render submit

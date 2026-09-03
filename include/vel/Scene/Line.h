@@ -9,13 +9,13 @@
 namespace vel
 {
 
-	struct LineActor
+	struct Line
 	{
 		std::string	name;
 		Actor*		actor;
 		bool		requiresUpdate;
 
-		LineActor(const std::string& name);
+		Line(const std::string& name);
 
 		static std::unique_ptr<Mesh> segmentsToMesh(const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points);
 		

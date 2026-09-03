@@ -8,8 +8,9 @@ namespace vel
 {
 	struct FinalRenderTarget
 	{
-		glm::ivec2 resolution;
-		unsigned int fbo;
-		Texture texture;
+		glm::ivec2 		resolution;
+		unsigned int 	fbo;
+		Texture 		texture;
+		glm::vec4 		colorMultiplier = glm::vec4(1.f);
 	};
 }

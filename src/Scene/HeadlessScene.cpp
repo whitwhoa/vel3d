@@ -15,12 +15,7 @@ namespace vel
 
 	HeadlessScene::HeadlessScene() :
 		id(HeadlessScene::nextSceneId++),
-		meshLoader(std::make_unique<AssimpMeshLoader>())
-	{
-	
-		
-
-	}
+		meshLoader(std::make_unique<AssimpMeshLoader>()){}
 
 	HeadlessScene::~HeadlessScene() 
 	{
@@ -28,7 +23,7 @@ namespace vel
 			delete cw;
 	}
 
-	unsigned int HeadlessScene::getId()
+	unsigned int HeadlessScene::getId() const
 	{
 		return this->id;
 	}
@@ -53,7 +48,7 @@ namespace vel
 	CollisionWorld* HeadlessScene::addCollisionWorld(const std::string& name, float gravity)
 	{
 		// for some reason CollisionWorld has to be a pointer or bullet has read access violation issues
-		// delete in destructor
+		// TODO: did we ever try unique_ptr here?
 		CollisionWorld* cw = new CollisionWorld(name, gravity);
 		this->collisionWorlds.push_back(cw);
 
@@ -78,47 +73,6 @@ namespace vel
 	{
 		for (auto& s : this->stages)
 			s->updateAnimators(delta);
-	}
-
-	//Stage* HeadlessScene::addStage(const std::string& name, int pos)
-	//{
-	//	std::unique_ptr<Stage> s = std::make_unique<Stage>(name, this->assetManager, this->getTickPointer());
-	//	this->stages.push_back(std::move(s));
-
-	//	return this->stages.back().get();
-	//}
-
-	Stage* HeadlessScene::addStage(const std::string& name, int pos)
-	{
-		std::unique_ptr<Stage> s = std::make_unique<Stage>(name);
-		Stage* stage = s.get();
-
-		if (pos == -1 || pos >= static_cast<int>(this->stages.size()))
-		{
-			this->stages.push_back(std::move(s));
-		}
-		else if (pos >= 0)
-		{
-			this->stages.insert(this->stages.begin() + pos, std::move(s));
-		}
-		else
-		{
-			SPDLOG_ERROR("HeadlessScene::addStage(): invalid stage position {}", pos);
-			return nullptr;
-		}
-
-		return stage;
-	}
-
-	Stage* HeadlessScene::getStage(const std::string& name)
-	{
-		for (int i = 0; i < this->stages.size(); i++)
-			if (this->stages.at(i)->getName() == name)
-				return this->stages.at(i).get();
-
-		SPDLOG_DEBUG("HeadlessScene::getStage(): Attempting to retrive stage that does not exist: {}" + name);
-
-		return nullptr;
 	}
 
 	/***********************************************************************************************
