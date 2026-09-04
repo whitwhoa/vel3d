@@ -40,6 +40,7 @@ namespace vel
         static std::unique_ptr<GPU> _gpu;
         static std::unique_ptr<AudioDevice> _audioDevice;
 
+        static unsigned int _nextId;
         static std::chrono::steady_clock::time_point _startTime;
         static int _currentSimTick;
         static double _currentRunTime;

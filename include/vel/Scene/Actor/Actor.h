@@ -11,6 +11,7 @@
 #include <vel/Scene/Mesh/Mesh.h>
 #include <vel/Scene/Actor/Transform.h>
 #include <vel/Scene/Material.h>
+#include <vel/Scene/Stage/Stage.h>
 
 #include <vel/Util/slot_map.h>
 
@@ -40,6 +41,7 @@ namespace vel
 		
 
 	public:
+		Stage*						stage;
 		void*						userPointer;
 		Material*					material;
 		Mesh*						mesh;

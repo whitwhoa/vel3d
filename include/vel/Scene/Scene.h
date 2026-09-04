@@ -9,7 +9,7 @@
 #include <ozz/animation//runtime/animation.h>
 
 #include <vel/Scene/Actor/Actor.h>
-#include <vel/Scene/Mesh/MeshLoaderInterface.h>
+#include <vel/Scene/MeshLoader/MeshLoaderInterface.h>
 #include <vel/Scene/Mesh/MeshFlag.h>
 #include <vel/Scene/GeoPool/GeoPool.h>
 #include <vel/Scene/Animation/SkelAnimator.h>
@@ -18,14 +18,12 @@
 #include <vel/Scene/FinalRenderTarget.h>
 #include <vel/Scene/CollisionWorld/CollisionWorld.h>
 #include <vel/Scene/CollisionWorld/CollisionDebugDrawer.h>
-#include <vel/Scene/HeadlessScene.h>
 #include <vel/Scene/Shader.h>
 #include <vel/Scene/Texture/Texture.h>
 #include <vel/Scene/Material.h>
 #include <vel/Scene/Font/FontBitmap.h>
 #include <vel/Scene/Font/FontGlyphInfo.h>
 #include <vel/Scene/Text.h>
-#include <vel/Scene/Line.h>
 #include <vel/Scene/Billboard.h>
 #include <vel/Scene/Mesh/PlaneOrigin.h>
 #include <vel/Util/slot_map.h>
@@ -55,16 +53,16 @@ namespace vel
 		~HeadlessScene();
 		unsigned int		getId() const;
 		virtual bool		internalLoad();
-		virtual bool		load() = 0;
 		virtual void		internalFixedLoop(float deltaTime);
+		virtual bool		load() = 0;
 		virtual void		fixedLoop(float deltaTime) = 0;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	// SceneMeshes
+	// SceneMesh
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	protected:
 		virtual std::vector<Mesh*>				loadMesh(const std::string& path, uint32_t meshFlags = MESHFLAG_NONE);
-		virtual Mesh*							addMesh(std::unique_ptr<Mesh> m);
+		virtual Mesh*							addMesh(std::unique_ptr<Mesh> m); // This method assumes that the caller understands no duplication checks are occuring
 		Mesh*									getMesh(const std::string& name);
 		virtual void							removeMesh(Mesh* pMesh);
 
@@ -97,9 +95,11 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	class Scene : public HeadlessScene
 	{
+	private:
+		int																audioGroupKey;
 	protected:
 		std::unique_ptr<FinalRenderTarget>								sceneRenderTarget;
-		std::vector<unique_ptr<Stage>> 									stages;
+		std::vector<std::unique_ptr<Stage>> 							stages;
 		std::vector<std::unique_ptr<Camera>>							cameras;
 		std::unordered_map<std::string, std::unique_ptr<Shader>>		shaders;
 		std::unordered_map<std::string, std::unique_ptr<Texture>>		textures;
@@ -108,14 +108,14 @@ namespace vel
 		std::vector<std::string>										soundsInUse;
 		std::unordered_map<VtxLayout, std::unique_ptr<GeoPool>>			renderGeoPools;
 		std::unordered_map<std::string, std::unique_ptr<GeoPool>>		renderSoloGeoPools;
+		std::vector<std::unique_ptr<Text>>								texts;
 	public:
-		int																audioGroupKey;
 		Scene();
 		~Scene();
 		virtual void	internalImmediateLoop(float frameTime, float renderLerpInterval);
-		virtual void	immediateLoop(float frameTime, float renderLerpInterval) = 0;
 		bool			internalLoad() override;
 		void			draw(float frameTime, float alpha);
+		virtual void	immediateLoop(float frameTime, float renderLerpInterval) = 0;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneStage
@@ -139,7 +139,6 @@ namespace vel
 		void						removeFontBitmap(FontBitmap* pFontBitmap);
 		Text*						addText(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb, glm::vec4 color, PlaneOrigin originType = PlaneOrigin::LEFT_BOTTOM);
 	public:
-		void						updateText(Text* t);
 		void						updateTexts();
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -173,17 +172,20 @@ namespace vel
 	// SceneLine
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	protected:
-		Line*						addLine(Stage* stage, const std::string& name, const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points, std::vector<glm::vec4> colors);
-		Line*						addContinuousLine(Stage* stage, const std::string& name, const std::vector<glm::vec2>& points, glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-		
+		Actor*						addLine(const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points, std::vector<glm::vec4> colors, float thickness = 1.f);
+		Actor*						addContinuousLine(const std::vector<glm::vec2>& points, glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float thickness = 1.f);
+		std::unique_ptr<Mesh>		linePointsToMesh(const std::vector<glm::vec2>& points);
+		std::unique_ptr<Mesh>		lineSegmentsToMesh(const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points);
+
+
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneBillboard
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	private:
-		std::unique_ptr<Mesh>		loadBillboardMesh(std::string name, float width, float height);
+		std::unique_ptr<Mesh>		loadBillboardMesh(const std::string& name, float width, float height);
 	protected:
-		Billboard*					addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera, float width = 1.0f, float height = 1.0f);
-		Billboard*					addBillboard(Stage* stage, const std::string& name, Material* material, Camera* parentCamera, Mesh* mesh);
+		Billboard*					addBillboard(Material* material, Camera* parentCamera, float width = 1.0f, float height = 1.0f);
+		Billboard*					addBillboard(Material* material, Camera* parentCamera, Mesh* mesh); // allows for re-use of mesh
 	public:
 		void						updateBillboards();
 		
@@ -192,7 +194,7 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	protected:
 		std::vector<Mesh*>			loadMesh(const std::string& path, uint32_t meshFlags = MESHFLAG_POOLED | MESHFLAG_RENDERABLE) override;
-		Mesh*						addMesh(std::unique_ptr<Mesh> m) override;
+		Mesh*						addMesh(std::unique_ptr<Mesh> m) override; // This method assumes that the caller understands no duplication checks are occuring
 		void						removeMesh(Mesh* pMesh) override;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -205,8 +207,8 @@ namespace vel
 	// SceneCamera
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	protected:
-		Camera*						addCamera(const std::string& name, CameraType type);
-		Camera*						getCamera(const std::string& name);
+		Camera*						addCamera(CameraType type);
+		Camera*						getCamera(unsigned int id);
 	public:
 		void						updateAllCameraResolutions(int x, int y);
 		void						clearAllRenderTargetBuffers();

@@ -22,6 +22,7 @@ namespace vel
 		animator(nullptr),
 		mesh(nullptr),
 		material(nullptr),
+		stage(nullptr),
 		userPointer(nullptr)
 	{}
 
@@ -38,6 +39,7 @@ namespace vel
 		animator(nullptr),
 		mesh(a.mesh),
 		material(a.material),
+		stage(nullptr),
 		userPointer(nullptr)
 	{}
 
@@ -54,6 +56,7 @@ namespace vel
 		this->transform = a.getTransform();
 		this->mesh = a.mesh;
 		this->material = a.material;
+		this->stage = a.stage;
 
 		return *this;
 	}

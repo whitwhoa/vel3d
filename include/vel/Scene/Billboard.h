@@ -7,20 +7,11 @@
 
 namespace vel
 {
-	class Billboard
+	struct Billboard
 	{
-	private:
-		vel::Actor*		billboardActor;
-		vel::Camera*	parentCamera;
-		bool			lockXZ;
-
-	public:
-		Billboard(vel::Actor* billboardActor, vel::Camera* parentCamera);
-
-		vel::Actor* getActor() const;
-		vel::Camera* getCamera() const;
-		
-		void lockXZRotation(bool b = true);
+		vel::Actor*		billboardActor = nullptr;
+		vel::Camera*	parentCamera = nullptr;
+		bool			lockXZ = true;
 
 		/*
 			Billboarding orientation notes (OpenGL-style):
