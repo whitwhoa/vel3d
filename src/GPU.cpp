@@ -807,9 +807,6 @@ namespace vel
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTx), (void*)offsetof(VtxPosNrmlTx, textureCoords));
 
-		glEnableVertexAttribArray(3);
-		glVertexAttribIPointer(3, 1, GL_INT, sizeof(VtxPosNrmlTxLm), (void*)offsetof(VtxPosNrmlTxLm, materialUBOIndex));
-
 		glBindVertexArray(0);
 
 		gp->gpuGeoPool = ggp;
@@ -842,8 +839,6 @@ namespace vel
 		glEnableVertexAttribArray(3);
 		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxLm), (void*)offsetof(VtxPosNrmlTxLm, lightmapCoords));
 
-		glEnableVertexAttribArray(4);
-		glVertexAttribIPointer(4, 1, GL_INT, sizeof(VtxPosNrmlTxLm), (void*)offsetof(VtxPosNrmlTxLm, materialUBOIndex));
 
 		glBindVertexArray(0);
 
@@ -880,17 +875,13 @@ namespace vel
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, textureCoords));
 
-		// Assign vertex bone ids to location = 3
-		glEnableVertexAttribArray(3);
-		glVertexAttribIPointer(3, 4, GL_INT, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, boneIds));
-
-		// Assign vertex weights to location = 4
+		// Assign vertex bone ids to location = 4
 		glEnableVertexAttribArray(4);
-		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, boneWeights));
+		glVertexAttribIPointer(4, 4, GL_INT, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, boneIds));
 
-		// Assign texture id to location = 5
+		// Assign vertex weights to location = 5
 		glEnableVertexAttribArray(5);
-		glVertexAttribIPointer(5, 1, GL_INT, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, materialUBOIndex));
+		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, boneWeights));
 
 		// Unbind the vertex array to prevent accidental operations
 		glBindVertexArray(0);

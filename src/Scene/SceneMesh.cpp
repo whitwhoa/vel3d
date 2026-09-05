@@ -32,7 +32,7 @@ namespace vel
 
 				GeoPool* soloGeoPoolRawPtr = soloGeoPool.get();
 
-				this->soloGeoPools.push_back(std::move(soloGeoPool));
+				this->soloGeoPools.emplace(pld.first, std::move(soloGeoPool));
 
 				requiredData.push_back({ pld.first, soloGeoPoolRawPtr });
 			}
