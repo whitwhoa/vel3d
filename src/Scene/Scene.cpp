@@ -19,17 +19,16 @@ using json = nlohmann::json;
 
 namespace vel
 {
-	unsigned int HeadlessScene::nextSceneId = 1;
-
 	HeadlessScene::HeadlessScene() :
-		id(HeadlessScene::nextSceneId++),
+		id(Runtime::_nextId++),
 		meshLoader(std::make_unique<AssimpMeshLoader>()) {
 	}
 
 	Scene::Scene() :
 		HeadlessScene(),
 		sceneRenderTarget(nullptr),
-		audioGroupKey(-1)
+		audioGroupKey(-1),
+		materialsSsbo(0)
 	{
 		// TODO: did we forget one?
 		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML, std::make_unique<GeoPoolT<VtxPosNrml>>());
@@ -70,7 +69,7 @@ namespace vel
 		{
 			Runtime::_gpu->clearTexture(t.second.get());
 
-			if (t.second->options & TXT_OPT_CPU_AND_GPU)
+			if (t.second->flags & TXT_OPT_CPU_AND_GPU)
 				for (auto& td : t.second->frames)
 					stbi_image_free(td.primaryImageData.data);
 		}

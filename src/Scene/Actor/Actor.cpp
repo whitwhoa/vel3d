@@ -7,10 +7,8 @@
 
 namespace vel
 {
-	unsigned int Actor::nextActorId = 1;
-
 	Actor::Actor() :
-		id(Actor::nextActorId++),
+		id(Runtime::_nextId++),
 		visible(true),
 		dynamic(false),
 		lerpable(false),
@@ -22,44 +20,42 @@ namespace vel
 		animator(nullptr),
 		mesh(nullptr),
 		material(nullptr),
-		stage(nullptr),
-		userPointer(nullptr)
+		stage(nullptr)
 	{}
 
-	Actor::Actor(const Actor& a) :
-		id(Actor::nextActorId++),
-		visible(a.visible),
-		dynamic(a.dynamic),
-		lerpable(a.lerpable),
-		lastTransformUpdateTick(0),
-		transform(a.getTransform()),
-		previousTransform(a.getPreviousTransform()),
-		parentActor(std::nullopt),
-		parentActorBone(-1),
-		animator(nullptr),
-		mesh(a.mesh),
-		material(a.material),
-		stage(nullptr),
-		userPointer(nullptr)
-	{}
+	//Actor::Actor(const Actor& a) :
+	//	id(Runtime::_nextId++),
+	//	visible(a.visible),
+	//	dynamic(a.dynamic),
+	//	lerpable(a.lerpable),
+	//	lastTransformUpdateTick(0),
+	//	transform(a.getTransform()),
+	//	previousTransform(a.getPreviousTransform()),
+	//	parentActor(std::nullopt),
+	//	parentActorBone(-1),
+	//	animator(nullptr),
+	//	mesh(a.mesh),
+	//	material(a.material),
+	//	stage(nullptr)
+	//{}
 
-	// TODO: Need to identify why this was done and why it only sets the subset of members
-	Actor& Actor::operator=(const Actor& a)
-	{
-		if (this == &a)
-			return *this; // handle self-assignment
-		
-		this->id = Actor::nextActorId++;
-		this->visible = a.visible;
-		this->dynamic = a.dynamic;
-		this->lerpable = a.lerpable;
-		this->transform = a.getTransform();
-		this->mesh = a.mesh;
-		this->material = a.material;
-		this->stage = a.stage;
+	//// TODO: Need to identify why this was done and why it only sets the subset of members
+	//Actor& Actor::operator=(const Actor& a)
+	//{
+	//	if (this == &a)
+	//		return *this; // handle self-assignment
+	//	
+	//	this->id = Runtime::_nextId++;
+	//	this->visible = a.visible;
+	//	this->dynamic = a.dynamic;
+	//	this->lerpable = a.lerpable;
+	//	this->transform = a.getTransform();
+	//	this->mesh = a.mesh;
+	//	this->material = a.material;
+	//	this->stage = a.stage;
 
-		return *this;
-	}
+	//	return *this;
+	//}
 
 	unsigned int Actor::getId() const
 	{

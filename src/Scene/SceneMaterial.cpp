@@ -5,46 +5,41 @@
 
 namespace vel
 {
-	Material* Scene::addMaterial(std::unique_ptr<Material> m)
+	unsigned int Scene::addMaterial(uint32_t flags)
 	{
-		if (this->materials.contains(m->getName()))
-		{
-			SPDLOG_DEBUG("Scene::addMaterial(): Existing Material, bypass reload: {}", m->getName());
+		Material m;
+		m.flags = flags;
 
-			return this->materials.at(m->getName()).get();
+		auto it = this->shaders.begin();
+		for (; it != this->shaders.end(); ++it)
+		{
+			if (it->materialFlags == flags)
+			{
+				SPDLOG_DEBUG("Scene::addMaterial(): Existing Shader, bypass reload: {}", flags);
+
+				m.shaderId = it->id;
+				break;
+			}
 		}
 
-		SPDLOG_DEBUG("Scene::addMaterial(): Loading new Material: {}", m->getName());
-
-		Material* rawPtr = m.get();
-		this->materials.emplace(m->getName(), std::move(m));
-
-		return rawPtr;
-	}
-
-	Material* Scene::getMaterial(const std::string& name)
-	{
-		auto it = this->materials.find(name);
-
-		if (it == this->materials.end())
+		if (it == this->shaders.end())
 		{
-			SPDLOG_ERROR("Scene::getMaterial(): Attempting to get material that does not exist: {}", name);
-			return nullptr;
-		}
+			SPDLOG_DEBUG("Scene::addMaterial(): Loading new Shader: {}", flags);
 
-		return it->second.get();
+			m.shaderId = this->generateShader(flags);
+		}
+		
+
+		unsigned int materialIndex = this->materials.size();
+		this->materials.push_back(m);
+
+		// TODO: finish implementing...the gpu data part
+
 	}
 
-	void Scene::removeMaterial(Material* pMaterial)
+	unsigned int Scene::generateShader(uint32_t flags)
 	{
-		auto it = this->materials.find(pMaterial->getName());
-
-		if (it == this->materials.end())
-			return;
-
-		SPDLOG_DEBUG("Scene::removeMaterial(): Remove Material: {}", pMaterial->getName());
-
-		this->materials.erase(pMaterial->getName());
+		// TODO: implement shader program generation logic
 	}
 
 

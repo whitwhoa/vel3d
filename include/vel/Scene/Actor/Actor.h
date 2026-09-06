@@ -22,8 +22,6 @@ namespace vel
 	class Actor
 	{
 	private:
-		static unsigned int			nextActorId;
-
 		uint32_t					lastTransformUpdateTick;
 		unsigned int				id;
 		Transform					transform;
@@ -42,20 +40,19 @@ namespace vel
 
 	public:
 		Stage*						stage;
-		void*						userPointer;
 		Material*					material;
 		Mesh*						mesh;
 		SkelAnimator*				animator;
 		std::optional<slot_handle>	parentActor; // If has value, this actor is a child of the actor referenced by slot_handle
-		std::vector<slot_handle>	childActors; // If size() > 0, this actor is a parent to all actors referenced by contained slot_handles
 		int							parentActorBone; // Used in conjunction with parentActor, when present (> -1)
+		std::vector<slot_handle>	childActors; // If size() > 0, this actor is a parent to all actors referenced by contained slot_handles
 		bool						visible;
 		bool						dynamic;
 		bool						lerpable;
 
-									Actor();
-									Actor(const Actor& original);
-									Actor& operator=(const Actor& a);
+		Actor();
+		//Actor(const Actor& original);
+		//Actor& operator=(const Actor& a);
 
 		// TODO: move to Scene
 		void						setDynamic(bool dynamic, bool lerpable = true);

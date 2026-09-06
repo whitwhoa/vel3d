@@ -84,7 +84,7 @@ namespace vel
 		frt->texture.name = name;
 		frt->texture.frames.push_back(td);
 		frt->texture.frames.push_back(td2);
-		frt->texture.options = TXT_OPT_HAS_ALPHA | TXT_OPT_CLAMP_UVS | TXT_OPT_CPU_AND_GPU;
+		frt->texture.flags = TXT_OPT_CLAMP_UVS | TXT_OPT_CPU_AND_GPU;
 		frt->resolution = glm::ivec2(width, height);
 
 		unsigned int fboId = 0;
@@ -612,19 +612,19 @@ namespace vel
 		TextureData opaqueTD, depthTD, accumTD, revealTD;
 		rt.opaqueTexture.frames.push_back(opaqueTD);
 		rt.opaqueTexture.name = name + "_opaqueTexture";
-		rt.opaqueTexture.options = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
+		rt.opaqueTexture.flags = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
 		
 		rt.depthTexture.frames.push_back(depthTD);
 		rt.depthTexture.name = name + "_depthTexture";
-		rt.depthTexture.options = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
+		rt.depthTexture.flags = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
 		
 		rt.accumTexture.frames.push_back(accumTD);
 		rt.accumTexture.name = name + "_accumTexture";
-		rt.accumTexture.options = TXT_OPT_HAS_ALPHA | TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
+		rt.accumTexture.flags = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
 		
 		rt.revealTexture.frames.push_back(revealTD);
 		rt.revealTexture.name = name + "_revealTexture";
-		rt.revealTexture.options = TXT_OPT_HAS_ALPHA | TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
+		rt.revealTexture.flags = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
 
 		glGenFramebuffers(1, &rt.opaqueFBO);
 		glGenFramebuffers(1, &rt.alphaFBO);
@@ -958,11 +958,11 @@ namespace vel
 	}
 
 	std::unique_ptr<Texture> GPU::generateEmptyTexture(const std::string& name, unsigned int frameCount, 
-		unsigned int width, unsigned int height, int options)
+		unsigned int width, unsigned int height, int flags)
 	{
 		std::unique_ptr<Texture> t = std::make_unique<Texture>();
 		t->name = name;
-		t->options = options;
+		t->flags = flags;
 
 		for (unsigned int i = 0; i < frameCount; i++)
 		{
@@ -973,7 +973,7 @@ namespace vel
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_HALF_FLOAT, nullptr);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			if (t->options & TXT_OPT_CLAMP_UVS)
+			if (t->flags & TXT_OPT_CLAMP_UVS)
 			{
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -1037,7 +1037,7 @@ namespace vel
 			glGenerateMipmap(GL_TEXTURE_2D);
 
 			// set texture parameters
-			if (t->options & TXT_OPT_CLAMP_UVS)
+			if (t->flags & TXT_OPT_CLAMP_UVS)
 			{
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -1048,7 +1048,7 @@ namespace vel
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 			}
 			
-			if (t->options & TXT_OPT_DISABLE_FILTER)
+			if (t->flags & TXT_OPT_DISABLE_FILTER)
 			{
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -1066,7 +1066,7 @@ namespace vel
 			// set texture's DSA handle as resident so it can be accessed in shaders
 			glMakeTextureHandleResidentARB(td.dsaHandle);
 
-			if(!(t->options & TXT_OPT_CPU_AND_GPU))
+			if(!(t->flags & TXT_OPT_CPU_AND_GPU))
 				stbi_image_free(td.primaryImageData.data);
 		}	
 	}
@@ -1074,7 +1074,6 @@ namespace vel
 	void GPU::loadFontBitmapTexture(FontBitmap* fb)
 	{
 		Texture t;
-		t.name = fb->fontName + "_fontTexture";
 
 		TextureData td;
 		glGenTextures(1, &td.id);

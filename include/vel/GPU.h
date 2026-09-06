@@ -164,7 +164,7 @@ namespace vel
 		std::unique_ptr<FinalRenderTarget>	createFinalRenderTarget(const std::string& name, unsigned int width, unsigned int height);
 		void								freeFinalRenderTarget(FinalRenderTarget* frt);
 
-		std::unique_ptr<Texture>			generateEmptyTexture(const std::string& name, unsigned int frameCount, unsigned int width, unsigned int height, int options = 0);
+		std::unique_ptr<Texture>			generateEmptyTexture(const std::string& name, unsigned int frameCount, unsigned int width, unsigned int height, int flags = 0);
 		void								copyGPUTexture(unsigned int sourceId, unsigned int destinationId, unsigned int width, unsigned int height);
 
 		void								fenceAndFlush();

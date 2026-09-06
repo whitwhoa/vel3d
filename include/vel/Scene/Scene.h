@@ -21,6 +21,7 @@
 #include <vel/Scene/Shader.h>
 #include <vel/Scene/Texture/Texture.h>
 #include <vel/Scene/Material.h>
+#include <vel/Scene/MaterialGpuData.h>
 #include <vel/Scene/Font/FontBitmap.h>
 #include <vel/Scene/Font/FontGlyphInfo.h>
 #include <vel/Scene/Text.h>
@@ -37,7 +38,6 @@ namespace vel
 	class HeadlessScene
 	{
 	private:
-		static unsigned int 														nextSceneId;
 		unsigned int																id;
 	protected:
 		std::unique_ptr<MeshLoaderInterface>										meshLoader;
@@ -101,9 +101,18 @@ namespace vel
 		std::unique_ptr<FinalRenderTarget>								sceneRenderTarget;
 		std::vector<std::unique_ptr<Stage>> 							stages;
 		std::vector<std::unique_ptr<Camera>>							cameras;
-		std::unordered_map<std::string, std::unique_ptr<Shader>>		shaders;
-		std::unordered_map<std::string, std::unique_ptr<Texture>>		textures;
-		std::unordered_map<std::string, std::unique_ptr<Material>>		materials;
+
+		std::vector<Shader>												shaders;
+		
+		unsigned int													materialsSsbo;
+		std::vector<MaterialGpuData>									materialsGpu;
+		std::vector<Material>											materials;
+
+		unsigned int													texturesSsbo;
+		std::vector<uint64_t>											texturesGpu;
+		std::vector<Texture>											textures;
+
+
 		std::unordered_map<std::string, std::unique_ptr<FontBitmap>>	fontBitmaps;
 		std::vector<std::string>										soundsInUse;
 		std::unordered_map<VtxLayout, std::unique_ptr<GeoPool>>			renderGeoPools;
@@ -145,19 +154,18 @@ namespace vel
 	// SceneTexture
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	private:
-		std::optional<TextureData>	generateTextureData(const std::string& path);
+		TextureData					generateTextureData(const std::string& path);
 	protected:
-		Texture*					loadTexture(const std::string& name, const std::string& path, int options = 0);
-		Texture*					getTexture(const std::string& name);
-		void						removeTexture(Texture* pTexture);
+		unsigned int				loadTexture(const std::string& path, unsigned int flags = 0);
 		
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneMaterial
 	////////////////////////////////////////////////////////////////////////////////////////////////
+	private:
+		
 	protected:
-		Material*					addMaterial(std::unique_ptr<Material> m);
-		Material*					getMaterial(const std::string& name);
-		void						removeMaterial(Material* pMaterial);
+		unsigned int				addMaterial(uint32_t flags);
+		unsigned int				generateShader(uint32_t flags);
 		
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneSound
