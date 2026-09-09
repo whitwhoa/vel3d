@@ -7,7 +7,7 @@
 
 #include <glm/glm.hpp>
 
-#include <vel/Scene/Texture/Texture.h>
+#include <vel/Scene/Texture.h>
 
 
 namespace vel

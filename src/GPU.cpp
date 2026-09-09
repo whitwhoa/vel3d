@@ -1003,6 +1003,12 @@ namespace vel
 				td.primaryImageData.sizedFormat = GL_R8; // 8 bits per channel x1 channel
 				td.primaryImageData.format = GL_RED;
 			}
+			else if (td.primaryImageData.nrComponents == 2)
+			{
+				td.alphaChannel = false;
+				td.primaryImageData.sizedFormat = GL_RG8; // 8 bits per channel x2 channels
+				td.primaryImageData.format = GL_RG;
+			}
 			else if (td.primaryImageData.nrComponents == 3)
 			{
 				td.alphaChannel = false;

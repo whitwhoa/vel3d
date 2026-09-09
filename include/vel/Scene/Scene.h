@@ -20,7 +20,7 @@
 #include <vel/Scene/CollisionWorld/CollisionWorld.h>
 #include <vel/Scene/CollisionWorld/CollisionDebugDrawer.h>
 #include <vel/Scene/Shader.h>
-#include <vel/Scene/Texture/Texture.h>
+#include <vel/Scene/Texture.h>
 #include <vel/Scene/Material.h>
 #include <vel/Scene/MaterialGpuData.h>
 #include <vel/Scene/Font/FontBitmap.h>
@@ -104,13 +104,15 @@ namespace vel
 		std::vector<std::unique_ptr<Stage>> 							stages;
 		std::vector<std::unique_ptr<Camera>>							cameras;
 
+		std::vector<Texture>											textures;
+
 		std::vector<Shader>												shaders;
 		
 		std::vector<Material>											materials;
 		std::vector<MaterialGpuData>									materialsGpu;
 		std::vector<uint64_t>											materialTexturesGpu;
 		
-		std::vector<Texture>											textures;
+		
 		
 		
 
