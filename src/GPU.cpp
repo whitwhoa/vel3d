@@ -16,7 +16,8 @@
 
 #include <vel/GPU.h>
 #include <vel/Util/functions.h>
-
+#include <vel/Scene/ActorGpuData.h>
+#include <vel/Scene/MaterialGpuData.h>
 
 
 
@@ -1622,6 +1623,35 @@ void main()
 
 	}
 
+	///////////////////////////////////////////
+	// New stuff
+	///////////////////////////////////////////
+	void GPU::initSceneBuffers(BufferIds& b)
+	{
+		glCreateBuffers(1, &b.cameraUbo);
+		glNamedBufferData(b.cameraUbo, sizeof(CameraGpuData), nullptr, GL_DYNAMIC_DRAW);
+
+		glCreateBuffers(1, &b.actorDataSsbo);
+		glNamedBufferData(b.actorDataSsbo, sizeof(ActorGpuData), nullptr, GL_DYNAMIC_DRAW);
+
+		glCreateBuffers(1, &b.materialDataSsbo);
+		glNamedBufferData(b.materialDataSsbo, sizeof(MaterialGpuData), nullptr, GL_STATIC_DRAW);
+
+		glCreateBuffers(1, &b.materialTextureHandlesSsbo);
+		glNamedBufferData(b.materialTextureHandlesSsbo, sizeof(uint64_t), nullptr, GL_STATIC_DRAW);
+
+		glCreateBuffers(1, &b.actorAmbientCubeSsbo);
+		glNamedBufferData(b.actorAmbientCubeSsbo, sizeof(glm::vec4), nullptr, GL_DYNAMIC_DRAW);
+	}
+
+	void GPU::bindSceneBuffers(BufferIds& b)
+	{
+		glBindBufferBase(GL_UNIFORM_BUFFER, 1, b.cameraUbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, b.actorDataSsbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, b.materialDataSsbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, b.materialTextureHandlesSsbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, b.actorAmbientCubeSsbo);
+	}
 
 
 } // END NAMESPACE

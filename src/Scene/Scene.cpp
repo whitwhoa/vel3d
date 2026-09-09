@@ -28,7 +28,7 @@ namespace vel
 		HeadlessScene(),
 		sceneRenderTarget(nullptr),
 		audioGroupKey(-1),
-		materialsSsbo(0)
+		bufferIds()
 	{
 		// TODO: did we forget one?
 		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML, std::make_unique<GeoPoolT<VtxPosNrml>>());
@@ -119,6 +119,8 @@ namespace vel
 	{
 		if (HeadlessScene::internalLoad())
 		{
+			Runtime::_gpu->initSceneBuffers(this->bufferIds);
+
 			for (auto& renderGeoPoolKV : this->renderGeoPools)
 				Runtime::_gpu->loadGeoPool(renderGeoPoolKV.second.get());
 

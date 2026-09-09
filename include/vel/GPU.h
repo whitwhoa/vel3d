@@ -8,6 +8,7 @@
 
 #include <glm/glm.hpp>
 
+#include <vel/Scene/BufferIds.h>
 #include <vel/Scene/Mesh/Mesh.h>
 #include <vel/Scene/Texture/Texture.h>
 #include <vel/Scene/Material.h>
@@ -169,6 +170,17 @@ namespace vel
 
 		void								fenceAndFlush();
 		void								clientWaitSync();
+
+
+
+		////////////////////////////////////
+		// New Stuff
+		////////////////////////////////////
+		void								initSceneBuffers(BufferIds& b);
+		void								bindSceneBuffers(BufferIds& b);
+
+
+
 
 	};
 }

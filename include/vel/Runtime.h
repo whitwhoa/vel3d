@@ -31,7 +31,6 @@ namespace vel
         friend class HeadlessScene;
         friend class Scene;
         friend class Camera;
-        friend class Stage;
         friend class Actor;
 
     private:

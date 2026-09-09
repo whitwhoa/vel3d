@@ -8,6 +8,7 @@
 #include <ozz/animation/runtime/skeleton.h>
 #include <ozz/animation//runtime/animation.h>
 
+#include <vel/Scene/BufferIds.h>
 #include <vel/Scene/Actor/Actor.h>
 #include <vel/Scene/MeshLoader/MeshLoaderInterface.h>
 #include <vel/Scene/Mesh/MeshFlag.h>
@@ -97,6 +98,7 @@ namespace vel
 	{
 	private:
 		int																audioGroupKey;
+		BufferIds														bufferIds;
 	protected:
 		std::unique_ptr<FinalRenderTarget>								sceneRenderTarget;
 		std::vector<std::unique_ptr<Stage>> 							stages;
@@ -104,13 +106,13 @@ namespace vel
 
 		std::vector<Shader>												shaders;
 		
-		unsigned int													materialsSsbo;
-		std::vector<MaterialGpuData>									materialsGpu;
 		std::vector<Material>											materials;
-
-		unsigned int													texturesSsbo;
-		std::vector<uint64_t>											texturesGpu;
+		std::vector<MaterialGpuData>									materialsGpu;
+		std::vector<uint64_t>											materialTexturesGpu;
+		
 		std::vector<Texture>											textures;
+		
+		
 
 
 		std::unordered_map<std::string, std::unique_ptr<FontBitmap>>	fontBitmaps;
