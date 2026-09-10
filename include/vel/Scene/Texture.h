@@ -1,11 +1,14 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 namespace vel
 {
-	enum TextureFlags
+	typedef unsigned int texture_handle;
+
+	enum TextureFlags : uint32_t
 	{
 		TXT_OPT_NONE = 0,
 		TXT_OPT_CLAMP_UVS = 1 << 1,
@@ -15,7 +18,7 @@ namespace vel
 
 	struct Texture
 	{
-		unsigned int	flags = 0;
+		uint32_t		flags = 0;
 
 		uint64_t		dsaHandle;
 		unsigned int	bufferId; // used to be: id

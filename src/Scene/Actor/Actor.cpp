@@ -8,18 +8,17 @@
 namespace vel
 {
 	Actor::Actor() :
-		id(Runtime::_nextId++),
 		visible(true),
 		dynamic(false),
 		lerpable(false),
 		lastTransformUpdateTick(0),
 		transform(Transform()),
 		previousTransform(Transform()),
-		parentActor(std::nullopt),
+		parentActor(),
 		parentActorBone(-1),
 		animator(nullptr),
 		mesh(nullptr),
-		material(nullptr),
+		material(-1),
 		stage(nullptr)
 	{}
 
@@ -56,11 +55,6 @@ namespace vel
 
 	//	return *this;
 	//}
-
-	unsigned int Actor::getId() const
-	{
-		return this->id;
-	}
 
 	void Actor::_updatePrevTransform()
 	{

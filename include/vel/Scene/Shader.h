@@ -7,14 +7,13 @@
 #include <glm/glm.hpp>
 
 
-typedef int GLint;
-
 namespace vel
 {
+	typedef unsigned int shader_handle;
+
 	struct Shader
 	{
-		unsigned int materialFlags = 0;
-		unsigned int id = 0;
+		unsigned int programId = 0; // opengl program id, used to be called "id"
 		std::string vertCode = "";
 		std::string geomCode = "";
 		std::string fragCode = "";

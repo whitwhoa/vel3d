@@ -5,41 +5,31 @@
 
 namespace vel
 {
-	unsigned int Scene::addMaterial(uint32_t flags)
+	material_handle Scene::addMaterial(uint32_t flags)
 	{
 		Material m;
 		m.flags = flags;
 
-		auto it = this->shaders.begin();
-		for (; it != this->shaders.end(); ++it)
+		auto it = this->shaderHandleMap.find(flags);
+		if (it != this->shaderHandleMap.end())
 		{
-			if (it->materialFlags == flags)
-			{
-				SPDLOG_DEBUG("Scene::addMaterial(): Existing Shader, bypass reload: {}", flags);
-
-				m.shaderId = it->id;
-				break;
-			}
+			SPDLOG_DEBUG("Scene::addMaterial(): Existing Shader, bypass reload: {}", flags);
+			m.shaderId = this->shaders[it->second].programId;
 		}
-
-		if (it == this->shaders.end())
+		else
 		{
 			SPDLOG_DEBUG("Scene::addMaterial(): Loading new Shader: {}", flags);
+			m.shaderId = this->shaders[this->generateShader(flags)].programId;
+		}		
 
-			m.shaderId = this->generateShader(flags);
-		}
-		
-
-		unsigned int materialIndex = this->materials.size();
+		material_handle handle = this->materials.size();
 		this->materials.push_back(m);
-
-		// TODO: finish implementing...the gpu data part
-
 	}
 
-	unsigned int Scene::generateShader(uint32_t flags)
+	shader_handle Scene::generateShader(uint32_t flags)
 	{
 		// TODO: implement shader program generation logic
+		// IE, use flag values to determine how we should build vertex/geometry/fragment shaders
 	}
 
 

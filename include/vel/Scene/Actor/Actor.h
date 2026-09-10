@@ -19,11 +19,12 @@
 
 namespace vel
 {
+	typedef slot_handle actor_handle;
+
 	class Actor
 	{
 	private:
 		uint32_t					lastTransformUpdateTick;
-		unsigned int				id;
 		Transform					transform;
 		Transform					previousTransform;
 		std::vector<std::pair<unsigned int, unsigned int>> activeBones; // the bones from the armature used by the mesh, .first = animator.renderModelMatrices index, .second = mesh.bones index
@@ -39,16 +40,16 @@ namespace vel
 		
 
 	public:
-		Stage*						stage;
-		Material*					material;
-		Mesh*						mesh;
-		SkelAnimator*				animator;
-		std::optional<slot_handle>	parentActor; // If has value, this actor is a child of the actor referenced by slot_handle
-		int							parentActorBone; // Used in conjunction with parentActor, when present (> -1)
-		std::vector<slot_handle>	childActors; // If size() > 0, this actor is a parent to all actors referenced by contained slot_handles
-		bool						visible;
-		bool						dynamic;
-		bool						lerpable;
+		Stage*							stage;
+		material_handle					material;
+		Mesh*							mesh;
+		SkelAnimator*					animator;
+		actor_handle					parentActor; // If has value, this actor is a child of the actor referenced by slot_handle
+		int								parentActorBone; // Used in conjunction with parentActor, when present (> -1)
+		std::vector<actor_handle>		childActors; // If size() > 0, this actor is a parent to all actors referenced by contained slot_handles
+		bool							visible;
+		bool							dynamic;
+		bool							lerpable;
 
 		Actor();
 		//Actor(const Actor& original);
@@ -75,7 +76,6 @@ namespace vel
 		void						appendRotation(float angle, glm::vec3 axis);
 		void						setScale(glm::vec3 s);
 
-		unsigned int				getId() const;
 		bool						isAnimated() const;
 		const std::vector<std::pair<unsigned int, unsigned int>>& getActiveBones() const;
 		const Transform&			getTransform() const;

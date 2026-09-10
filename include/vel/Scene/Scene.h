@@ -104,13 +104,15 @@ namespace vel
 		std::vector<std::unique_ptr<Stage>> 							stages;
 		std::vector<std::unique_ptr<Camera>>							cameras;
 
+		std::unordered_map<std::string, texture_handle>					textureHandleMap;
 		std::vector<Texture>											textures;
 
+		std::unordered_map<unsigned int, shader_handle>					shaderHandleMap;
 		std::vector<Shader>												shaders;
-		
+
 		std::vector<Material>											materials;
 		std::vector<MaterialGpuData>									materialsGpu;
-		std::vector<uint64_t>											materialTexturesGpu;
+		std::vector<uint64_t>											materialTexturesGpu; // contiguous array of every texture in every material
 		
 		
 		
@@ -158,9 +160,10 @@ namespace vel
 	// SceneTexture
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	private:
-		TextureData					generateTextureData(const std::string& path);
+		void						generateTextureData(const std::string& path, Texture& t);
 	protected:
-		unsigned int				loadTexture(const std::string& path, unsigned int flags = 0);
+		texture_handle				loadTexture(const std::string& path, uint32_t flags = 0);
+		std::vector<texture_handle>	loadTextureFrames(const std::string& dir, uint32_t flags = 0);
 		
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneMaterial
@@ -168,8 +171,8 @@ namespace vel
 	private:
 		
 	protected:
-		unsigned int				addMaterial(uint32_t flags);
-		unsigned int				generateShader(uint32_t flags);
+		material_handle				addMaterial(uint32_t flags);
+		shader_handle				generateShader(uint32_t flags);
 		
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneSound

@@ -8,54 +8,54 @@
 
 namespace vel
 {
-	TextureData Scene::generateTextureData(const std::string& path)
+	void Scene::generateTextureData(const std::string& path, Texture& t)
 	{
-		TextureData td;
-		td.primaryImageData.data = stbi_load(
-			path.c_str(),
-			&td.primaryImageData.width,
-			&td.primaryImageData.height,
-			&td.primaryImageData.nrComponents,
-			0
-		);
+		t.data = stbi_load(path.c_str(), &t.width, &t.height, &t.channels, 0);
 
-		if (!td.primaryImageData.data)
-		{
+		if (!t.data)
 			SPDLOG_ERROR("Scene::generateTextureData(): failed to load file: {}", path);
-		}
-
-		return td;
 	}
 
-	unsigned int Scene::loadTexture(const std::string& path, unsigned int flags)
+	texture_handle Scene::loadTexture(const std::string& path, uint32_t flags)
 	{
+		auto it = this->textureHandleMap.find(path);
+		if (it != this->textureHandleMap.end())
+			return it->second;
+
 		SPDLOG_DEBUG("Scene::loadTexture(): Loading new Texture: {}", path);
 
 		Texture texture;
 		texture.flags = flags;
-
-		// Determine if path is a directory or file, if directory then load each file in the directory as a texture frame
-		if (std::filesystem::is_directory(path))
-		{
-			std::map<int, std::string> orderedFiles;
-
-			for (const auto& entry : std::filesystem::directory_iterator(path))
-				orderedFiles[std::stoi(vel::explode_string(entry.path().filename().string(), '.')[0])] = entry.path().string();
-
-			for (auto& of : orderedFiles)
-				texture.frames.push_back(this->generateTextureData(of.second));
-		}
-		else
-		{
-			texture.frames.push_back(this->generateTextureData(path));
-		}
+		this->generateTextureData(path, texture);
 
 		Runtime::_gpu->loadTexture(&texture);
 
-		unsigned int textureIndex = this->textures.size();
+		texture_handle handle = this->textures.size();
 		this->textures.push_back(texture);
+		this->textureHandleMap.emplace(path, handle);
 
-		return textureIndex;
+		return handle;
+	}
+
+	std::vector<texture_handle> Scene::loadTextureFrames(const std::string& dir, uint32_t flags)
+	{
+		if (!std::filesystem::is_directory(dir))
+		{
+			SPDLOG_DEBUG("Scene::loadTextureFrames(): The following is not a valid directory: {}", dir);
+			return {};
+		}
+
+		SPDLOG_DEBUG("Scene::loadTextureFrames(): Loading new Texture frames: {}", dir);
+
+		std::map<int, std::string> orderedFiles; // sort files by filename
+		for (const auto& entry : std::filesystem::directory_iterator(dir))
+			orderedFiles[std::stoi(vel::explode_string(entry.path().filename().string(), '.')[0])] = entry.path().string();
+
+		std::vector<texture_handle> out;
+		for (auto& of : orderedFiles)
+			out.push_back(this->loadTexture(of.second, flags));
+
+		return out;
 	}
 
 
