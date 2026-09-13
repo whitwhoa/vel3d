@@ -293,11 +293,12 @@ namespace vel
 	{
 		if (!this->mesh)
 		{
-			SPDLOG_ERROR("Actor::setAnimator(): Attempting to add animator to actor that does not contain a mesh: {}", this->id);
+			SPDLOG_ERROR("Actor::setAnimator(): Attempting to add animator to actor that does not contain a mesh");
 			return false;
 		}
 
 		this->animator = a;
+		this->activeBones.clear();
 
 		unsigned int index = 0;
 		for (auto& meshBone : this->mesh->bones)

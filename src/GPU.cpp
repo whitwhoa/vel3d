@@ -500,7 +500,7 @@ namespace vel
 		glDeleteFramebuffers(1, &rt->alphaFBO);
 	}
 
-	bool GPU::loadShader(Shader* s)
+	bool GPU::loadShader(Shader& s, const std::string& vertCode, const std::string& fragCode)
 	{
 		int success;
 		char infoLog[512];
@@ -509,15 +509,15 @@ namespace vel
 		/////////////////////////////////////////////////////////
 		// Vertex Shader
 		/////////////////////////////////////////////////////////
-		const char* vShaderCode = s->vertCode.c_str();
-		unsigned int vertex;
+		const char* vShaderCode = vertCode.c_str();
+		unsigned int vertex = 0;
 		vertex = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(vertex, 1, &vShaderCode, NULL);
 		glCompileShader(vertex);
 
 		// if compile errors, log and exit
 		glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-		if (!success) 
+		if (!success)
 		{
 			glGetShaderInfoLog(vertex, 512, NULL, infoLog);
 			infoLogStr = infoLog;
@@ -526,36 +526,11 @@ namespace vel
 			return false;
 		};
 
-
-		/////////////////////////////////////////////////////////
-		// Geometry Shader
-		/////////////////////////////////////////////////////////
-		unsigned int geometry = 0;
-		if (s->geomCode != "")
-		{
-			const char* gShaderCode = s->geomCode.c_str();
-			geometry = glCreateShader(GL_GEOMETRY_SHADER);
-			glShaderSource(geometry, 1, &gShaderCode, NULL);
-			glCompileShader(geometry);
-
-			// if compile errors, log and exit
-			glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
-			if (!success) 
-			{
-				glGetShaderInfoLog(geometry, 512, NULL, infoLog);
-				infoLogStr = infoLog;
-
-				SPDLOG_DEBUG("GPU::loadShader: GEOMETRY::COMPILATION_FAILED: {}", infoLogStr);
-				return false;
-			};
-		}
-
-
 		/////////////////////////////////////////////////////////
 		// Fragment Shader
 		/////////////////////////////////////////////////////////
-		const char* fShaderCode = s->fragCode.c_str();
-		unsigned int fragment;
+		const char* fShaderCode = fragCode.c_str();
+		unsigned int fragment = 0;
 		fragment = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(fragment, 1, &fShaderCode, NULL);
 		glCompileShader(fragment);
@@ -575,11 +550,106 @@ namespace vel
 		/////////////////////////////////////////////////////////
 		// Shader Program
 		/////////////////////////////////////////////////////////
-		unsigned int id;
-
+		unsigned int id = 0;
 		id = glCreateProgram();
 		glAttachShader(id, vertex);
-		if(geometry > 0)
+		glAttachShader(id, fragment);
+		glLinkProgram(id);
+
+		// if linking errors, log and exit
+		glGetProgramiv(id, GL_LINK_STATUS, &success);
+		if (!success)
+		{
+			glGetProgramInfoLog(id, 512, NULL, infoLog);
+			infoLogStr = infoLog;
+
+			SPDLOG_DEBUG("GPU::loadShader: PROGRAM::LINKING_FAILED: {}", infoLog);
+			return false;
+		}
+
+		// delete the shaders as they're linked into our program now and no longer necessary
+		glDeleteShader(vertex);
+		glDeleteShader(fragment);
+
+		s.programId = id;
+
+		return true;
+	}
+
+	bool GPU::loadShader(Shader& s, const std::string& vertCode, const std::string& geomCode, const std::string& fragCode)
+	{
+		int success;
+		char infoLog[512];
+		std::string infoLogStr = "";
+
+		/////////////////////////////////////////////////////////
+		// Vertex Shader
+		/////////////////////////////////////////////////////////
+		const char* vShaderCode = vertCode.c_str();
+		unsigned int vertex = 0;
+		vertex = glCreateShader(GL_VERTEX_SHADER);
+		glShaderSource(vertex, 1, &vShaderCode, NULL);
+		glCompileShader(vertex);
+
+		// if compile errors, log and exit
+		glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(vertex, 512, NULL, infoLog);
+			infoLogStr = infoLog;
+
+			SPDLOG_DEBUG("GPU::loadShader: VERTEX::COMPILATION_FAILED: {}", infoLogStr);
+			return false;
+		};
+
+		/////////////////////////////////////////////////////////
+		// Geometry Shader
+		/////////////////////////////////////////////////////////
+		const char* gShaderCode = geomCode.c_str();
+		unsigned int geometry = 0;
+		geometry = glCreateShader(GL_GEOMETRY_SHADER);
+		glShaderSource(geometry, 1, &gShaderCode, NULL);
+		glCompileShader(geometry);
+
+		// if compile errors, log and exit
+		glGetShaderiv(geometry, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(geometry, 512, NULL, infoLog);
+			infoLogStr = infoLog;
+
+			SPDLOG_DEBUG("GPU::loadShader: GEOMETRY::COMPILATION_FAILED: {}", infoLogStr);
+			return false;
+		};
+
+		/////////////////////////////////////////////////////////
+		// Fragment Shader
+		/////////////////////////////////////////////////////////
+		const char* fShaderCode = fragCode.c_str();
+		unsigned int fragment = 0;
+		fragment = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(fragment, 1, &fShaderCode, NULL);
+		glCompileShader(fragment);
+
+		// if compile errors, log and exit
+		glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(fragment, 512, NULL, infoLog);
+			infoLogStr = infoLog;
+
+			SPDLOG_DEBUG("GPU::loadShader: FRAGMENT::COMPILATION_FAILED: {}", infoLogStr);
+			return false;
+		};
+
+
+		/////////////////////////////////////////////////////////
+		// Shader Program
+		/////////////////////////////////////////////////////////
+		unsigned int id = 0;
+		id = glCreateProgram();
+		glAttachShader(id, vertex);
+		if (geometry > 0)
 			glAttachShader(id, geometry);
 		glAttachShader(id, fragment);
 		glLinkProgram(id);
@@ -600,7 +670,7 @@ namespace vel
 		glDeleteShader(geometry);
 		glDeleteShader(fragment);
 
-		s->id = id;
+		s.programId = id;
 
 		return true;
 	}
@@ -1384,9 +1454,7 @@ namespace vel
 		////////////////////////////////////////////////////////
 		// Screen Shader
 		////////////////////////////////////////////////////////
-		this->screenShader->name = "screen";
-
-		this->screenShader->vertCode = R"GLSL(
+		std::string vertCode = R"GLSL(
 #version 460 core
 
 layout (location = 0) in vec3 aPos;
@@ -1407,7 +1475,7 @@ void main()
 }
 )GLSL";
 
-		this->screenShader->fragCode = R"GLSL(
+		std::string fragCode = R"GLSL(
 #version 460 core
 #extension GL_ARB_bindless_texture : require
 #extension GL_ARB_gpu_shader_int64 : require
@@ -1430,15 +1498,14 @@ void main()
 }
 )GLSL";
 
-		this->loadShader(this->screenShader.get());
+		this->loadShader(this->screenShader, vertCode, fragCode);
 
 
 		////////////////////////////////////////////////////////
 		// Post Shader
 		////////////////////////////////////////////////////////
-		this->postShader->name = "post";
 
-		this->postShader->vertCode = R"GLSL(
+		vertCode = R"GLSL(
 #version 460 core
 
 layout (location = 0) in vec3 aPos;
@@ -1459,7 +1526,7 @@ void main()
 }
 )GLSL";
 
-		this->postShader->fragCode = R"GLSL(
+		fragCode = R"GLSL(
 #version 460 core
 #extension GL_ARB_bindless_texture : require
 #extension GL_ARB_gpu_shader_int64 : require
@@ -1537,28 +1604,26 @@ vec3 applyFXAA(sampler2D tex, vec2 uv, vec2 res)
 
 void main()
 {	
-	if (enableFXAA)
-	{
-		vec3 fxaaResult = applyFXAA(tex[TexId], TexCoords, vec2(resolution.x, resolution.y));
-		FragColor = mix(vec4(fxaaResult, 1.0), vec4(tint.rgb, 1.0), tint.a);
-	}
-	else
-	{
+	//if (enableFXAA)
+	//{
+	//	vec3 fxaaResult = applyFXAA(tex[TexId], TexCoords, vec2(resolution.x, resolution.y));
+	//	FragColor = mix(vec4(fxaaResult, 1.0), vec4(tint.rgb, 1.0), tint.a);
+	//}
+	//else
+	//{
 		vec4 texColor = texture(tex[TexId], TexCoords);
 		FragColor = mix(texColor, vec4(tint.rgb, 1.0), tint.a);
-	}
+	//}
 }
 )GLSL";
 
-		this->loadShader(this->postShader.get());
+		this->loadShader(this->postShader, vertCode, fragCode);
 
 
 		////////////////////////////////////////////////////////
 		// Composite Shader
 		////////////////////////////////////////////////////////
-		this->compositeShader->name = "composite";
-
-		this->compositeShader->vertCode = R"GLSL(
+		vertCode = R"GLSL(
 #version 460 core
 
 layout (location = 0) in vec3 position;
@@ -1569,7 +1634,7 @@ void main()
 }
 )GLSL";
 
-		this->compositeShader->fragCode = R"GLSL(
+		fragCode = R"GLSL(
 #version 460 core
 #extension GL_ARB_bindless_texture : require
 #extension GL_ARB_gpu_shader_int64 : require
@@ -1625,7 +1690,7 @@ void main()
 }
 )GLSL";
 
-		this->loadShader(this->compositeShader.get());
+		this->loadShader(this->compositeShader, vertCode, fragCode);
 
 	}
 
@@ -1648,6 +1713,9 @@ void main()
 
 		glCreateBuffers(1, &b.actorAmbientCubeSsbo);
 		glNamedBufferData(b.actorAmbientCubeSsbo, sizeof(glm::vec4), nullptr, GL_DYNAMIC_DRAW);
+
+		glCreateBuffers(1, &b.actorBoneMatricesSsbo);
+		glNamedBufferData(b.actorBoneMatricesSsbo, sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 	}
 
 	void GPU::bindSceneBuffers(BufferIds& b)
@@ -1657,6 +1725,17 @@ void main()
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, b.materialDataSsbo);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, b.materialTextureHandlesSsbo);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, b.actorAmbientCubeSsbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, b.actorBoneMatricesSsbo);
+	}
+
+	void GPU::freeSceneBuffers(BufferIds& b)
+	{
+		glDeleteBuffers(1, &b.cameraUbo);
+		glDeleteBuffers(1, &b.actorDataSsbo);
+		glDeleteBuffers(1, &b.materialDataSsbo);
+		glDeleteBuffers(1, &b.materialTextureHandlesSsbo);
+		glDeleteBuffers(1, &b.actorAmbientCubeSsbo);
+		glDeleteBuffers(1, &b.actorBoneMatricesSsbo);
 	}
 
 

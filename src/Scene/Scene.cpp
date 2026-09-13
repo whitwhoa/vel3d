@@ -11,7 +11,7 @@
 #include <vel/Util/functions.h>
 #include <vel/Scene/CollisionWorld/CollisionObjectTemplate.h>
 #include <vel/Scene/Scene.h>
-#include <vel/Scene/Texture/Texture.h>
+#include <vel/Scene/Texture.h>
 #include <vel/Scene/MeshLoader/AssimpMeshLoader.h>
 
 using json = nlohmann::json;
@@ -55,6 +55,10 @@ namespace vel
 
 	Scene::~Scene()
 	{
+		/*
+			!!!!!! TODO: YOU MUST REMEMBER TO UPDATE THIS ONCE WE HAVE EVERYTHING ELSE FIGURED OUT !!!!!!!!!
+		*/
+
 		SPDLOG_DEBUG("Freeing assets for scene: {}", this->getId());
 
 		// Note: we repeat some code here to optimize for destruction. If we called the
@@ -234,75 +238,6 @@ namespace vel
 	/***********************************************************************************************
 	* SHADERS (this will not be required after we refactor for MDI)
 	************************************************************************************************/
-	void Scene::setShaderOpts(int opts, std::vector<std::string>& defs, std::string& shaderName)
-	{
-		if (opts & MTRL_OPT_TRANSLUCENT)
-		{
-			defs.push_back("HAS_ALPHA");
-			shaderName += "Alpha";
-		}
-
-		if (opts & MTRL_OPT_CUTOUT)
-		{
-			defs.push_back("IS_CUTOUT");
-			shaderName += "Cutout";
-		}
-	}
-
-	std::optional<std::string> Scene::loadShaderFile(const std::string& shaderPath)
-	{
-		std::ifstream shaderFile(shaderPath);
-
-		if (!shaderFile.is_open())
-		{
-			SPDLOG_DEBUG("Scene::loadShaderFile(): could not open shader file: {}", shaderPath);
-			return std::nullopt;
-		}
-
-		std::stringstream shaderStream;
-		shaderStream << shaderFile.rdbuf();
-		shaderFile.close();
-
-		if (shaderStream.str().empty())
-		{
-			SPDLOG_DEBUG("Scene::loadShaderFile(): Shader file is empty: {}", shaderPath);
-			return std::nullopt;
-		}
-
-		return shaderStream.str();
-	}
-
-	std::string Scene::getTopShaderLines(const std::string& shaderCode, int numLinesToGet)
-	{
-		std::istringstream shaderStream(shaderCode);
-		std::string line;
-		std::string firstLines;
-
-		for (int i = 0; i < numLinesToGet; ++i)
-		{
-			std::getline(shaderStream, line);
-			firstLines += line + "\n";
-		}
-
-		return firstLines;
-	}
-
-	std::string Scene::getBottomShaderLines(const std::string& shaderCode, int numLinesToSkip)
-	{
-		std::istringstream shaderStream(shaderCode);
-		std::string line;
-
-		// Skip the specified number of lines
-		for (int i = 0; i < numLinesToSkip; ++i)
-			std::getline(shaderStream, line);
-
-		// Return the remaining shader code
-		std::stringstream remainingShaderCode;
-		remainingShaderCode << shaderStream.rdbuf();
-
-		return remainingShaderCode.str();
-	}
-
 	Shader* Scene::loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile,
 		const std::string& fragFile, std::vector<std::string> defs)
 	{
@@ -391,19 +326,6 @@ namespace vel
 		Runtime::_gpu->loadShader(rawPtr);
 
 		return rawPtr;
-	}
-
-	Shader* Scene::getShader(const std::string& name)
-	{
-		auto it = this->shaders.find(name);
-
-		if (it == shaders.end())
-		{
-			SPDLOG_DEBUG("Scene::getShader(): Attempting to get shader that does not exist: {}", name);
-			return nullptr;
-		}
-
-		return it->second.get();
 	}
 
 	void Scene::removeShader(Shader* pShader)

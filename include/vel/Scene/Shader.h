@@ -14,8 +14,5 @@ namespace vel
 	struct Shader
 	{
 		unsigned int programId = 0; // opengl program id, used to be called "id"
-		std::string vertCode = "";
-		std::string geomCode = "";
-		std::string fragCode = "";
 	};
 }

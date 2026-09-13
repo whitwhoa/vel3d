@@ -43,6 +43,6 @@ namespace vel
 		float f2 = 0.0f;
 
 		uint32_t flags = 0;
-		uint32_t shaderId = 0;
+		uint32_t shaderProgramId = 0;
 	};
 }

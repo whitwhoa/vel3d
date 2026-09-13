@@ -10,7 +10,7 @@
 
 #include <vel/Scene/BufferIds.h>
 #include <vel/Scene/Mesh/Mesh.h>
-#include <vel/Scene/Texture/Texture.h>
+#include <vel/Scene/Texture.h>
 #include <vel/Scene/Material.h>
 #include <vel/Scene/CollisionWorld/CollisionDebugDrawer.h>
 #include <vel/Scene/Font/FontBitmap.h>
@@ -36,11 +36,11 @@ namespace vel
 
 		std::unique_ptr<Mesh>				screenSpaceMesh;
 		std::unique_ptr<GeoPoolT<VtxPosNrmlTx>>	screenSpaceMeshGeoPool;
-		std::unique_ptr<Shader>				screenShader;
-		std::unique_ptr<Shader>				postShader;
-		std::unique_ptr<Shader>				compositeShader;
+		Shader								screenShader;
+		Shader								postShader;
+		Shader								compositeShader;
 		RenderTarget*						activeRenderTarget;
-		Shader*								activeShader;
+		Shader								activeShader;
 		Mesh*								activeMesh;
 		Material*							activeMaterial;
 		glm::ivec2							activeCameraViewportSize;
@@ -81,8 +81,8 @@ namespace vel
 		const Material*	const				getActiveMaterial() const;
 		void								resetActives();
 
-
-		bool								loadShader(Shader* s);
+		bool								loadShader(Shader& s, const std::string& vertCode, const std::string& fragCode);
+		bool								loadShader(Shader& s, const std::string& vertCode, const std::string& geomCode, const std::string& fragCode);
 		void								loadGeoPool(GeoPool* gp);
 		void								updateGeoPool(GeoPool* m);
 		void								loadTexture(Texture* t);
@@ -178,6 +178,7 @@ namespace vel
 		////////////////////////////////////
 		void								initSceneBuffers(BufferIds& b);
 		void								bindSceneBuffers(BufferIds& b);
+		void								freeSceneBuffers(BufferIds& b);
 
 
 

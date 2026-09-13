@@ -8,13 +8,15 @@
 #include <ozz/animation/runtime/skeleton.h>
 #include <ozz/animation//runtime/animation.h>
 
+#include <vel/InputState.h>
+#include <vel/Util/slot_map.h>
+
 #include <vel/Scene/BufferIds.h>
 #include <vel/Scene/Actor/Actor.h>
 #include <vel/Scene/MeshLoader/MeshLoaderInterface.h>
 #include <vel/Scene/Mesh/MeshFlag.h>
 #include <vel/Scene/GeoPool/GeoPool.h>
 #include <vel/Scene/Animation/SkelAnimator.h>
-#include <vel/InputState.h>
 #include <vel/Scene/Camera/Camera.h>
 #include <vel/Scene/FinalRenderTarget.h>
 #include <vel/Scene/CollisionWorld/CollisionWorld.h>
@@ -28,7 +30,8 @@
 #include <vel/Scene/Text.h>
 #include <vel/Scene/Billboard.h>
 #include <vel/Scene/Mesh/PlaneOrigin.h>
-#include <vel/Util/slot_map.h>
+#include <vel/Scene/ActorGpuData.h>
+
 
 
 namespace vel
@@ -112,10 +115,11 @@ namespace vel
 
 		std::vector<Material>											materials;
 		std::vector<MaterialGpuData>									materialsGpu;
-		std::vector<uint64_t>											materialTexturesGpu; // contiguous array of every texture in every material
+		std::vector<uint64_t>											materialTexturesGpu; // contiguous array of every texture in every material, generated once during load
 		
-		
-		
+		std::vector<ActorGpuData> 										actorsGpu;
+		std::vector<glm::vec4> 											actorAmbientCube;
+		std::vector<glm::mat4> 											actorBoneMatrices;
 		
 
 
@@ -164,15 +168,21 @@ namespace vel
 	protected:
 		texture_handle				loadTexture(const std::string& path, uint32_t flags = 0);
 		std::vector<texture_handle>	loadTextureFrames(const std::string& dir, uint32_t flags = 0);
-		
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// SceneShader
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	private:
+		shader_handle				generateLineShader(uint32_t flags);
+		shader_handle				generateShader(uint32_t flags);
+	protected:
+		unsigned int				getShaderProgramId(uint32_t flags);
+
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneMaterial
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	private:
-		
 	protected:
 		material_handle				addMaterial(uint32_t flags);
-		shader_handle				generateShader(uint32_t flags);
 		
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneSound
@@ -234,14 +244,8 @@ namespace vel
 		
 	// UNSORTED BELOW THIS LINE
 		
-		
-		void						setShaderOpts(int opts, std::vector<std::string>& defs, std::string& shaderName);
-		std::optional<std::string>	loadShaderFile(const std::string& shaderPath);
-		std::string					getTopShaderLines(const std::string& shaderCode, int numLinesToGet);
-		std::string					getBottomShaderLines(const std::string& shaderCode, int numLinesToSkip);
-		Shader*						loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, const std::string& fragFile, std::vector<std::string> defs = {});
-		Shader*						getShader(const std::string& name);
-		void						removeShader(Shader* pShader);		
+	Shader*						loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, const std::string& fragFile, std::vector<std::string> defs = {});
+	void						removeShader(Shader* pShader);
 		
 
 	};

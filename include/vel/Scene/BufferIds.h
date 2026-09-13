@@ -9,5 +9,6 @@ namespace vel
 		unsigned int materialDataSsbo = 0;
 		unsigned int materialTextureHandlesSsbo = 0;
 		unsigned int actorAmbientCubeSsbo = 0;
+		unsigned int actorBoneMatricesSsbo = 0;
 	};
 }
