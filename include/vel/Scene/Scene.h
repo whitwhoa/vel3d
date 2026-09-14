@@ -174,6 +174,8 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	private:
 		shader_handle				generateLineShader(uint32_t flags);
+		void						generateVertexShader(uint32_t flags, std::string& code);
+		void						generateFragmentShader(uint32_t flags, std::string& code);
 		shader_handle				generateShader(uint32_t flags);
 	protected:
 		unsigned int				getShaderProgramId(uint32_t flags);

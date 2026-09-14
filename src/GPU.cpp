@@ -757,7 +757,7 @@ namespace vel
 		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
-			SPDLOG_DEBUG("GPU::updateRenderTarget: Framebuffer is not complete: 001");
+			SPDLOG_DEBUG("GPU::updateRenderTarget(): Framebuffer is not complete: 001");
 			return false;
 		}
 
@@ -790,15 +790,17 @@ namespace vel
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, rt->revealTexture.frames.at(0).id, 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt->depthTexture.frames.at(0).id, 0);
 
-		const GLenum transparentDrawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-		glDrawBuffers(2, transparentDrawBuffers);
-
 		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
-			SPDLOG_DEBUG("GPU::updateRenderTarget: Framebuffer is not complete: 002");
+			SPDLOG_DEBUG("GPU::updateRenderTarget(): Framebuffer is not complete: 002");
 			return false;
 		}
+
+		const GLenum transparentDrawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+		glDrawBuffers(2, transparentDrawBuffers);
+
+
 
 		this->bindFrameBuffer(0);
 
@@ -948,7 +950,7 @@ namespace vel
 
 		// Assign vertex bone ids to location = 4
 		glEnableVertexAttribArray(4);
-		glVertexAttribIPointer(4, 4, GL_INT, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, boneIds));
+		glVertexAttribIPointer(4, 4, GL_UNSIGNED_INT, sizeof(VtxPosNrmlTxSkn), (void*)offsetof(VtxPosNrmlTxSkn, boneIds));
 
 		// Assign vertex weights to location = 5
 		glEnableVertexAttribArray(5);

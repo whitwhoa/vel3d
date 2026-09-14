@@ -125,6 +125,8 @@ namespace vel
 		{
 			Runtime::_gpu->initSceneBuffers(this->bufferIds);
 
+			// TODO: load immutable scene buffers
+
 			for (auto& renderGeoPoolKV : this->renderGeoPools)
 				Runtime::_gpu->loadGeoPool(renderGeoPoolKV.second.get());
 
@@ -232,121 +234,5 @@ namespace vel
 		}
 
 	}
-
-	
-
-	/***********************************************************************************************
-	* SHADERS (this will not be required after we refactor for MDI)
-	************************************************************************************************/
-	Shader* Scene::loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile,
-		const std::string& fragFile, std::vector<std::string> defs)
-	{
-
-		if (this->shaders.contains(name))
-		{
-			SPDLOG_DEBUG("Scene::loadShader(): Existing Shader, bypass reload: {}", name);
-
-			return this->shaders.at(name).get();
-		}
-
-		SPDLOG_DEBUG("Scene::loadShader(): Loading new Shader: {}", name);
-
-
-		// Process vertex shader script
-		std::optional<std::string> vcOpt = this->loadShaderFile(Runtime::_config.dataDir + "/shaders/" + vertFile);
-		if (!vcOpt)
-			return nullptr;
-
-		std::string vertexCode = vcOpt.value();
-		std::string topVertexLines = this->getTopShaderLines(vertexCode, 10);
-		std::string bottomVertexLines = this->getBottomShaderLines(vertexCode, 10);
-		std::stringstream preprocessedVertexCode;
-		preprocessedVertexCode << topVertexLines;
-
-		for (const auto& def : defs) // preload defs into scripts
-			preprocessedVertexCode << "#define " << def << "\n";
-
-		preprocessedVertexCode << bottomVertexLines;
-
-		vertexCode = preprocessedVertexCode.str();
-
-
-		// Process Geometry shader script
-		std::string geomCode = "";
-		if (geomFile != "")
-		{
-			std::optional<std::string> gcOpt = this->loadShaderFile(Runtime::_config.dataDir + "/shaders/" + geomFile);
-			if (!gcOpt)
-				return nullptr;
-
-			geomCode = gcOpt.value();
-			std::string topGeomLines = this->getTopShaderLines(geomCode, 10);
-			std::string bottomGeomLines = this->getBottomShaderLines(geomCode, 10);
-			std::stringstream preprocessedGeomCode;
-			preprocessedGeomCode << topGeomLines;
-
-			for (const auto& def : defs) // preload defs into scripts
-				preprocessedGeomCode << "#define " << def << "\n";
-
-			preprocessedGeomCode << bottomGeomLines;
-
-			geomCode = preprocessedGeomCode.str();
-		}
-
-
-		// Process fragment shader script
-		std::optional<std::string> fcOpt = this->loadShaderFile(Runtime::_config.dataDir + "/shaders/" + fragFile);
-		if (!fcOpt)
-			return nullptr;
-
-		std::string fragmentCode = fcOpt.value();
-		std::string topFragmentLines = this->getTopShaderLines(fragmentCode, 10);
-		std::string bottomFragmentLines = this->getBottomShaderLines(fragmentCode, 10);
-		std::stringstream preprocessedFragmentCode;
-		preprocessedFragmentCode << topFragmentLines;
-
-		for (const auto& def : defs) // preload defs into scripts
-			preprocessedFragmentCode << "#define " << def << "\n";
-
-		preprocessedFragmentCode << bottomFragmentLines;
-		fragmentCode = preprocessedFragmentCode.str();
-
-
-		// Build the shader
-		std::unique_ptr<Shader> s = std::make_unique<Shader>();
-		s->name = name;
-		s->vertCode = vertexCode;
-		s->geomCode = geomCode;
-		s->fragCode = fragmentCode;
-
-		Shader* rawPtr = s.get();
-
-		this->shaders.emplace(name, std::move(s));
-
-		Runtime::_gpu->loadShader(rawPtr);
-
-		return rawPtr;
-	}
-
-	void Scene::removeShader(Shader* pShader)
-	{
-		auto it = this->shaders.find(pShader->name);
-
-		if (it == shaders.end())
-			return;
-
-		Runtime::_gpu->clearShader(it->second.get());
-		this->shaders.erase(pShader->name);
-	}
-
-
-	
-
-	
-
-	
-
-
-
 
 } // END VEL NAMESPACE
