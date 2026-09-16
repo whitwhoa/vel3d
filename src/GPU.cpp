@@ -30,13 +30,9 @@ namespace vel
 
 		screenSpaceMesh(std::make_unique<Mesh>("screenSpaceMesh")),
 		screenSpaceMeshGeoPool(std::make_unique<GeoPoolT<VtxPosNrmlTx>>()),
-		screenShader(std::make_unique<Shader>()),
-		postShader(std::make_unique<Shader>()),
-		compositeShader(std::make_unique<Shader>()),
-		activeRenderTarget(nullptr),
-		activeShader(nullptr),
-		activeMesh(nullptr),
-		activeMaterial(nullptr),
+		screenShader({.programId = 0}),
+		postShader({ .programId = 0 }),
+		compositeShader({ .programId = 0 }),
 		activeCameraViewportSize(glm::ivec2(1280, 720)),
 		prevFrameFence(0),
 
@@ -71,48 +67,38 @@ namespace vel
 		this->texturesUBO = 0;
 		this->lightmapTextureUBO = 0;
 
-		this->clearShader(this->screenShader.get());
-		this->clearShader(this->postShader.get());
-		this->clearShader(this->compositeShader.get());
+		this->clearShader(this->screenShader.programId);
+		this->clearShader(this->postShader.programId);
+		this->clearShader(this->compositeShader.programId);
 	}
 
-	std::unique_ptr<FinalRenderTarget> GPU::createFinalRenderTarget(const std::string& name, unsigned int width, unsigned int height)
+	FinalRenderTarget GPU::createFinalRenderTarget(unsigned int width, unsigned int height)
 	{
-		TextureData td;
-		TextureData td2;
-
-		std::unique_ptr<FinalRenderTarget> frt = std::make_unique<FinalRenderTarget>();
-		frt->texture.name = name;
-		frt->texture.frames.push_back(td);
-		frt->texture.frames.push_back(td2);
-		frt->texture.flags = TXT_OPT_CLAMP_UVS | TXT_OPT_CPU_AND_GPU;
-		frt->resolution = glm::ivec2(width, height);
+		FinalRenderTarget frt;
+		frt.resolution = glm::ivec2(width, height);
 
 		unsigned int fboId = 0;
 		glGenFramebuffers(1, &fboId);
-		frt->fbo = fboId;
+		frt.fbo = fboId;
 
-		glGenTextures(1, &frt->texture.frames.at(0).id);
-		glGenTextures(1, &frt->texture.frames.at(1).id);
+		glGenTextures(1, &frt.colorBufferId);
+		glGenTextures(1, &frt.depthBufferId);
 
-		// color
-		glBindTexture(GL_TEXTURE_2D, frt->texture.frames.at(0).id);
+		glBindTexture(GL_TEXTURE_2D, frt.colorBufferId);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		// depth
-		glBindTexture(GL_TEXTURE_2D, frt->texture.frames.at(1).id);
+		glBindTexture(GL_TEXTURE_2D, frt.depthBufferId);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-
 		glBindTexture(GL_TEXTURE_2D, 0); // be safe
 		
-		this->bindFrameBuffer(frt->fbo);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frt->texture.frames.at(0).id, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, frt->texture.frames.at(1).id, 0);
+		this->bindFrameBuffer(frt.fbo);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, frt.colorBufferId, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, frt.depthBufferId, 0);
 
 		GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
 		glDrawBuffers(1, drawBuffers);
@@ -153,31 +139,26 @@ namespace vel
 				statusString = "Unknown error";
 			}
 
-			SPDLOG_DEBUG("GPU::createFinalRenderTarget: Framebuffer is not complete! Status code: {}", statusString);
-
-			return nullptr;
+			SPDLOG_ERROR("GPU::createFinalRenderTarget: Framebuffer is not complete! Status code: {}", statusString);
 		}
 
-		// be safe
-		this->bindFrameBuffer(0);
+		this->bindFrameBuffer(0); // be safe
 
-
-		// obtain texture's DSA handle, and set texture's DSA handle as resident so it can be accessed in shaders
-		frt->texture.frames.at(0).dsaHandle = glGetTextureHandleARB(frt->texture.frames.at(0).id);
-		glMakeTextureHandleResidentARB(frt->texture.frames.at(0).dsaHandle);
+		frt.colorDsaHandle = glGetTextureHandleARB(frt.colorBufferId);
+		glMakeTextureHandleResidentARB(frt.colorDsaHandle);
 
 		return frt;
 	}
 
-	void GPU::freeFinalRenderTarget(FinalRenderTarget* frt)
+	void GPU::freeFinalRenderTarget(FinalRenderTarget& frt)
 	{
-		glMakeTextureHandleNonResidentARB(frt->texture.frames.at(0).dsaHandle);
-		glDeleteTextures(1, &frt->texture.frames.at(0).id);
-		glDeleteTextures(1, &frt->texture.frames.at(1).id);
-		glDeleteFramebuffers(1, &frt->fbo);
+		glMakeTextureHandleNonResidentARB(frt.colorDsaHandle);
+		glDeleteTextures(1, &frt.colorBufferId);
+		glDeleteTextures(1, &frt.depthBufferId);
+		glDeleteFramebuffers(1, &frt.fbo);
 	}
 
-	void GPU::setOpaqueRenderState()
+	void GPU::setOpaqueRenderState(RenderTarget& rt)
 	{
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LESS);
@@ -185,10 +166,10 @@ namespace vel
 		glDisable(GL_BLEND);
 		//glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-		this->bindFrameBuffer(this->activeRenderTarget->opaqueFBO);		
+		this->bindFrameBuffer(rt.opaqueFBO);		
 	}
 
-	void GPU::setAlphaRenderState()
+	void GPU::setAlphaRenderState(RenderTarget& rt)
 	{
 		glDepthMask(GL_FALSE);
 		glEnable(GL_BLEND);
@@ -196,7 +177,7 @@ namespace vel
 		glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
 		glBlendEquation(GL_FUNC_ADD);
 
-		this->bindFrameBuffer(this->activeRenderTarget->alphaFBO);
+		this->bindFrameBuffer(rt.alphaFBO);
 	}
 
 	//void GPU::setCompositeRenderState()
@@ -211,7 +192,7 @@ namespace vel
 	// Changed above to this when troubleshooting why the edges of text that have alpha
 	// were ignoring the element behind them when blending, and blending with the contents
 	// of the final render target
-	void GPU::setCompositeRenderState()
+	void GPU::setCompositeRenderState(RenderTarget& rt)
 	{
 		glDepthFunc(GL_ALWAYS);
 		glDepthMask(GL_FALSE);
@@ -219,21 +200,21 @@ namespace vel
 		glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-		this->bindFrameBuffer(this->activeRenderTarget->opaqueFBO);
+		this->bindFrameBuffer(rt.opaqueFBO);
 	}
 
-	void GPU::composeFBOs()
+	void GPU::composeFBOs(RenderTarget& rt)
 	{
-		this->setCompositeRenderState();
+		this->setCompositeRenderState(rt);
 		
-		this->useShader(this->compositeShader.get());
+		this->useShader(this->compositeShader);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, this->activeRenderTarget->accumTexture.frames.at(0).id);
+		glBindTexture(GL_TEXTURE_2D, rt.accumBufferId);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, this->activeRenderTarget->revealTexture.frames.at(0).id);
+		glBindTexture(GL_TEXTURE_2D, rt.revealBufferId);
 		
-		this->useMesh(this->screenSpaceMesh.get());
+		this->useVao(this->screenSpaceMesh->gp->gpuGeoPool->VAO);
 
 		this->drawGpuMesh();		
 	}
@@ -246,40 +227,31 @@ namespace vel
 
 	void GPU::drawToFinalRenderTarget(GLuint64 dsaHandle)
 	{
-		this->useShader(this->screenShader.get());
+		this->useShader(this->screenShader);
 
 		this->updateTextureUBO(0, dsaHandle);
 
-		this->useMesh(this->screenSpaceMesh.get());
+		this->useVao(this->screenSpaceMesh->gp->gpuGeoPool->VAO);
 
 		this->drawGpuMesh();
 	}
 
-	void GPU::drawToScreen(FinalRenderTarget* frt, glm::vec4 tint)
+	void GPU::drawToScreen(FinalRenderTarget& frt)
 	{
 		this->clearScreenBuffer(0.0f, 1.0f, 0.0f, 1.0f);
 
 		this->disableBlend();
 
-		this->useShader(this->postShader.get());
+		this->useShader(this->postShader);
 
-		this->updateTextureUBO(0, frt->texture.frames.at(0).dsaHandle);
-
-		this->setShaderVec4("tint", tint);
-		// don't have setShaderVec2 method right now, so use vec3 to get this done
-		this->setShaderVec3("resolution", glm::vec3(frt->resolution.x, frt->resolution.y, 0.0f));
-		this->setShaderBool("enableFXAA", this->useFXAA);
-
-		this->useMesh(this->screenSpaceMesh.get());
+		glUniform1ui64ARB(this->postShaderTextureLocation, frt.colorDsaHandle);
+		glUniform4fv(this->postShaderColorLocation, 1, &frt.colorMultiplier[0]);
+		
+		this->useVao(this->screenSpaceMesh->gp->gpuGeoPool->VAO);
 
 		this->drawGpuMesh();
 
 		this->enableBlend();
-	}
-
-	void GPU::setRenderTarget(RenderTarget* rt)
-	{
-		this->activeRenderTarget = rt;
 	}
 
 	void GPU::updateCameraViewportSize(unsigned int width, unsigned int height)
@@ -297,31 +269,27 @@ namespace vel
 		glViewport(0, 0, width, height);
 	}
 
-	std::unique_ptr<FinalRenderTarget> GPU::updateFinalRenderTargetVPSize(FinalRenderTarget* frt, unsigned int width, unsigned int height)
+	std::optional<FinalRenderTarget> GPU::updateFinalRenderTargetVPSize(FinalRenderTarget& frt, unsigned int width, unsigned int height)
 	{
-		std::unique_ptr<FinalRenderTarget> updatedFRT = nullptr;
+		if (width == frt.resolution.x && height == frt.resolution.y)
+			return std::nullopt;
 
-		if (width != frt->resolution.x || height != frt->resolution.y)
-		{
-			frt->resolution = glm::ivec2(width, height);
-
-			if (frt->resolution.x != 0 && frt->resolution.y != 0)
-			{
-				this->freeFinalRenderTarget(frt);
-				updatedFRT = this->createFinalRenderTarget(frt->texture.name, width, height);
-			}
-		}
+		frt.resolution = glm::ivec2(width, height);
 
 		glViewport(0, 0, width, height);
 
-		return updatedFRT;
+		if (frt.resolution.x != 0 && frt.resolution.y != 0)
+		{
+			this->freeFinalRenderTarget(frt);
+			return this->createFinalRenderTarget(width, height);
+		}
 	}
 
-	void GPU::setFinalRenderTarget(FinalRenderTarget* frt)
+	void GPU::setFinalRenderTarget(FinalRenderTarget& frt)
 	{
 		glDepthMask(GL_TRUE); // insure we're writing to depth buffer (without this, we had to have two stages 
 							// each with a camera for rendering to work right, so i must be disabling it somewhere.
-		this->bindFrameBuffer(frt->fbo);
+		this->bindFrameBuffer(frt.fbo);
 	}
 
 	void GPU::setDefaultFrameBuffer()
@@ -342,7 +310,6 @@ namespace vel
 		v0.position = glm::vec3(-1.0f, 1.0f, 0.0f);
 		v0.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 		v0.textureCoords = glm::vec2(0.0f, 1.0f);
-		v0.materialUBOIndex = 0;
 		this->screenSpaceMeshGeoPool->vertices.push_back(v0);
 
 		// bottom left
@@ -350,7 +317,6 @@ namespace vel
 		v1.position = glm::vec3(-1.0f, -1.0f, 0.0f);
 		v1.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 		v1.textureCoords = glm::vec2(0.0f, 0.0f);
-		v1.materialUBOIndex = 0;
 		this->screenSpaceMeshGeoPool->vertices.push_back(v1);
 
 		// bottom right
@@ -358,7 +324,6 @@ namespace vel
 		v2.position = glm::vec3(1.0f, -1.0f, 0.0f);
 		v2.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 		v2.textureCoords = glm::vec2(1.0f, 0.0f);
-		v2.materialUBOIndex = 0;
 		this->screenSpaceMeshGeoPool->vertices.push_back(v2);
 
 		// top right
@@ -366,7 +331,6 @@ namespace vel
 		v3.position = glm::vec3(1.0f, 1.0f, 0.0f);
 		v3.normal = glm::vec3(0.0f, 0.0f, 1.0f);
 		v3.textureCoords = glm::vec2(1.0f, 1.0f);
-		v3.materialUBOIndex = 0;
 		this->screenSpaceMeshGeoPool->vertices.push_back(v3);
 
 		std::vector<unsigned int> is = { 0,1,2,0,2,3 };
@@ -394,14 +358,6 @@ namespace vel
 	{
 		glDisable(GL_CULL_FACE);
 	}
-
-	void GPU::resetActives()
-	{
-		this->activeShader = nullptr;
-		this->activeMesh = nullptr;
-		this->activeMaterial = nullptr;
-	}
-
 
 	void GPU::initLightMapTextureUBO()
 	{
@@ -464,9 +420,9 @@ namespace vel
 	}
 
 
-	void GPU::clearShader(Shader* s)
+	void GPU::clearShader(unsigned int programId)
 	{
-		glDeleteProgram(s->id);
+		glDeleteProgram(programId);
 	}
 
 	void GPU::clearGeoPool(GpuGeoPool ggp)
@@ -476,28 +432,25 @@ namespace vel
 		glDeleteBuffers(1, &ggp.EBO);
 	}
 
-	void GPU::clearTexture(Texture* t)
+	void GPU::clearTexture(Texture& t)
 	{
-		for (auto& td : t->frames)
-		{
-			glMakeTextureHandleNonResidentARB(td.dsaHandle);
-			glDeleteTextures(1, &td.id);
-		}
+		glMakeTextureHandleNonResidentARB(t.dsaHandle);
+		glDeleteTextures(1, &t.bufferId);
 	}
 
-	void GPU::clearRenderTarget(RenderTarget* rt)
+	void GPU::clearRenderTarget(RenderTarget& rt)
 	{
-		glMakeTextureHandleNonResidentARB(rt->opaqueTexture.frames.at(0).dsaHandle);
-		glMakeTextureHandleNonResidentARB(rt->depthTexture.frames.at(0).dsaHandle);
-		glMakeTextureHandleNonResidentARB(rt->accumTexture.frames.at(0).dsaHandle);
-		glMakeTextureHandleNonResidentARB(rt->revealTexture.frames.at(0).dsaHandle);
-		glDeleteTextures(1, &rt->opaqueTexture.frames.at(0).id);
-		glDeleteTextures(1, &rt->depthTexture.frames.at(0).id);
-		glDeleteTextures(1, &rt->accumTexture.frames.at(0).id);
-		glDeleteTextures(1, &rt->revealTexture.frames.at(0).id);
+		glMakeTextureHandleNonResidentARB(rt.opaqueDsaHandle);
+		glMakeTextureHandleNonResidentARB(rt.depthDsaHandle);
+		glMakeTextureHandleNonResidentARB(rt.accumDsaHandle);
+		glMakeTextureHandleNonResidentARB(rt.revealDsaHandle);
+		glDeleteTextures(1, &rt.opaqueBufferId);
+		glDeleteTextures(1, &rt.depthBufferId);
+		glDeleteTextures(1, &rt.accumBufferId);
+		glDeleteTextures(1, &rt.revealBufferId);
 
-		glDeleteFramebuffers(1, &rt->opaqueFBO);
-		glDeleteFramebuffers(1, &rt->alphaFBO);
+		glDeleteFramebuffers(1, &rt.opaqueFBO);
+		glDeleteFramebuffers(1, &rt.alphaFBO);
 	}
 
 	bool GPU::loadShader(Shader& s, const std::string& vertCode, const std::string& fragCode)
@@ -675,59 +628,37 @@ namespace vel
 		return true;
 	}
 
-	RenderTarget GPU::createRenderTarget(const std::string& name, unsigned int width, unsigned int height)
+	RenderTarget GPU::createRenderTarget(unsigned int width, unsigned int height)
 	{
 		RenderTarget rt;
 		rt.resolution = glm::ivec2(width, height);
 
-		TextureData opaqueTD, depthTD, accumTD, revealTD;
-		rt.opaqueTexture.frames.push_back(opaqueTD);
-		rt.opaqueTexture.name = name + "_opaqueTexture";
-		rt.opaqueTexture.flags = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
-		
-		rt.depthTexture.frames.push_back(depthTD);
-		rt.depthTexture.name = name + "_depthTexture";
-		rt.depthTexture.flags = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
-		
-		rt.accumTexture.frames.push_back(accumTD);
-		rt.accumTexture.name = name + "_accumTexture";
-		rt.accumTexture.flags = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
-		
-		rt.revealTexture.frames.push_back(revealTD);
-		rt.revealTexture.name = name + "_revealTexture";
-		rt.revealTexture.flags = TXT_OPT_CPU_AND_GPU | TXT_OPT_CLAMP_UVS;
-
 		glGenFramebuffers(1, &rt.opaqueFBO);
 		glGenFramebuffers(1, &rt.alphaFBO);
 
-		glGenTextures(1, &rt.opaqueTexture.frames.at(0).id);
-		glGenTextures(1, &rt.depthTexture.frames.at(0).id);
-		glGenTextures(1, &rt.accumTexture.frames.at(0).id);
-		glGenTextures(1, &rt.revealTexture.frames.at(0).id);
+		glGenTextures(1, &rt.opaqueBufferId);
+		glGenTextures(1, &rt.depthBufferId);
+		glGenTextures(1, &rt.accumBufferId);
+		glGenTextures(1, &rt.revealBufferId);
 		
+		this->updateRenderTarget(rt);
 
-		this->updateRenderTarget(&rt);
+		rt.opaqueDsaHandle = glGetTextureHandleARB(rt.opaqueBufferId);
+		rt.depthDsaHandle = glGetTextureHandleARB(rt.depthBufferId);
+		rt.accumDsaHandle = glGetTextureHandleARB(rt.accumBufferId);
+		rt.revealDsaHandle = glGetTextureHandleARB(rt.revealBufferId);
 
-
-		// obtain texture's DSA handle
-		rt.opaqueTexture.frames.at(0).dsaHandle = glGetTextureHandleARB(rt.opaqueTexture.frames.at(0).id);
-		rt.depthTexture.frames.at(0).dsaHandle = glGetTextureHandleARB(rt.depthTexture.frames.at(0).id);
-		rt.accumTexture.frames.at(0).dsaHandle = glGetTextureHandleARB(rt.accumTexture.frames.at(0).id);
-		rt.revealTexture.frames.at(0).dsaHandle = glGetTextureHandleARB(rt.revealTexture.frames.at(0).id);
-
-		// set texture's DSA handle as resident so it can be accessed in shaders
-		glMakeTextureHandleResidentARB(rt.opaqueTexture.frames.at(0).dsaHandle);
-		glMakeTextureHandleResidentARB(rt.depthTexture.frames.at(0).dsaHandle);
-		glMakeTextureHandleResidentARB(rt.accumTexture.frames.at(0).dsaHandle);
-		glMakeTextureHandleResidentARB(rt.revealTexture.frames.at(0).dsaHandle);
-
+		glMakeTextureHandleResidentARB(rt.opaqueBufferId);
+		glMakeTextureHandleResidentARB(rt.depthBufferId);
+		glMakeTextureHandleResidentARB(rt.accumBufferId);
+		glMakeTextureHandleResidentARB(rt.revealBufferId);
 
 		return rt;
 	}
 
-	bool GPU::updateRenderTarget(RenderTarget* rt)
+	bool GPU::updateRenderTarget(RenderTarget& rt)
 	{
-		if (rt->resolution.x == 0 || rt->resolution.y == 0)
+		if (rt.resolution.x == 0 || rt.resolution.y == 0)
 			return false;
 
 		//
@@ -735,14 +666,14 @@ namespace vel
 		//
 
 		// opaque texture
-		glBindTexture(GL_TEXTURE_2D, rt->opaqueTexture.frames.at(0).id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, rt->resolution.x, rt->resolution.y, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
+		glBindTexture(GL_TEXTURE_2D, rt.opaqueBufferId);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, rt.resolution.x, rt.resolution.y, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		// depth texture
-		glBindTexture(GL_TEXTURE_2D, rt->depthTexture.frames.at(0).id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, rt->resolution.x, rt->resolution.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glBindTexture(GL_TEXTURE_2D, rt.depthBufferId);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, rt.resolution.x, rt.resolution.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		
@@ -750,9 +681,9 @@ namespace vel
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// associate textures with opaqueFBO
-		this->bindFrameBuffer(rt->opaqueFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->opaqueTexture.frames.at(0).id, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt->depthTexture.frames.at(0).id, 0);
+		this->bindFrameBuffer(rt.opaqueFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt.opaqueBufferId, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt.depthBufferId, 0);
 
 		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -769,15 +700,15 @@ namespace vel
 		//
 
 		// accum texture
-		glBindTexture(GL_TEXTURE_2D, rt->accumTexture.frames.at(0).id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, rt->resolution.x, rt->resolution.y, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
+		glBindTexture(GL_TEXTURE_2D, rt.accumBufferId);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, rt.resolution.x, rt.resolution.y, 0, GL_RGBA, GL_HALF_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 		// reveal texture
-		glBindTexture(GL_TEXTURE_2D, rt->revealTexture.frames.at(0).id);
+		glBindTexture(GL_TEXTURE_2D, rt.revealBufferId);
 		//glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, rt->resolution.x, rt->resolution.y, 0, GL_RED, GL_FLOAT, NULL);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, rt->resolution.x, rt->resolution.y, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, rt.resolution.x, rt.resolution.y, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -785,10 +716,10 @@ namespace vel
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// associate textures with alphaFBO
-		this->bindFrameBuffer(rt->alphaFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt->accumTexture.frames.at(0).id, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, rt->revealTexture.frames.at(0).id, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt->depthTexture.frames.at(0).id, 0);
+		this->bindFrameBuffer(rt.alphaFBO);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt.accumBufferId, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, rt.revealBufferId, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, rt.depthBufferId, 0);
 
 		// verify success
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -1030,133 +961,114 @@ namespace vel
 		);
 	}
 
-	std::unique_ptr<Texture> GPU::generateEmptyTexture(const std::string& name, unsigned int frameCount, 
-		unsigned int width, unsigned int height, int flags)
+	Texture GPU::generateEmptyTexture(unsigned int width, unsigned int height, int flags)
 	{
-		std::unique_ptr<Texture> t = std::make_unique<Texture>();
-		t->name = name;
-		t->flags = flags;
+		Texture t;
+		t.flags = flags;
 
-		for (unsigned int i = 0; i < frameCount; i++)
+		glGenTextures(1, &t.bufferId);
+		glBindTexture(GL_TEXTURE_2D, t.bufferId);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_HALF_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		if (t.flags & TXT_OPT_CLAMP_UVS)
 		{
-			TextureData td;
-
-			glGenTextures(1, &td.id);
-			glBindTexture(GL_TEXTURE_2D, td.id);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_HALF_FLOAT, nullptr);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			if (t->flags & TXT_OPT_CLAMP_UVS)
-			{
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			}
-			else
-			{
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			}
-			td.dsaHandle = glGetTextureHandleARB(td.id);
-			glMakeTextureHandleResidentARB(td.dsaHandle);
-
-			t->frames.push_back(td);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		}
+		else
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
+		t.dsaHandle = glGetTextureHandleARB(t.bufferId);
+		glMakeTextureHandleResidentARB(t.dsaHandle);		
 
 		return t;
 	}
 
-	void GPU::loadTexture(Texture* t)
+	void GPU::loadTexture(Texture& t)
 	{
-		for (auto& td : t->frames)
+		switch (t.channels)
 		{
-			if (td.primaryImageData.nrComponents == 1)
-			{
-				td.alphaChannel = false;
-				td.primaryImageData.sizedFormat = GL_R8; // 8 bits per channel x1 channel
-				td.primaryImageData.format = GL_RED;
-			}
-			else if (td.primaryImageData.nrComponents == 2)
-			{
-				td.alphaChannel = false;
-				td.primaryImageData.sizedFormat = GL_RG8; // 8 bits per channel x2 channels
-				td.primaryImageData.format = GL_RG;
-			}
-			else if (td.primaryImageData.nrComponents == 3)
-			{
-				td.alphaChannel = false;
-				td.primaryImageData.sizedFormat = GL_RGB8; // 8 bits per channel x3 channels
-				td.primaryImageData.format = GL_RGB;
-			}
-			else if (td.primaryImageData.nrComponents == 4)
-			{
-				td.alphaChannel = true;
-				td.primaryImageData.sizedFormat = GL_RGBA8; // 8 bits per channel x4 channels
-				td.primaryImageData.format = GL_RGBA;
-			}
+		case 1:
+			t.sizedFormat = GL_R8; // 8 bits per channel x1 channel
+			t.format = GL_RED;
+			break;
+		case 2:
+			t.sizedFormat = GL_RG8; // 8 bits per channel x2 channels
+			t.format = GL_RG;
+			break;
+		case 3:
+			t.sizedFormat = GL_RGB8; // 8 bits per channel x3 channels
+			t.format = GL_RGB;
+			break;
+		case 4:
+			t.sizedFormat = GL_RGBA8; // 8 bits per channel x4 channels
+			t.format = GL_RGBA;
+			break;
+		}
 
+		// create a texture buffer and bind it to context
+		glGenTextures(1, &t.bufferId);
+		glBindTexture(GL_TEXTURE_2D, t.bufferId);
 
-			// create a texture buffer and bind it to context
-			glGenTextures(1, &td.id);
-			glBindTexture(GL_TEXTURE_2D, td.id);
+		// load data into the buffer
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			t.sizedFormat,
+			t.width,
+			t.height,
+			0,
+			t.format,
+			GL_UNSIGNED_BYTE,
+			t.data
+		);
 
-			// load data into the buffer
-			glTexImage2D(
-				GL_TEXTURE_2D,
-				0,
-				td.primaryImageData.sizedFormat,
-				td.primaryImageData.width,
-				td.primaryImageData.height,
-				0,
-				td.primaryImageData.format,
-				GL_UNSIGNED_BYTE,
-				td.primaryImageData.data
-			);
+		//// auto generate mipmap levels for texture
+		glGenerateMipmap(GL_TEXTURE_2D);
 
-			//// auto generate mipmap levels for texture
-			glGenerateMipmap(GL_TEXTURE_2D);
-
-			// set texture parameters
-			if (t->flags & TXT_OPT_CLAMP_UVS)
-			{
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			}
-			else
-			{
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			}
+		// set texture parameters
+		if (t.flags & TXT_OPT_CLAMP_UVS)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+		else
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
 			
-			if (t->flags & TXT_OPT_DISABLE_FILTER)
-			{
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-			}
-			else
-			{
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-			}
+		if (t.flags & TXT_OPT_DISABLE_FILTER)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		}
+		else
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		}
 
-			// obtain texture's DSA handle
-			td.dsaHandle = glGetTextureHandleARB(td.id);
+		// obtain texture's DSA handle
+		t.dsaHandle = glGetTextureHandleARB(t.bufferId);
 
-			// set texture's DSA handle as resident so it can be accessed in shaders
-			glMakeTextureHandleResidentARB(td.dsaHandle);
+		// set texture's DSA handle as resident so it can be accessed in shaders
+		glMakeTextureHandleResidentARB(t.dsaHandle);
 
-			if(!(t->flags & TXT_OPT_CPU_AND_GPU))
-				stbi_image_free(td.primaryImageData.data);
-		}	
+		if(!(t.flags & TXT_OPT_CPU_AND_GPU))
+			stbi_image_free(t.data);
 	}
 
 	void GPU::loadFontBitmapTexture(FontBitmap* fb)
 	{
 		Texture t;
 
-		TextureData td;
-		glGenTextures(1, &td.id);
-		glBindTexture(GL_TEXTURE_2D, td.id);
+		glGenTextures(1, &t.bufferId);
+		glBindTexture(GL_TEXTURE_2D, t.bufferId);
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexImage2D(
 			GL_TEXTURE_2D,
@@ -1169,39 +1081,21 @@ namespace vel
 			GL_UNSIGNED_BYTE,
 			fb->data.get()
 		);
+
 		// TODO: verify these don't cause trouble
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 		// reset pack alignment to default
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-		// obtain texture's DSA handle
-		td.dsaHandle = glGetTextureHandleARB(td.id);
 
-		// set texture's DSA handle as resident so it can be accessed in shaders
-		glMakeTextureHandleResidentARB(td.dsaHandle);
-
-		// push this texture data object as a frame into texture
-		t.frames.push_back(td);
+		t.dsaHandle = glGetTextureHandleARB(t.bufferId);
+		glMakeTextureHandleResidentARB(t.dsaHandle);
 
 		fb->texture = t;
-	}
-
-	const Shader* const GPU::getActiveShader() const
-	{
-		return this->activeShader;
-	}
-
-	const Mesh* const GPU::getActiveMesh() const
-	{
-		return this->activeMesh;
-	}
-
-	const Material* const GPU::getActiveMaterial() const
-	{
-		return this->activeMaterial;
 	}
 
 	glm::ivec2 GPU::getActiveCameraViewportSize()
@@ -1209,100 +1103,14 @@ namespace vel
 		return this->activeCameraViewportSize;
 	}
 
-	void GPU::useShader(Shader* s)
+	void GPU::useShader(Shader s)
 	{
-		if (s == nullptr || this->activeShader == s)
-			return;
-
-		this->activeShader = s;
-		glUseProgram(s->id);
+		glUseProgram(s.programId);
 	}
 
-	void GPU::setShaderBool(const std::string& name, bool value)
+	void GPU::useVao(unsigned int vao)
 	{
-		if (!this->activeShader->uniformLocations.count(name) == 1)
-			this->activeShader->uniformLocations[name] = glGetUniformLocation(this->activeShader->id, name.c_str());
-
-		glUniform1i(this->activeShader->uniformLocations[name], (int)value);
-	}
-
-	void GPU::setShaderInt(const std::string& name, int value)
-	{
-		if (!this->activeShader->uniformLocations.count(name) == 1)
-			this->activeShader->uniformLocations[name] = glGetUniformLocation(this->activeShader->id, name.c_str());
-
-		glUniform1i(this->activeShader->uniformLocations[name], value);
-	}
-
-	void GPU::setShaderUInt(const std::string &name, uint64_t value)
-	{
-		if (!this->activeShader->uniformLocations.count(name) == 1)
-			this->activeShader->uniformLocations[name] = glGetUniformLocation(this->activeShader->id, name.c_str());
-
-		glUniform1ui(this->activeShader->uniformLocations[name], value);
-	}
-
-	void GPU::setShaderFloat(const std::string& name, float value)
-	{
-		if (!this->activeShader->uniformLocations.count(name) == 1)
-			this->activeShader->uniformLocations[name] = glGetUniformLocation(this->activeShader->id, name.c_str());
-
-		glUniform1f(this->activeShader->uniformLocations[name], value);
-	}
-
-	void GPU::setShaderFloatArray(const std::string &name, const std::vector<float>& value)
-	{
-		if (!this->activeShader->uniformLocations.count(name) == 1)
-			this->activeShader->uniformLocations[name] = glGetUniformLocation(this->activeShader->id, name.c_str());
-
-		glUniform1fv(this->activeShader->uniformLocations[name], value.size(), &value[0]);
-	}
-
-	void GPU::setShaderMat4(const std::string& name, const glm::mat4& value)
-	{
-		if (!this->activeShader->uniformLocations.count(name) == 1)
-			this->activeShader->uniformLocations[name] = glGetUniformLocation(this->activeShader->id, name.c_str());
-
-		glUniformMatrix4fv(this->activeShader->uniformLocations[name], 1, GL_FALSE, glm::value_ptr(value));
-	}
-
-	void GPU::setShaderVec3(const std::string &name, const glm::vec3& value)
-	{
-		if (!this->activeShader->uniformLocations.count(name) == 1)
-			this->activeShader->uniformLocations[name] = glGetUniformLocation(this->activeShader->id, name.c_str());
-
-		glUniform3fv(this->activeShader->uniformLocations[name], 1, &value[0]);
-	}
-
-	void GPU::setShaderVec3Array(const std::string &name, const std::vector<glm::vec3>& value)
-	{
-		if (!this->activeShader->uniformLocations.count(name) == 1)
-			this->activeShader->uniformLocations[name] = glGetUniformLocation(this->activeShader->id, name.c_str());
-
-		glUniform3fv(this->activeShader->uniformLocations[name], value.size(), glm::value_ptr(value[0]));
-	}
-
-	void GPU::setShaderVec4(const std::string &name, const glm::vec4& value)
-	{
-		if (!this->activeShader->uniformLocations.count(name) == 1)
-			this->activeShader->uniformLocations[name] = glGetUniformLocation(this->activeShader->id, name.c_str());
-
-		glUniform4fv(this->activeShader->uniformLocations[name], 1, &value[0]);
-	}
-
-
-	void GPU::useMesh(Mesh* m)
-	{
-		if (!m || m == this->activeMesh)
-			return;
-
-		this->activeMesh = m;
-		glBindVertexArray(m->getGpuMesh()->VAO);
-	}
-
-	void GPU::setActiveMaterial(Material* m)
-	{
-		this->activeMaterial = m;
+		glBindVertexArray(vao);
 	}
 
 	void GPU::disableDepthMask()
@@ -1348,22 +1156,19 @@ namespace vel
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 
-	void GPU::clearRenderTargetBuffers(float r, float g, float b, float a)
+	void GPU::clearRenderTargetBuffers(RenderTarget& rt, float r, float g, float b, float a)
 	{
-		this->bindFrameBuffer(this->activeRenderTarget->opaqueFBO);
+		this->bindFrameBuffer(rt.opaqueFBO);
 		this->clearBuffers(r,g,b,a);
 
-		this->bindFrameBuffer(this->activeRenderTarget->alphaFBO);
+		this->bindFrameBuffer(rt.alphaFBO);
 		glClearBufferfv(GL_COLOR, 0, &this->zeroFillerVec[0]);
 		glClearBufferfv(GL_COLOR, 1, &this->oneFillerVec[0]);
 	}
 
-	void GPU::clearFinalRenderTarget(FinalRenderTarget* frt, glm::vec4 color)
+	void GPU::clearFinalRenderTarget(FinalRenderTarget& frt, glm::vec4 color)
 	{
-		if (!frt)
-			return;
-
-		this->bindFrameBuffer(frt->fbo);
+		this->bindFrameBuffer(frt.fbo);
 		this->clearBuffers(color.x, color.y, color.z, color.w);
 	}
 
@@ -1408,7 +1213,7 @@ namespace vel
 		}
 	}
 
-	void GPU::drawGpuMesh()
+	void GPU::drawGpuMesh() // TODO: this will be replaced with MDI pipelilne
 	{
 		glDrawElements(GL_TRIANGLES, this->activeMesh->getGpuMesh()->indiceCount, GL_UNSIGNED_INT, 0);
 	}
@@ -1513,8 +1318,6 @@ void main()
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
-layout (location = 3) in vec2 aLightMapCoords;
-layout (location = 4) in uint aTexId;
 
 out vec2 TexCoords;
 flat out uint TexId;
@@ -1534,92 +1337,25 @@ void main()
 #extension GL_ARB_gpu_shader_int64 : require
 
 in vec2 TexCoords;
-in vec2 LMTexCoords;
 flat in uint TexId;
 
-uniform vec4 tint;
-uniform vec3 resolution;
-uniform bool enableFXAA;
-
-const int MAX_TEXTURE_SLOTS = 250;
-layout (std140, binding = 0) uniform TexturesUBO
-{
-    sampler2D tex[MAX_TEXTURE_SLOTS];
-};
+uniform vec4 color;
+uniform uint64_t textureHandle;
 
 out vec4 FragColor;
 
-vec3 applyFXAA(sampler2D tex, vec2 uv, vec2 res)
-{
-    vec2 inverseResolution = 1.0 / res;
-
-    // Sample positions
-    vec3 rgbNW = texture(tex, uv + (vec2(-1.0, -1.0) * inverseResolution)).rgb;
-    vec3 rgbNE = texture(tex, uv + (vec2( 1.0, -1.0) * inverseResolution)).rgb;
-    vec3 rgbSW = texture(tex, uv + (vec2(-1.0,  1.0) * inverseResolution)).rgb;
-    vec3 rgbSE = texture(tex, uv + (vec2( 1.0,  1.0) * inverseResolution)).rgb;
-    vec3 rgbM  = texture(tex, uv).rgb;
-
-    // Luma (brightness)
-    float lumaNW = dot(rgbNW, vec3(0.299, 0.587, 0.114));
-    float lumaNE = dot(rgbNE, vec3(0.299, 0.587, 0.114));
-    float lumaSW = dot(rgbSW, vec3(0.299, 0.587, 0.114));
-    float lumaSE = dot(rgbSE, vec3(0.299, 0.587, 0.114));
-    float lumaM  = dot(rgbM,  vec3(0.299, 0.587, 0.114));
-
-    float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
-    float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
-
-    // Early exit: if contrast is too low, skip FXAA
-    if (lumaMax - lumaMin < max(0.0312, lumaMax * 0.125))
-        return rgbM;
-    
-    // Edge detection
-    vec2 dir;
-    dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
-    dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
-
-    float dirReduce = max(
-        (lumaNW + lumaNE + lumaSW + lumaSE) * (0.25 * 0.5),
-        1.0 / 32.0
-    );
-    float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
-    dir = clamp(dir * rcpDirMin, vec2(-8.0), vec2(8.0)) * inverseResolution;
-
-    // Sample along the edge direction
-    vec3 rgbA = 0.5 * (
-        texture(tex, uv + dir * (1.0/3.0 - 0.5)).rgb +
-        texture(tex, uv + dir * (2.0/3.0 - 0.5)).rgb
-    );
-    vec3 rgbB = rgbA * 0.5 + 0.25 * (
-        texture(tex, uv + dir * -0.5).rgb +
-        texture(tex, uv + dir * 0.5).rgb
-    );
-
-    // Choose based on brightness range
-    float lumaB = dot(rgbB, vec3(0.299, 0.587, 0.114));
-    if ((lumaB < lumaMin) || (lumaB > lumaMax))
-        return rgbA;
-    else
-        return rgbB;
-}
-
 void main()
 {	
-	//if (enableFXAA)
-	//{
-	//	vec3 fxaaResult = applyFXAA(tex[TexId], TexCoords, vec2(resolution.x, resolution.y));
-	//	FragColor = mix(vec4(fxaaResult, 1.0), vec4(tint.rgb, 1.0), tint.a);
-	//}
-	//else
-	//{
-		vec4 texColor = texture(tex[TexId], TexCoords);
-		FragColor = mix(texColor, vec4(tint.rgb, 1.0), tint.a);
-	//}
+	sampler2D tex = sampler2D(textureHandle);
+	vec4 texColor = texture(tex, TexCoords);
+	FragColor = mix(texColor, vec4(color.rgb, 1.0), color.a);
 }
 )GLSL";
 
 		this->loadShader(this->postShader, vertCode, fragCode);
+
+		this->postShaderColorLocation = glGetUniformLocation(this->postShader.programId, "color");
+		this->postShaderTextureLocation = glGetUniformLocation(this->postShader.programId, "textureHandle");
 
 
 		////////////////////////////////////////////////////////

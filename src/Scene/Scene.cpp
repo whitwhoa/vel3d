@@ -194,27 +194,27 @@ namespace vel
 		// all stage camera's framebuffers are now updated, loop through each stage camera and check if it should display it's contents 
 
 		// now bind the scene's FinalRenderTarget. It's viewport size should always be the full size of the window, or screen in fullscreen mode
-		std::unique_ptr<FinalRenderTarget> updatedFRT = Runtime::_gpu->updateFinalRenderTargetVPSize(
-			this->sceneRenderTarget.get(), 
+		std::optional<FinalRenderTarget> updatedFRT = Runtime::_gpu->updateFinalRenderTargetVPSize(
+			this->sceneRenderTarget, 
 			Runtime::_window->getWindowSize().x,
 			Runtime::_window->getWindowSize().y
 		);
 
 		if (updatedFRT)
-			this->sceneRenderTarget = std::move(updatedFRT);
+			this->sceneRenderTarget = updatedFRT.value();
 
 
-		Runtime::_gpu->setFinalRenderTarget(this->sceneRenderTarget.get());
+		Runtime::_gpu->setFinalRenderTarget(this->sceneRenderTarget);
 
 
 		for (auto& c : this->cameras)
-			if (c->isFinalRenderCam())
-				Runtime::_gpu->drawToFinalRenderTarget(c->getRenderTarget().opaqueTexture.frames.at(0).dsaHandle);
+			if (c->finalRenderCam)
+				Runtime::_gpu->drawToFinalRenderTarget(c->renderTarget.opaqueDsaHandle);
 		
 
 		// call post process to apply post process shader while drawing into the default framebuffer for display to screen
 		Runtime::_gpu->setDefaultFrameBuffer();
-		Runtime::_gpu->drawToScreen(this->sceneRenderTarget.get(), this->screenTint);
+		Runtime::_gpu->drawToScreen(this->sceneRenderTarget);
 
 		// If you don't set glviewport back to the render resolution (vs leaving it at the window size), mouse movement gets jacked up 
 		Runtime::_gpu->setViewportSize(Runtime::_window->getResolution().x, Runtime::_window->getResolution().y);

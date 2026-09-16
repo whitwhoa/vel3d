@@ -1,16 +1,18 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include <cstdint>
 
-#include <vel/Scene/Texture/Texture.h>
+#include <glm/glm.hpp>
 
 namespace vel
 {
 	struct FinalRenderTarget
 	{
-		glm::ivec2 		resolution;
-		unsigned int 	fbo;
-		Texture 		texture;
 		glm::vec4 		colorMultiplier = glm::vec4(1.f);
+		glm::ivec2 		resolution = glm::ivec2(1280, 720);
+		uint64_t		colorDsaHandle = 0;
+		uint32_t 		fbo = 0;
+		uint32_t		colorBufferId = 0;
+		uint32_t		depthBufferId = 0;
 	};
 }

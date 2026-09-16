@@ -17,7 +17,7 @@ namespace vel
 		id(Camera::nextCameraId++),
 		resolution(Runtime::_window->getResolution()),
 		previousResolution(glm::ivec2(0, 0)),
-		renderTarget(Runtime::_gpu->createRenderTarget((this->id + "_RT"), resolution.x, resolution.y)),
+		renderTarget(Runtime::_gpu->createRenderTarget(resolution.x, resolution.y)),
 		type(type),
 		fovScale(75.0f),
 		nearPlane(0.1f),
@@ -47,8 +47,8 @@ namespace vel
 		{
 			SPDLOG_DEBUG("Camera::update(): viewport size altered");
 
-			RenderTarget rt = Runtime::_gpu->createRenderTarget((this->getId() + "_RT"), currentResolution.x, currentResolution.y);
-			Runtime::_gpu->clearRenderTarget(&this->renderTarget);
+			RenderTarget rt = Runtime::_gpu->createRenderTarget(currentResolution.x, currentResolution.y);
+			Runtime::_gpu->clearRenderTarget(this->renderTarget);
 			this->renderTarget = rt;
 		}
 

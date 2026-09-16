@@ -50,6 +50,8 @@ namespace vel
 		bool							visible;
 		bool							dynamic;
 		bool							lerpable;
+		bool							billboard;
+		bool							billboardLockY;
 
 		Actor();
 		//Actor(const Actor& original);

@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 #include <glm/glm.hpp>
 
-#include <vel/Scene/Texture/Texture.h>
+#include <vel/Scene/Texture.h>
 
 namespace vel
 {
@@ -10,13 +12,17 @@ namespace vel
 	{
 		glm::ivec2 resolution;
 
-		unsigned int opaqueFBO;
-		unsigned int alphaFBO;
+		uint32_t opaqueFBO;
+		uint32_t alphaFBO;
 
-		Texture opaqueTexture;
-		Texture depthTexture;
+		uint32_t opaqueBufferId;
+		uint32_t depthBufferId;
+		uint32_t accumBufferId;
+		uint32_t revealBufferId;
 
-		Texture accumTexture;
-		Texture revealTexture;
+		uint64_t opaqueDsaHandle;
+		uint64_t depthDsaHandle;
+		uint64_t accumDsaHandle;
+		uint64_t revealDsaHandle;
 	};
 }

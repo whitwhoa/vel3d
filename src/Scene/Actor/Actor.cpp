@@ -11,6 +11,8 @@ namespace vel
 		visible(true),
 		dynamic(false),
 		lerpable(false),
+		billboard(false),
+		billboardLockY(false),
 		lastTransformUpdateTick(0),
 		transform(Transform()),
 		previousTransform(Transform()),

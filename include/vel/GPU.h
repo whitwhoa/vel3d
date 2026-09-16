@@ -37,12 +37,12 @@ namespace vel
 		std::unique_ptr<Mesh>				screenSpaceMesh;
 		std::unique_ptr<GeoPoolT<VtxPosNrmlTx>>	screenSpaceMeshGeoPool;
 		Shader								screenShader;
+
 		Shader								postShader;
+		int									postShaderTextureLocation;
+		int									postShaderColorLocation;
+
 		Shader								compositeShader;
-		RenderTarget*						activeRenderTarget;
-		Shader								activeShader;
-		Mesh*								activeMesh;
-		Material*							activeMaterial;
 		glm::ivec2							activeCameraViewportSize;
 		GLsync								prevFrameFence;
 
@@ -75,36 +75,19 @@ namespace vel
 		void								clearBuffers(float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 0.0f);
 		void								drawLinesOnly();
 
-		
-		const Shader* const					getActiveShader() const;
-		const Mesh*	const					getActiveMesh() const;
-		const Material*	const				getActiveMaterial() const;
-		void								resetActives();
-
 		bool								loadShader(Shader& s, const std::string& vertCode, const std::string& fragCode);
 		bool								loadShader(Shader& s, const std::string& vertCode, const std::string& geomCode, const std::string& fragCode);
 		void								loadGeoPool(GeoPool* gp);
 		void								updateGeoPool(GeoPool* m);
-		void								loadTexture(Texture* t);
+		void								loadTexture(Texture& t);
 		void								loadFontBitmapTexture(FontBitmap* fb);
 
-		RenderTarget						createRenderTarget(const std::string& name, unsigned int width, unsigned int height);
-		bool								updateRenderTarget(RenderTarget* rt);
-		void								clearRenderTarget(RenderTarget* rt);
+		RenderTarget						createRenderTarget(unsigned int width, unsigned int height);
+		bool								updateRenderTarget(RenderTarget& rt);
+		void								clearRenderTarget(RenderTarget& rt);
 
-		void								setActiveMaterial(Material* m);
-		void								useShader(Shader* s);
-		void								useMesh(Mesh* m);
-
-		void								setShaderBool(const std::string& name, bool value);
-		void								setShaderInt(const std::string& name, int value);
-		void								setShaderUInt(const std::string& name, uint64_t value);
-		void								setShaderFloat(const std::string& name, float value);
-		void								setShaderFloatArray(const std::string& name, const std::vector<float>& value);
-		void								setShaderMat4(const std::string& name, const glm::mat4& value);
-		void								setShaderVec3(const std::string& name, const glm::vec3& value);
-		void								setShaderVec3Array(const std::string& name, const std::vector<glm::vec3>& value);
-		void								setShaderVec4(const std::string& name, const glm::vec4& value);
+		void								useShader(Shader s);
+		void								useVao(unsigned int vao);
 
 		void								drawGpuMesh();
 		void								clearDepthBuffer();
@@ -115,9 +98,9 @@ namespace vel
 
 		void								debugDrawCollisionWorld(CollisionDebugDrawer* cdd);
 
-		void								clearShader(Shader* s);
+		void								clearShader(unsigned int programId);
 		void								clearGeoPool(GpuGeoPool ggp);
-		void								clearTexture(Texture* t);
+		void								clearTexture(Texture& t);
 
 		void								updateBonesUBO(const std::vector<std::pair<unsigned int, glm::mat4>>& boneData); // first = bone array index, second = bone matrix
 
@@ -128,8 +111,7 @@ namespace vel
 		void								updateLightmapTextureUBO(GLuint64 dsaHandle);
 
 		void								updateCameraViewportSize(unsigned int width, unsigned int height);
-		std::unique_ptr<FinalRenderTarget>	updateFinalRenderTargetVPSize(FinalRenderTarget* frt, unsigned int width, unsigned int height);
-		void								setRenderTarget(RenderTarget* rt);
+		std::optional<FinalRenderTarget>	updateFinalRenderTargetVPSize(FinalRenderTarget& frt, unsigned int width, unsigned int height);
 
 		void								drawToFinalRenderTarget(GLuint64 dsaHandle);
 
@@ -138,13 +120,13 @@ namespace vel
 
 
 
-		void								setOpaqueRenderState();
-		void								setAlphaRenderState();
-		void								setCompositeRenderState();
-		void								composeFBOs();
+		void								setOpaqueRenderState(RenderTarget& rt);
+		void								setAlphaRenderState(RenderTarget& rt);
+		void								setCompositeRenderState(RenderTarget& rt);
+		void								composeFBOs(RenderTarget& rt);
 		void								setDefaultFrameBuffer();
 
-		void								clearRenderTargetBuffers(float r, float g, float b, float a);
+		void								clearRenderTargetBuffers(RenderTarget& rt, float r, float g, float b, float a);
 		void								clearScreenBuffer(float r, float g, float b, float a);
 
 		void								setGLDebugMessage(const std::string& message);
@@ -154,18 +136,18 @@ namespace vel
 		void								drawLines(unsigned int pointCount);
 
 											// adjust x,y,z as r,g,b for any color, adjust w as strength of the overlay tint
-		void								drawToScreen(FinalRenderTarget* frt, glm::vec4 tint = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f));
+		void								drawToScreen(FinalRenderTarget& frt);
 
-		void								clearFinalRenderTarget(FinalRenderTarget* frt, glm::vec4 color);
+		void								clearFinalRenderTarget(FinalRenderTarget& frt, glm::vec4 color);
 
-		void								setFinalRenderTarget(FinalRenderTarget* frt);
+		void								setFinalRenderTarget(FinalRenderTarget& frt);
 
 		void								setViewportSize(unsigned int width, unsigned int height);
 
-		std::unique_ptr<FinalRenderTarget>	createFinalRenderTarget(const std::string& name, unsigned int width, unsigned int height);
-		void								freeFinalRenderTarget(FinalRenderTarget* frt);
+		FinalRenderTarget					createFinalRenderTarget(unsigned int width, unsigned int height);
+		void								freeFinalRenderTarget(FinalRenderTarget& frt);
 
-		std::unique_ptr<Texture>			generateEmptyTexture(const std::string& name, unsigned int frameCount, unsigned int width, unsigned int height, int flags = 0);
+		Texture								generateEmptyTexture(unsigned int width, unsigned int height, int flags = 0);
 		void								copyGPUTexture(unsigned int sourceId, unsigned int destinationId, unsigned int width, unsigned int height);
 
 		void								fenceAndFlush();

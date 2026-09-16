@@ -53,11 +53,15 @@ struct DrawBucketCommand
 	uint	activeFrame;
 };
 
+const uint ACTOR_GPU_IS_BILLBOARD     = 1u << 1;
+const uint ACTOR_GPU_BILLBOARD_LOCK_Y = 1u << 2;
+
 struct ActorGpuData
 {
 	mat4		model;
 	vec4		colorMultiplier;
 	uint64_t	lightmapHandle;
+	uint flags;
 	uint		ambientCubeOffset;
 	uint		boneMatrixOffset;
 };
@@ -133,12 +137,67 @@ void main()
     localNormal					= mat3(skinMatrix) * localNormal;
 	#endif
 
-	const vec4 worldPosition	= actor.model * localPosition;
 
-    fragWorldPos				= worldPosition.xyz;
-    fragNormal					= normalize(mat3(actor.model) * localNormal); // uniform scale only
+	vec4 worldPosition;
+	vec3 worldNormal;
 
-    gl_Position					= projection * view * worldPosition;
+	if ((actor.flags & ACTOR_GPU_IS_BILLBOARD) != 0u)
+	{
+		const vec3 actorPosition = actor.model[3].xyz;
+		const vec2 billboardScale = vec2(length(actor.model[0].xyz), length(actor.model[1].xyz));
+
+		const vec3 cameraRight = vec3(view[0][0], view[1][0], view[2][0]);
+		const vec3 cameraUp = vec3(view[0][1], view[1][1], view[2][1]);
+		const vec3 cameraBackward = vec3(view[0][2], view[1][2], view[2][2]);
+
+		vec3 billboardRight = cameraRight;
+		vec3 billboardUp = cameraUp;
+		vec3 billboardBackward = cameraBackward;
+
+		if ((actor.flags & ACTOR_GPU_BILLBOARD_LOCK_Y) != 0u)
+		{
+			billboardUp = vec3(0.0, 1.0, 0.0);
+
+			vec3 horizontalBackward = vec3(cameraBackward.x, 0.0, cameraBackward.z);
+
+			if (dot(horizontalBackward, horizontalBackward) < 0.000001)
+			{
+				horizontalBackward = vec3(actor.model[2].x, 0.0, actor.model[2].z);
+
+				if (dot(horizontalBackward, horizontalBackward) < 0.000001)
+					horizontalBackward = vec3(0.0, 0.0, 1.0);
+			}
+
+			billboardBackward = normalize(horizontalBackward);
+			billboardRight = cross(billboardUp, billboardBackward);
+		}
+
+		const mat3 billboardRotation = mat3(billboardRight, billboardUp, billboardBackward);
+
+		const vec3 billboardLocalPosition = vec3(
+			localPosition.x * billboardScale.x,
+			localPosition.y * billboardScale.y,
+			localPosition.z
+		);
+
+		worldPosition = vec4(actorPosition + billboardRotation * billboardLocalPosition, 1.0);
+		worldNormal = billboardRotation * localNormal;
+	}
+	else
+	{
+		worldPosition = actor.model * localPosition;
+		worldNormal = normalize(mat3(actor.model) * localNormal);
+	}
+
+	fragWorldPos = worldPosition.xyz;
+	fragNormal = worldNormal;
+
+	gl_Position = projection * view * worldPosition;
+	
+
+
+
+
 })GLSL";
 	}
 
@@ -173,6 +232,7 @@ struct ActorGpuData
 	mat4		model;
 	vec4		colorMultiplier;
 	uint64_t	lightmapHandle;
+	uint		flags;
 	uint		ambientCubeOffset;
 	uint		boneMatrixOffset;
 };

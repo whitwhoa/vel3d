@@ -18,11 +18,12 @@ namespace vel
 		PERSPECTIVE
 	};
 
-	struct CameraGpuData
+	struct alignas(16) CameraGpuData
 	{
 		glm::mat4 viewMatrix = glm::mat4(1.f);
 		glm::mat4 projectionMatrix = glm::mat4(1.f);
 	};
+	static_assert(sizeof(CameraGpuData) == 128);
 
 	class Camera
 	{

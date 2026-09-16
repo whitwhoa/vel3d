@@ -103,7 +103,7 @@ namespace vel
 		int																audioGroupKey;
 		BufferIds														bufferIds;
 	protected:
-		std::unique_ptr<FinalRenderTarget>								sceneRenderTarget;
+		FinalRenderTarget												sceneRenderTarget;
 		std::vector<std::unique_ptr<Stage>> 							stages;
 		std::vector<std::unique_ptr<Camera>>							cameras;
 

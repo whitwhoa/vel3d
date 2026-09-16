@@ -14,7 +14,7 @@ namespace vel
 {
 	typedef unsigned int material_handle;
 
-	enum MtlFlgs : uint32_t
+	enum MtlFlg : uint32_t
 	{
 		//MTLFLG_TEXTURES_ANIMATED = 1 << 4, // TODO: this needs to be an actor flag
 		//MTLFLG_SELECTABLE_TEXTURE = 1 << 8, // TODO: this likely needs to be an actor flag
