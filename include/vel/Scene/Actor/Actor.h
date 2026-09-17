@@ -37,8 +37,8 @@ namespace vel
 	private:
 		Transform						transform;
 		Transform						previousTransform;
-		std::vector<std::pair<uint32_t, uint32_t>> activeBones; // the bones from the armature used by the mesh, .first = animator.renderModelMatrices index, .second = mesh.bones index
 	public:
+		std::vector<std::pair<uint32_t, uint32_t>> activeBones; // the bones from the armature used by the mesh, .first = animator.renderModelMatrices index, .second = mesh.bones index
 		std::vector<actor_handle>		childActors; // If size() > 0, this actor is a parent to all actors referenced by contained slot_handles
 	private:
 		uint32_t						lastTransformUpdateTick;
@@ -60,14 +60,7 @@ namespace vel
 		//Actor& operator=(const Actor& a);
 
 		// TODO: move to HeadlessScene
-		bool						setAnimator(SkelAnimator* a); // !!! LEFT OFF HERE !!!!!
-		void						setParentActor(Actor* a);
-		void						setParentActorBone(Actor* a, int boneId);
-		void						addChildActor(Actor* a);
-		void						removeParentActor();
-		void						removeChildActor(Actor* child);
-		void						_removeParentActor();
-		void						_removeChildActor(Actor* child);
+		bool						setAnimator(SkelAnimator* a); // TODO: this logic will be part of the Scene::addActor(...) method that includes animator
 		// END
 
 
@@ -77,20 +70,22 @@ namespace vel
 		void						appendRotation(float angle, glm::vec3 axis);
 		void						setScale(glm::vec3 s);
 
-		bool						isAnimated() const;
-		const std::vector<std::pair<unsigned int, unsigned int>>& getActiveBones() const;
 		const Transform&			getTransform() const;
 		const Transform&			getPreviousTransform() const;
+
 		glm::mat4					getWorldMatrix();
-		glm::mat4					getWorldRenderMatrix(float alpha); // contains logic for interpolation
+		glm::mat4					getWorldRenderMatrix(float alpha);
+
 		glm::vec3					getInterpolatedTranslation(float alpha);
 		glm::quat					getInterpolatedRotation(float alpha);
 		glm::vec3					getInterpolatedScale(float alpha);
-		AABB						getWorldAABB();
+
 		const glm::vec3&			getTranslation() const;
 		const glm::quat&			getRotation() const;
 		const glm::vec3&			getScale() const;
+
 		glm::mat4					getMatrix();
-		
+
+		AABB						getWorldAABB();
 	};
 }

@@ -66,7 +66,7 @@ namespace vel
         return this->scale;
     }
 
-    glm::mat4 Transform::getMatrix()
+    glm::mat4 Transform::getMatrix() const
     {
 		// Original
 		//glm::mat4 m = glm::mat4(1.0f);

@@ -27,7 +27,7 @@ namespace vel
 		const glm::vec3&	getTranslation() const;
 		const glm::quat&	getRotation() const;
 		const glm::vec3&	getScale() const;
-		glm::mat4			getMatrix();
+		glm::mat4			getMatrix() const;
 
 
 		glm::vec3			getRotationEulers();
