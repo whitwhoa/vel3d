@@ -26,8 +26,8 @@ namespace vel
 
 	Scene::Scene() :
 		HeadlessScene(),
-		sceneRenderTarget(nullptr),
 		audioGroupKey(-1),
+		sceneRenderTarget(),
 		bufferIds()
 	{
 		// TODO: did we forget one?
@@ -38,10 +38,7 @@ namespace vel
 
 
 		this->sceneRenderTarget = Runtime::_gpu->createFinalRenderTarget(
-			"sceneRenderTarget_" + this->getId(),
-			Runtime::_window->getWindowSize().x,
-			Runtime::_window->getWindowSize().y
-		);
+			Runtime::_window->getWindowSize().x, Runtime::_window->getWindowSize().y);
 
 		if(Runtime::_audioDevice)
 			this->audioGroupKey = Runtime::_audioDevice->generateGroupKey();
@@ -71,18 +68,17 @@ namespace vel
 
 		for (auto& t : this->textures)
 		{
-			Runtime::_gpu->clearTexture(t.second.get());
+			Runtime::_gpu->clearTexture(t);
 
-			if (t.second->flags & TXT_OPT_CPU_AND_GPU)
-				for (auto& td : t.second->frames)
-					stbi_image_free(td.primaryImageData.data);
+			if (t.flags & TXT_OPT_CPU_AND_GPU)
+				stbi_image_free(t.data);
 		}
 		
 		for (auto& fb : this->fontBitmaps)
-			Runtime::_gpu->clearTexture(&fb.second->texture);
+			Runtime::_gpu->clearTexture(fb.second->texture);
 
 		for (auto& s : this->shaders)
-			Runtime::_gpu->clearShader(s.second.get());
+			Runtime::_gpu->clearShader(s.programId);
 
 		for (auto& m : this->meshes)
 		{
@@ -94,9 +90,9 @@ namespace vel
 			Runtime::_audioDevice->removeSound(s);
 
 		for (auto& c : this->cameras)
-			Runtime::_gpu->clearRenderTarget(&c->getRenderTarget());
+			Runtime::_gpu->clearRenderTarget(c->renderTarget);
 
-		Runtime::_gpu->freeFinalRenderTarget(this->sceneRenderTarget.get());
+		Runtime::_gpu->freeFinalRenderTarget(this->sceneRenderTarget);
 	}
 
 	unsigned int HeadlessScene::getId() const

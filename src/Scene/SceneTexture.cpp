@@ -28,7 +28,7 @@ namespace vel
 		texture.flags = flags;
 		this->generateTextureData(path, texture);
 
-		Runtime::_gpu->loadTexture(&texture);
+		Runtime::_gpu->loadTexture(texture);
 
 		texture_handle handle = this->textures.size();
 		this->textures.push_back(texture);

@@ -21,54 +21,53 @@ namespace vel
 {
 	typedef slot_handle actor_handle;
 
+	enum ActFlg : uint32_t
+	{
+		ACTFLG_NONE = 0,
+		ACTFLG_VISIBLE = 1 << 0,
+		ACTFLG_DYNAMIC = 1 << 1,
+		ACTFLG_LERPABLE = 1 << 2,
+		ACTFLG_BILLBOARD = 1 << 3,
+		ACTFLG_BILLBOARD_LOCK_Y = 1 << 4,
+		ACTFLG_ANIMATED_MATERIAL = 1 << 5
+	};
+
 	class Actor
 	{
 	private:
-		uint32_t					lastTransformUpdateTick;
-		Transform					transform;
-		Transform					previousTransform;
-		std::vector<std::pair<unsigned int, unsigned int>> activeBones; // the bones from the armature used by the mesh, .first = animator.renderModelMatrices index, .second = mesh.bones index
-
-		void						_updatePrevTransform();
-
-
-		// TODO: move to HeadlessScene
-		void						_removeParentActor();
-		void						_removeChildActor(Actor* child);
-		// END
-		
-		
-
+		Transform						transform;
+		Transform						previousTransform;
+		std::vector<std::pair<uint32_t, uint32_t>> activeBones; // the bones from the armature used by the mesh, .first = animator.renderModelMatrices index, .second = mesh.bones index
 	public:
-		Stage*							stage;
-		material_handle					material;
-		Mesh*							mesh;
-		SkelAnimator*					animator;
-		actor_handle					parentActor; // If has value, this actor is a child of the actor referenced by slot_handle
-		int								parentActorBone; // Used in conjunction with parentActor, when present (> -1)
 		std::vector<actor_handle>		childActors; // If size() > 0, this actor is a parent to all actors referenced by contained slot_handles
-		bool							visible;
-		bool							dynamic;
-		bool							lerpable;
-		bool							billboard;
-		bool							billboardLockY;
+	private:
+		uint32_t						lastTransformUpdateTick;
+	public:
+		int32_t							parentActorBone; // Used in conjunction with parentActor, when present (> -1)
+		uint32_t						flags;
+		material_handle					material;
+		actor_handle					parentActor; // If has value, this actor is a child of the actor referenced by slot_handle
+		SkelAnimator*					animator;
+		Mesh*							mesh;
+		Stage*							stage;
 
+	private:
+		void						_updatePrevTransform();
+		
+	public:
 		Actor();
 		//Actor(const Actor& original);
 		//Actor& operator=(const Actor& a);
 
-		// TODO: move to Scene
-		void						setDynamic(bool dynamic, bool lerpable = true);
-		void						setVisible(bool v);
-		// END
-
 		// TODO: move to HeadlessScene
-		bool						setAnimator(SkelAnimator* a);
+		bool						setAnimator(SkelAnimator* a); // !!! LEFT OFF HERE !!!!!
 		void						setParentActor(Actor* a);
 		void						setParentActorBone(Actor* a, int boneId);
 		void						addChildActor(Actor* a);
 		void						removeParentActor();
 		void						removeChildActor(Actor* child);
+		void						_removeParentActor();
+		void						_removeChildActor(Actor* child);
 		// END
 
 

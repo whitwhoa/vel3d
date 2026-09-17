@@ -14,7 +14,6 @@
 #include <vel/Scene/BufferIds.h>
 #include <vel/Scene/Actor/Actor.h>
 #include <vel/Scene/MeshLoader/MeshLoaderInterface.h>
-#include <vel/Scene/Mesh/MeshFlag.h>
 #include <vel/Scene/GeoPool/GeoPool.h>
 #include <vel/Scene/Animation/SkelAnimator.h>
 #include <vel/Scene/Camera/Camera.h>
@@ -28,7 +27,6 @@
 #include <vel/Scene/Font/FontBitmap.h>
 #include <vel/Scene/Font/FontGlyphInfo.h>
 #include <vel/Scene/Text.h>
-#include <vel/Scene/Billboard.h>
 #include <vel/Scene/Mesh/PlaneOrigin.h>
 #include <vel/Scene/ActorGpuData.h>
 
@@ -136,6 +134,15 @@ namespace vel
 		void			draw(float frameTime, float alpha);
 		virtual void	immediateLoop(float frameTime, float renderLerpInterval) = 0;
 	
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// SceneActor
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	protected:
+		void			hideActor(actor_handle h);
+		void			showActor(actor_handle h);
+
+
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneStage
 	////////////////////////////////////////////////////////////////////////////////////////////////

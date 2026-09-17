@@ -8,11 +8,7 @@
 namespace vel
 {
 	Actor::Actor() :
-		visible(true),
-		dynamic(false),
-		lerpable(false),
-		billboard(false),
-		billboardLockY(false),
+		flags(ACTFLG_VISIBLE),
 		lastTransformUpdateTick(0),
 		transform(Transform()),
 		previousTransform(Transform()),
@@ -60,7 +56,7 @@ namespace vel
 
 	void Actor::_updatePrevTransform()
 	{
-		if (!this->dynamic || (this->dynamic && !this->lerpable))
+		if (!(this->flags & ACTFLG_DYNAMIC) || ((this->flags & ACTFLG_DYNAMIC) && !(this->flags & ACTFLG_LERPABLE)))
 			return;
 
 		if (this->lastTransformUpdateTick != Runtime::_currentSimTick)
@@ -210,12 +206,6 @@ namespace vel
 		return Transform::interpolateScales(this->previousTransform, this->transform, alpha);
 	}
 
-	void Actor::setDynamic(bool dynamic, bool lerpable)
-	{
-		this->dynamic = dynamic;
-		this->lerpable = lerpable;
-	}
-
 	void Actor::setParentActor(Actor* a)
 	{
 		// set the parent relationship
@@ -273,14 +263,6 @@ namespace vel
 	const Transform& Actor::getPreviousTransform() const
 	{
 		return this->previousTransform;
-	}
-
-	void Actor::setVisible(bool v)
-	{
-		this->visible = v;
-
-		for (auto& ca : this->childActors)
-			ca->setVisible(v);
 	}
 
 	bool Actor::isAnimated() const

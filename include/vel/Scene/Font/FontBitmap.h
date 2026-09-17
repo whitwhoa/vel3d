@@ -3,7 +3,7 @@
 #include <string>
 #include <memory>
 
-#include <vel/Scene/Texture/Texture.h>
+#include <vel/Scene/Texture.h>
 
 namespace vel
 {
@@ -31,28 +31,16 @@ namespace vel
 		uint32_t		firstChar = ' ';
 		uint32_t		charCount = '~' - ' ' + 1;
 
-		float ascent = 0.0f;
-		float descent = 0.0f;
-		float lineGap = 0.0f;
-		float fontHeight = 0.0f; // complete ascent-to-descent height
-		float lineHeight = 0.0f; // distance from one baseline to the next
-
-		//fb_packedchar* charInfo; // cast as stbtt_packedchar
-		//unsigned char* data;
-
-		//std::shared_ptr<unsigned char[]> data;
-		//std::shared_ptr<fb_packedchar[]> charInfo;
+		float			ascent = 0.0f;
+		float			descent = 0.0f;
+		float			lineGap = 0.0f;
+		float			fontHeight = 0.0f; // complete ascent-to-descent height
+		float			lineHeight = 0.0f; // distance from one baseline to the next
 
 		std::unique_ptr<unsigned char[]> data;
 		std::unique_ptr<fb_packedchar[]> charInfo;
 
 		Texture			texture;
-
-		//~FontBitmap()
-		//{
-		//	delete this->data;
-		//	delete this->charInfo;
-		//}
 	};
 
 	
