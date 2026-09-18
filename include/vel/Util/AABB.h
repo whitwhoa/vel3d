@@ -16,16 +16,10 @@ namespace vel
 
 	public:
 		
-		// Construct using a vector of vertices, where min/max edges are generated
-		// as the encompassing volumn of vector of vertices
+		AABB();
+		AABB(glm::vec3 min, glm::vec3 max);
 		AABB(const std::vector<glm::vec3>& inputVectors);
 
-		// Construct AABB using a min vector and max vector
-		AABB(glm::vec3 min, glm::vec3 max);
-
-		// Default
-		AABB();
-		
 		const std::vector<glm::vec3>&	getCorners();
 		glm::vec3						getFarthestCorner();
 		glm::vec3						getSize();

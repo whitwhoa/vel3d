@@ -158,6 +158,8 @@ namespace vel
 		////////////////////////////////////
 		// New Stuff
 		////////////////////////////////////
+		void								createBuffer(uint32_t* id);
+		void								deleteBuffer(uint32_t* id);
 		void								initSceneBuffers(BufferIds& b);
 		void								bindSceneBuffers(BufferIds& b);
 		void								freeSceneBuffers(BufferIds& b);

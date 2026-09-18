@@ -52,25 +52,24 @@ namespace vel
 
 	Scene::~Scene()
 	{
-		/*
-			!!!!!! TODO: YOU MUST REMEMBER TO UPDATE THIS ONCE WE HAVE EVERYTHING ELSE FIGURED OUT !!!!!!!!!
-		*/
-
 		SPDLOG_DEBUG("Freeing assets for scene: {}", this->getId());
 
-		// Note: we repeat some code here to optimize for destruction. If we called the
-		// explicit removal methods of each asset type, that's an additional method call,
-		// plus validation check, plus logic, plus another hash lookup for the erase. Doing
-		// it this way, we clear only what needs cleared, then let memory be freed when Scene
-		// goes out of scope (ie is removed from App)
+		Runtime::_gpu->freeSceneBuffers(this->bufferIds);
 
-		// Note: materials do not require explicit removal
+		for (auto& s : this->stages)
+		{
+			for (auto& ob : s->opaqueBuckets)
+				Runtime::_gpu->deleteBuffer(&ob.indirectBuffer);
+
+			for (auto& tb : s->transparentBuckets)
+				Runtime::_gpu->deleteBuffer(&tb.indirectBuffer);
+		}
 
 		for (auto& t : this->textures)
 		{
 			Runtime::_gpu->clearTexture(t);
 
-			if (t.flags & TXT_OPT_CPU_AND_GPU)
+			if (t.flags & TXTRFLG_CPU_AND_GPU)
 				stbi_image_free(t.data);
 		}
 		

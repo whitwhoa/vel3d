@@ -10,10 +10,12 @@
 #include <vel/Scene/Animation/SkelAnimator.h>
 #include <vel/Scene/Mesh/Mesh.h>
 #include <vel/Scene/Actor/Transform.h>
+#include <vel/Scene/Actor/DrawBucketLocation.h>
 #include <vel/Scene/Material.h>
 #include <vel/Scene/Stage/Stage.h>
 
 #include <vel/Util/slot_map.h>
+#include <vel/Util/FrameAnimator.h>
 
 
 
@@ -27,9 +29,9 @@ namespace vel
 		ACTFLG_VISIBLE = 1 << 0,
 		ACTFLG_DYNAMIC = 1 << 1,
 		ACTFLG_LERPABLE = 1 << 2,
-		ACTFLG_BILLBOARD = 1 << 3,
-		ACTFLG_BILLBOARD_LOCK_Y = 1 << 4,
-		ACTFLG_ANIMATED_MATERIAL = 1 << 5
+		ACTFLG_ANIMATED_MATERIAL = 1 << 3,
+		ACTFLG_BILLBOARD = 1 << 4,
+		ACTFLG_BILLBOARD_LOCK_Y = 1 << 5
 	};
 
 	class Actor
@@ -50,6 +52,14 @@ namespace vel
 		SkelAnimator*					animator;
 		Mesh*							mesh;
 		Stage*							stage;
+		
+		std::vector<uint32_t>			materialIndices; // mesh.sections[n].materialIndex selects one slot in this vector.
+		std::vector<DrawBucketLocation> drawBuckets; // one draw bucket per mesh section
+		std::vector<FrameAnimator>		materialAnimators; // lockstep with materialIndices. Selects one texture inside the corresponding Material, or ignored (and zero used in its place if material not animated)
+
+		glm::vec4						colorMultiplier;
+		std::vector<glm::vec3>			ambientCube;
+		texture_handle					lightmapTexture;
 
 	private:
 		void						_updatePrevTransform();

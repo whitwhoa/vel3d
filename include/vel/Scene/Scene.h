@@ -151,11 +151,13 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneActor
 	////////////////////////////////////////////////////////////////////////////////////////////////
+	private:
+		DrawBucketLocation	findOrCreateDrawBucket(Stage* stage, RenderPass pass, uint32_t shader, uint32_t vao);
 	protected:
-		actor_handle	addActor(Stage* stage, Mesh* mesh, uint32_t flags); // TODO: leaving off here. This probably isn't right.
-		void			hideActor(actor_handle h);
-		void			showActor(actor_handle h);
-		glm::mat4		getActorWorldRenderMatrix(actor_handle h, float alpha);
+		actor_handle		addActor(Stage* stage, Mesh* mesh, std::vector<material_handle> materials, uint32_t flags);
+		void				hideActor(actor_handle h);
+		void				showActor(actor_handle h);
+		glm::mat4			getActorWorldRenderMatrix(actor_handle h, float alpha);
 
 		
 

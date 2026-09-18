@@ -104,6 +104,24 @@ namespace vel
 			this->showActor(h2);
 	}
 
+	DrawBucketLocation Scene::findOrCreateDrawBucket(Stage* stage, RenderPass pass, uint32_t shader, uint32_t vao)
+	{
+		std::vector<DrawBucket>& buckets = pass == RENDER_PASS_OPAQUE ? stage->opaqueBuckets : stage->transparentBuckets;
+
+		for (uint32_t i = 0; i < buckets.size(); i++)
+		{
+			if (buckets[i].shader == shader && buckets[i].vao == vao)
+				return { pass, i };
+		}
+
+		DrawBucket& bucket = buckets.emplace_back();
+		bucket.shader = shader;
+		bucket.vao = vao;
+		Runtime::_gpu->createBuffer(&bucket.indirectBuffer);
+
+		return { pass, static_cast<uint32_t>(buckets.size() - 1) };
+	}
+
 	actor_handle HeadlessScene::addActor(Mesh* mesh)
 	{
 		Actor a{};
@@ -111,13 +129,26 @@ namespace vel
 		return this->actors.insert(a);
 	}
 
-	actor_handle Scene::addActor(Stage* stage, Mesh* mesh, uint32_t flags)
+	actor_handle Scene::addActor(Stage* stage, Mesh* mesh, std::vector<material_handle> materials, uint32_t flags)
 	{
 		Actor a{};
+		a.stage = stage;
 		a.mesh = mesh;
 		a.flags = flags;
+		a.materialIndices = materials;
 
+		for (uint32_t i = 0; i < materials.size(); i++)
+		{
+			Material& m = this->materials[materials[i]];
 
+			if (m.flags & MTLFLG_IS_TRANSPARENT)
+				a.drawBuckets.push_back(this->findOrCreateDrawBucket(stage, RENDER_PASS_TRANSPARENT, m.shaderProgramId, mesh->gp->gpuGeoPool->VAO));
+			else
+				a.drawBuckets.push_back(this->findOrCreateDrawBucket(stage, RENDER_PASS_OPAQUE, m.shaderProgramId, mesh->gp->gpuGeoPool->VAO));
+
+			if (flags & ACTFLG_ANIMATED_MATERIAL)
+				a.materialAnimators.emplace_back(m.textures.size(), 24.f);
+		}
 
 		return this->actors.insert(a);
 	}

@@ -12,7 +12,7 @@ namespace vel
 
     struct DrawBucketLocation
     {
-        RenderPass pass = RENDER_PASS_OPAQUE;
-        uint32_t index = 0;
+        RenderPass  pass = RENDER_PASS_OPAQUE;
+        uint32_t    index = 0;
     };
 }

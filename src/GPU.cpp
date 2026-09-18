@@ -971,7 +971,7 @@ namespace vel
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_HALF_FLOAT, nullptr);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		if (t.flags & TXT_OPT_CLAMP_UVS)
+		if (t.flags & TXTRFLG_CLAMP_UVS)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -1030,7 +1030,7 @@ namespace vel
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		// set texture parameters
-		if (t.flags & TXT_OPT_CLAMP_UVS)
+		if (t.flags & TXTRFLG_CLAMP_UVS)
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -1041,16 +1041,16 @@ namespace vel
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		}
 			
-		if (t.flags & TXT_OPT_DISABLE_FILTER)
+		if (t.flags & TXTRFLG_FILTER)
+		{
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		}
+		else
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-		}
-		else
-		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		}
 
 		// obtain texture's DSA handle
@@ -1059,7 +1059,7 @@ namespace vel
 		// set texture's DSA handle as resident so it can be accessed in shaders
 		glMakeTextureHandleResidentARB(t.dsaHandle);
 
-		if(!(t.flags & TXT_OPT_CPU_AND_GPU))
+		if(!(t.flags & TXTRFLG_CPU_AND_GPU))
 			stbi_image_free(t.data);
 	}
 
@@ -1435,6 +1435,16 @@ void main()
 	///////////////////////////////////////////
 	// New stuff
 	///////////////////////////////////////////
+	void GPU::createBuffer(uint32_t* id)
+	{
+		glCreateBuffers(1, id);
+	}
+
+	void GPU::deleteBuffer(uint32_t* id)
+	{
+		glDeleteBuffers(1, id);
+	}
+
 	void GPU::initSceneBuffers(BufferIds& b)
 	{
 		glCreateBuffers(1, &b.cameraUbo);

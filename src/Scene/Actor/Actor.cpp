@@ -17,7 +17,9 @@ namespace vel
 		animator(nullptr),
 		mesh(nullptr),
 		material(-1),
-		stage(nullptr)
+		stage(nullptr),
+		lightmapTexture(-1),
+		colorMultiplier({1.f, 1.f, 1.f, 1.f})
 	{}
 
 	//Actor::Actor(const Actor& a) :

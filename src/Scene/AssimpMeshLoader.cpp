@@ -3,7 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include <vel/Util/functions.h>
-#include <vel/Scene/Mesh/AssimpMeshLoader.h>
+#include <vel/Scene/MeshLoader/AssimpMeshLoader.h>
 
 
 namespace vel
@@ -336,7 +336,7 @@ namespace vel
 					this->processMesh(cm.second, finalMesh.get());
 					sectionIndexCount = finalMesh->gp->indices.size() - sectionFirstIndex;
 
-					auto it= materialSlots.try_emplace(cm.second->mMaterialIndex, static_cast<uint32_t>(materialSlots.size())).first;
+					auto it = materialSlots.try_emplace(cm.second->mMaterialIndex, static_cast<uint32_t>(materialSlots.size())).first;
 
 					finalMesh->sections.emplace_back(sectionFirstIndex, sectionIndexCount, it->second);
 				}

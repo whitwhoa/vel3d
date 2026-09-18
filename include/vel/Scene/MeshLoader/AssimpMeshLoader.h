@@ -10,7 +10,7 @@
 #include <assimp/postprocess.h>
 
 #include <vel/Scene/Mesh/Mesh.h>
-#include <vel/Scene/Mesh/MeshLoaderInterface.h>
+#include <vel/Scene/MeshLoader/MeshLoaderInterface.h>
 
 
 namespace vel

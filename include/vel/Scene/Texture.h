@@ -8,12 +8,12 @@ namespace vel
 {
 	typedef unsigned int texture_handle;
 
-	enum TextureFlags : uint32_t
+	enum TxtrFlg : uint32_t
 	{
-		TXT_OPT_NONE = 0,
-		TXT_OPT_CLAMP_UVS = 1 << 1,
-		TXT_OPT_CPU_AND_GPU = 1 << 2,
-		TXT_OPT_DISABLE_FILTER = 1 << 3
+		TXTRFLG_NONE = 0,
+		TXTRFLG_CLAMP_UVS = 1 << 1,
+		TXTRFLG_CPU_AND_GPU = 1 << 2,
+		TXTRFLG_FILTER = 1 << 3
 	};
 
 	struct Texture
