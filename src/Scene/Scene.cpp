@@ -67,6 +67,9 @@ namespace vel
 
 		for (auto& t : this->textures)
 		{
+			if (t.flags & TXTRFLG_RT_WRAPPER)
+				continue;
+
 			Runtime::_gpu->clearTexture(t);
 
 			if (t.flags & TXTRFLG_CPU_AND_GPU)

@@ -420,7 +420,7 @@ namespace vel
 
 		SPDLOG_DEBUG("Scene::removeFontBitmap(): Remove FontBitmap: {}", pFontBitmap->fontName);
 
-		Runtime::_gpu->clearTexture(&pFontBitmap->texture);
+		Runtime::_gpu->clearTexture(pFontBitmap->texture);
 
 		this->fontBitmaps.erase(pFontBitmap->fontName);
 	}

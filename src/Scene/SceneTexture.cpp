@@ -58,5 +58,26 @@ namespace vel
 		return out;
 	}
 
+	texture_handle Scene::createCameraTexture(Camera* c)
+	{
+		std::string name = "camera_" + std::to_string(c->getId());
+		auto it = this->textureHandleMap.find(name);
+		if (it != this->textureHandleMap.end())
+			return it->second;
+
+		SPDLOG_DEBUG("Scene::createCameraTexture(): Creating new camera texture: {}", name);
+
+		Texture texture;
+		texture.flags = TXTRFLG_RT_WRAPPER;
+		texture.bufferId = c->renderTarget.opaqueBufferId;
+		texture.dsaHandle = c->renderTarget.opaqueDsaHandle;
+
+		texture_handle handle = this->textures.size();
+		this->textures.push_back(texture);
+		this->textureHandleMap.emplace(name, handle);
+
+		return handle;
+	}
+
 
 } // END NAMESPACE

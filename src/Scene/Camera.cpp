@@ -6,15 +6,10 @@
 #include <vel/Scene/Camera/Camera.h>
 
 
-
-using json = nlohmann::json;
-
 namespace vel
 {
-	unsigned int Camera::nextCameraId = 1;
-
 	Camera::Camera(CameraType type) :
-		id(Camera::nextCameraId++),
+		id(Runtime::_nextId++),
 		resolution(Runtime::_window->getResolution()),
 		previousResolution(glm::ivec2(0, 0)),
 		renderTarget(Runtime::_gpu->createRenderTarget(resolution.x, resolution.y)),
@@ -22,8 +17,8 @@ namespace vel
 		fovScale(75.0f),
 		nearPlane(0.1f),
 		farPlane(100.0f),
-		position(glm::vec3(0.0f, 0.0f, 0.0f)),
-		lookAt(glm::vec3(0.0f, 0.0f, 0.0f)),
+		position(glm::vec3(0.0f)),
+		lookAt(glm::vec3(0.0f)),
 		up(glm::vec3(0.0f, 1.0f, 0.0f)),
 		gpuData({}),
 		finalRenderCam(true),

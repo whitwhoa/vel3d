@@ -8,7 +8,13 @@ namespace vel
 	BasicSkelAnim::BasicSkelAnim(ozz::animation::Skeleton* skeleton) :
 		SkelAnimator(skeleton),
 		animation(nullptr)
-	{}
+	{
+		// Since this example is very basic, the only buffers we're using are the
+		// required buffers that are initialized in SkelAnimator base class
+
+		// Allocate a context that matches animation requirements.
+		this->context.Resize(this->skeleton->num_joints());
+	}
 
 	void BasicSkelAnim::setAnimation(ozz::animation::Animation* a)
 	{
@@ -20,13 +26,6 @@ namespace vel
 		// Skeleton and animation needs to match.
 		if (this->skeleton->num_joints() != this->animation->num_tracks())
 			return false;
-
-		// Since this example is very basic, the only buffers we're using are the
-		// required buffers that are initialized in SkelAnimator base class, which is
-		// why this looks odd compared to the ozz example
-
-		// Allocate a context that matches animation requirements.
-		this->context.Resize(this->skeleton->num_joints());
 
 		return true;
 	}

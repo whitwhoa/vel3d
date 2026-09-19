@@ -2,6 +2,7 @@
 
 #include <vel/Runtime.h>
 #include <vel/Util/functions.h>
+#include <vel/Util/Assert.h>
 #include <vel/Scene/Scene.h>
 
 
@@ -152,6 +153,43 @@ namespace vel
 
 		return this->actors.insert(a);
 	}
+
+	actor_handle Scene::addActor(Stage* stage, Mesh* mesh, SkelAnimator* animator, std::vector<material_handle> materials, uint32_t flags)
+	{
+		Actor a{};
+		a.stage = stage;
+		a.mesh = mesh;
+		a.flags = flags;
+		a.materialIndices = materials;
+		a.animator = animator;
+
+		for (uint32_t i = 0; i < materials.size(); i++)
+		{
+			Material& m = this->materials[materials[i]];
+
+			if (m.flags & MTLFLG_IS_TRANSPARENT)
+				a.drawBuckets.push_back(this->findOrCreateDrawBucket(stage, RENDER_PASS_TRANSPARENT, m.shaderProgramId, mesh->gp->gpuGeoPool->VAO));
+			else
+				a.drawBuckets.push_back(this->findOrCreateDrawBucket(stage, RENDER_PASS_OPAQUE, m.shaderProgramId, mesh->gp->gpuGeoPool->VAO));
+
+			if (flags & ACTFLG_ANIMATED_MATERIAL)
+				a.materialAnimators.emplace_back(m.textures.size(), 24.f);
+		}
+
+		unsigned int index = 0;
+		for (auto& meshBone : a.mesh->bones)
+		{
+			int skelBoneIndex = a.animator->getBoneIndex(meshBone.name);
+			VEL_ASSERT(skelBoneIndex != -1, ("Actor::setAnimator(): Skeleton does not contain bone with name " + meshBone.name).c_str());
+
+			a.activeBones.push_back(std::pair<unsigned int, unsigned int>(skelBoneIndex, index));
+			index++;
+		}
+
+		return this->actors.insert(a);
+	}
+
+
 
 
 

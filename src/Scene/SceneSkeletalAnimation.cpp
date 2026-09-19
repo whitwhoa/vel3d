@@ -127,14 +127,14 @@ namespace vel
 
 	void HeadlessScene::updateAnimators(float delta)
 	{
-		for (auto& s : this->stages)
-			s->updateAnimators(delta);
+		for (auto& a : this->animators)
+			a->update(delta);
 	}
 
 	void Scene::lerpAnimators(float alpha)
 	{
-		for (auto& s : this->stages)
-			s->lerpAnimators(alpha);
+		for (auto& a : this->animators)
+			a->renderLerp(alpha);
 	}
 
 } // END NAMESPACE

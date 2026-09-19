@@ -6,8 +6,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <nlohmann/json.hpp>
-
 #include <vel/Scene/Camera/RenderTarget.h>
 
 namespace vel
@@ -18,6 +16,7 @@ namespace vel
 		PERSPECTIVE
 	};
 
+
 	struct alignas(16) CameraGpuData
 	{
 		glm::mat4 viewMatrix = glm::mat4(1.f);
@@ -25,12 +24,11 @@ namespace vel
 	};
 	static_assert(sizeof(CameraGpuData) == 128);
 
+
 	class Camera
 	{
 	private:
-		static unsigned int		nextCameraId;
 		unsigned int			id;
-
 	public:
 		glm::ivec2				resolution;
 		glm::ivec2				previousResolution;

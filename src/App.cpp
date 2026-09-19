@@ -267,8 +267,6 @@ namespace vel
 			//double t2 = Runtime::seconds();
 			//SPDLOG_TRACE("{:.15f}", t2 - t1);
 
-			this->activeScene->updateBillboards();
-
 			this->activeScene->internalImmediateLoop(dt, renderLerp);
 
 			this->activeScene->updateTexts();

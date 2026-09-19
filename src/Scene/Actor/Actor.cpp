@@ -143,34 +143,6 @@ namespace vel
 		return this->previousTransform;
 	}
 
-	bool Actor::setAnimator(SkelAnimator* a)
-	{
-		if (!this->mesh)
-		{
-			SPDLOG_ERROR("Actor::setAnimator(): Attempting to add animator to actor that does not contain a mesh");
-			return false;
-		}
-
-		this->animator = a;
-		this->activeBones.clear();
-
-		unsigned int index = 0;
-		for (auto& meshBone : this->mesh->bones)
-		{
-			int skelBoneIndex = this->animator->getBoneIndex(meshBone.name);
-			if (skelBoneIndex == -1)
-			{
-				SPDLOG_ERROR("Actor::setAnimator(): Skeleton does not contain bone with name {}.", meshBone.name);
-				return false;
-			}
-
-			this->activeBones.push_back(std::pair<unsigned int, unsigned int>(skelBoneIndex, index));
-			index++;
-		}
-
-		return true;
-	}
-
 	AABB Actor::getWorldAABB()
 	{
 		if (this->mesh == nullptr)

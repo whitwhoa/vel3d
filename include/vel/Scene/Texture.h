@@ -13,7 +13,8 @@ namespace vel
 		TXTRFLG_NONE = 0,
 		TXTRFLG_CLAMP_UVS = 1 << 1,
 		TXTRFLG_CPU_AND_GPU = 1 << 2,
-		TXTRFLG_FILTER = 1 << 3
+		TXTRFLG_FILTER = 1 << 3,
+		TXTRFLG_RT_WRAPPER = 1 << 4
 	};
 
 	struct Texture

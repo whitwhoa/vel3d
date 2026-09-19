@@ -26,7 +26,7 @@ namespace vel
 	struct Mesh
 	{
 		AABB aabb;
-		std::string name = ""; // TODO: if we store Meshes in unordered_map where key is name...is this necessary?
+		std::string name = "";
 		std::vector<MeshBone> bones;
 		std::vector<MeshSection> sections; // sub-sections of the overall mesh
 		GeoPool* gp = nullptr; // non-owning pointer to Mesh data, optionally containing VBO/EBO/VAO ints refers to

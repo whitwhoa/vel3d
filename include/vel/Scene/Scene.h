@@ -132,13 +132,14 @@ namespace vel
 		std::vector<glm::vec4> 											actorAmbientCube;
 		std::vector<glm::mat4> 											actorBoneMatrices;
 		
-
-
 		std::unordered_map<std::string, std::unique_ptr<FontBitmap>>	fontBitmaps;
-		std::vector<std::string>										soundsInUse;
+		std::vector<std::unique_ptr<Text>>								texts;
+
 		std::unordered_map<VtxLayout, std::unique_ptr<GeoPool>>			renderGeoPools;
 		std::unordered_map<std::string, std::unique_ptr<GeoPool>>		renderSoloGeoPools;
-		std::vector<std::unique_ptr<Text>>								texts;
+
+		std::vector<std::string>										soundsInUse;
+		
 	public:
 		Scene();
 		~Scene();
@@ -155,12 +156,10 @@ namespace vel
 		DrawBucketLocation	findOrCreateDrawBucket(Stage* stage, RenderPass pass, uint32_t shader, uint32_t vao);
 	protected:
 		actor_handle		addActor(Stage* stage, Mesh* mesh, std::vector<material_handle> materials, uint32_t flags);
+		actor_handle		addActor(Stage* stage, Mesh* mesh, SkelAnimator* animator, std::vector<material_handle> materials, uint32_t flags);
 		void				hideActor(actor_handle h);
 		void				showActor(actor_handle h);
 		glm::mat4			getActorWorldRenderMatrix(actor_handle h, float alpha);
-
-		
-
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneStage
@@ -229,24 +228,13 @@ namespace vel
 		Actor*						addContinuousLine(const std::vector<glm::vec2>& points, glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float thickness = 1.f);
 		std::unique_ptr<Mesh>		linePointsToMesh(const std::vector<glm::vec2>& points);
 		std::unique_ptr<Mesh>		lineSegmentsToMesh(const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points);
-
-
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	// SceneBillboard
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	private:
-		std::unique_ptr<Mesh>		loadBillboardMesh(const std::string& name, float width, float height);
-	protected:
-		Billboard*					addBillboard(Material* material, Camera* parentCamera, float width = 1.0f, float height = 1.0f);
-		Billboard*					addBillboard(Material* material, Camera* parentCamera, Mesh* mesh); // allows for re-use of mesh
-	public:
-		void						updateBillboards();
 		
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneMesh
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	protected:
 		std::vector<Mesh*>			loadMesh(const std::string& path, uint32_t meshFlags = MESHFLAG_POOLED | MESHFLAG_RENDERABLE) override;
+		Mesh*						loadBillboardMesh(const std::string& name, float width, float height);
 		Mesh*						addMesh(std::unique_ptr<Mesh> m) override; // This method assumes that the caller understands no duplication checks are occuring
 		void						removeMesh(Mesh* pMesh) override;
 	
@@ -265,17 +253,8 @@ namespace vel
 	public:
 		void						updateAllCameraResolutions(int x, int y);
 		void						clearAllRenderTargetBuffers();
+		texture_handle				createCameraTexture(Camera* c);
 
-	
-		
-		
-		
-	// UNSORTED BELOW THIS LINE
-		
-	Shader*						loadShader(const std::string& name, const std::string& vertFile, const std::string& geomFile, const std::string& fragFile, std::vector<std::string> defs = {});
-	void						removeShader(Shader* pShader);
-		
+	}; // END SCENE CLASS
 
-	};
-
-}
+} // END NAMESPACE
