@@ -1064,7 +1064,7 @@ namespace vel
 			stbi_image_free(t.data);
 	}
 
-	void GPU::loadFontBitmapTexture(FontBitmap* fb)
+	Texture GPU::generateFontBitmapTexture(FontBitmap* fb)
 	{
 		Texture t;
 
@@ -1083,20 +1083,18 @@ namespace vel
 			fb->data.get()
 		);
 
-		// TODO: verify these don't cause trouble
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-		// reset pack alignment to default
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4); // reset pack alignment to default
 
 
 		t.dsaHandle = glGetTextureHandleARB(t.bufferId);
 		glMakeTextureHandleResidentARB(t.dsaHandle);
 
-		fb->texture = t;
+		return t;
 	}
 
 	glm::ivec2 GPU::getActiveCameraViewportSize()

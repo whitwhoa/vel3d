@@ -75,9 +75,6 @@ namespace vel
 			if (t.flags & TXTRFLG_CPU_AND_GPU)
 				stbi_image_free(t.data);
 		}
-		
-		for (auto& fb : this->fontBitmaps)
-			Runtime::_gpu->clearTexture(fb.second->texture);
 
 		for (auto& s : this->shaders)
 			Runtime::_gpu->clearShader(s.programId);

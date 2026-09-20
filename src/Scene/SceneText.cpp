@@ -36,15 +36,15 @@ namespace vel
 		return info;
 	}
 
-	void Scene::buildTextGeometry(Text* ta, Mesh* mesh)
+	void Scene::buildTextGeometry(Text& text, Mesh* mesh)
 	{
 		GeoPoolT<VtxPosNrmlTx>* gp = static_cast<GeoPoolT<VtxPosNrmlTx>*>(mesh->gp);
 		gp->vertices.clear();
 		gp->indices.clear();
 
 
-		ta->caretPositions.clear();
-		ta->logicalWidth = 0.0f;
+		text.caretPositions.clear();
+		text.logicalWidth = 0.0f;
 
 		unsigned int lastIndex = 0;
 		unsigned int lineCount = 1;
@@ -52,25 +52,25 @@ namespace vel
 		float offsetX = 0.0f;
 		float offsetY = 0.0f;
 
-		ta->caretPositions.push_back({ offsetX, -offsetY });
+		text.caretPositions.push_back({ offsetX, -offsetY });
 
-		for (auto c : ta->text)
+		for (auto c : text.text)
 		{
 			if (c == '\n')
 			{
-				if (offsetX > ta->logicalWidth)
-					ta->logicalWidth = offsetX;
+				if (offsetX > text.logicalWidth)
+					text.logicalWidth = offsetX;
 
 				++lineCount;
 				offsetX = 0.0f;
-				offsetY += ta->fontBitmap->lineHeight;
+				offsetY += text.fontBitmap->lineHeight;
 
-				ta->caretPositions.push_back({ offsetX, -offsetY });
+				text.caretPositions.push_back({ offsetX, -offsetY });
 
 				continue;
 			}
 
-			const auto glyphInfo = this->getFontGlyphInfo(c, offsetX, offsetY, ta->fontBitmap);
+			const auto glyphInfo = this->getFontGlyphInfo(c, offsetX, offsetY, text.fontBitmap);
 			offsetX = glyphInfo.offsetX;
 			offsetY = glyphInfo.offsetY;
 
@@ -108,7 +108,7 @@ namespace vel
 
 			lastIndex += 4;
 
-			ta->caretPositions.push_back({ offsetX, -offsetY });
+			text.caretPositions.push_back({ offsetX, -offsetY });
 		}
 
 		mesh->indexCount = gp->indices.size();
@@ -116,36 +116,36 @@ namespace vel
 
 		float minX = mesh->aabb.getMinEdge().x;
 		float maxX = mesh->aabb.getMaxEdge().x;
-		float logicalMaxY = ta->fontBitmap->ascent;
-		float logicalMinY = ta->fontBitmap->descent - static_cast<float>(lineCount - 1) * ta->fontBitmap->lineHeight;
+		float logicalMaxY = text.fontBitmap->ascent;
+		float logicalMinY = text.fontBitmap->descent - static_cast<float>(lineCount - 1) * text.fontBitmap->lineHeight;
 
 		float xOffset = 0.0f;
 		float yOffset = 0.0f;
 
 		// Horizontal alignment can remain based on actual geometry.
-		if (ta->originType == PlaneOrigin::RIGHT_BOTTOM ||
-			ta->originType == PlaneOrigin::RIGHT_CENTER ||
-			ta->originType == PlaneOrigin::RIGHT_TOP)
+		if (text.originType == PlaneOrigin::RIGHT_BOTTOM ||
+			text.originType == PlaneOrigin::RIGHT_CENTER ||
+			text.originType == PlaneOrigin::RIGHT_TOP)
 		{
 			xOffset = maxX;
 		}
-		else if (ta->originType == PlaneOrigin::CENTER_BOTTOM ||
-			ta->originType == PlaneOrigin::CENTER_CENTER ||
-			ta->originType == PlaneOrigin::CENTER_TOP)
+		else if (text.originType == PlaneOrigin::CENTER_BOTTOM ||
+			text.originType == PlaneOrigin::CENTER_CENTER ||
+			text.originType == PlaneOrigin::CENTER_TOP)
 		{
 			xOffset = (minX + maxX) * 0.5f;
 		}
 
 		// Vertical alignment uses stable font metrics.
-		if (ta->originType == PlaneOrigin::LEFT_TOP ||
-			ta->originType == PlaneOrigin::CENTER_TOP ||
-			ta->originType == PlaneOrigin::RIGHT_TOP)
+		if (text.originType == PlaneOrigin::LEFT_TOP ||
+			text.originType == PlaneOrigin::CENTER_TOP ||
+			text.originType == PlaneOrigin::RIGHT_TOP)
 		{
 			yOffset = logicalMaxY;
 		}
-		else if (ta->originType == PlaneOrigin::LEFT_CENTER ||
-			ta->originType == PlaneOrigin::CENTER_CENTER ||
-			ta->originType == PlaneOrigin::RIGHT_CENTER)
+		else if (text.originType == PlaneOrigin::LEFT_CENTER ||
+			text.originType == PlaneOrigin::CENTER_CENTER ||
+			text.originType == PlaneOrigin::RIGHT_CENTER)
 		{
 			yOffset = (logicalMinY + logicalMaxY) * 0.5f;
 		}
@@ -161,16 +161,16 @@ namespace vel
 		}
 		mesh->refreshAABB();
 
-		for (auto& p : ta->caretPositions)
+		for (auto& p : text.caretPositions)
 		{
 			p.x -= xOffset;
 			p.y -= yOffset;
 		}
 
-		ta->logicalHeight = logicalMaxY - logicalMinY;
-		if (offsetX > ta->logicalWidth)
-			ta->logicalWidth = offsetX;
-		//ta->logicalWidth = maabb.getSize().x;
+		text.logicalHeight = logicalMaxY - logicalMinY;
+		if (offsetX > text.logicalWidth)
+			text.logicalWidth = offsetX;
+		//text.logicalWidth = maabb.getSize().x;
 	}
 
 	float Scene::measureFontHeight(const std::string& text, FontBitmap* fb)
@@ -241,7 +241,7 @@ namespace vel
 		{
 			SPDLOG_DEBUG("Scene::loadFontBitmapRaw(): Existing FontBitmap, bypass reload: {}", fontName);
 
-			return this->fontBitmaps.at(fontName).get();
+			return &this->fontBitmaps.at(fontName);
 		}
 
 		SPDLOG_DEBUG("Scene::loadFontBitmapRaw(): Loading new FontBitmap: {}", fontName);
@@ -266,12 +266,12 @@ namespace vel
 		//
 		auto fontData = bytes;
 
-		std::unique_ptr<FontBitmap> fb = std::make_unique<FontBitmap>();
-		fb->fontName = fontName;
-		fb->fontSize = stbFontSize;
-		fb->fontPath = fontPath;
-		fb->data = std::make_unique<unsigned char[]>(fb->textureWidth * fb->textureHeight);
-		fb->charInfo = std::make_unique<fb_packedchar[]>(fb->charCount);
+		FontBitmap fb;
+		fb.fontName = fontName;
+		fb.fontSize = stbFontSize;
+		fb.fontPath = fontPath;
+		fb.data = std::make_unique<unsigned char[]>(fb.textureWidth * fb.textureHeight);
+		fb.charInfo = std::make_unique<fb_packedchar[]>(fb.charCount);
 
 
 		//
@@ -295,12 +295,12 @@ namespace vel
 
 		float fontScale = stbtt_ScaleForPixelHeight(&fontInfo, static_cast<float>(stbFontSize));
 
-		fb->ascent = static_cast<float>(ascent) * fontScale;
-		fb->descent = static_cast<float>(descent) * fontScale;
-		fb->lineGap = static_cast<float>(lineGap) * fontScale;
+		fb.ascent = static_cast<float>(ascent) * fontScale;
+		fb.descent = static_cast<float>(descent) * fontScale;
+		fb.lineGap = static_cast<float>(lineGap) * fontScale;
 
-		fb->fontHeight = fb->ascent - fb->descent;
-		fb->lineHeight = fb->fontHeight + fb->lineGap;
+		fb.fontHeight = fb.ascent - fb.descent;
+		fb.lineHeight = fb.fontHeight + fb.lineGap;
 
 
 		//
@@ -309,10 +309,10 @@ namespace vel
 		int maxAtlasSize = 4096;
 		bool fontPacked = false;
 
-		while (fb->textureWidth <= maxAtlasSize)
+		while (fb.textureWidth <= maxAtlasSize)
 		{
 			stbtt_pack_context context;
-			bool fontInitialized = stbtt_PackBegin(&context, fb->data.get(), fb->textureWidth, fb->textureHeight, 0, 1, nullptr);
+			bool fontInitialized = stbtt_PackBegin(&context, fb.data.get(), fb.textureWidth, fb.textureHeight, 0, 1, nullptr);
 
 			if (!fontInitialized)
 			{
@@ -320,17 +320,17 @@ namespace vel
 				return nullptr;
 			}
 
-			stbtt_PackSetOversampling(&context, fb->oversampleX, fb->oversampleY);
-			fontPacked = stbtt_PackFontRange(&context, fontData.data(), 0, fb->fontSize, fb->firstChar, fb->charCount, (stbtt_packedchar*)fb->charInfo.get());
+			stbtt_PackSetOversampling(&context, fb.oversampleX, fb.oversampleY);
+			fontPacked = stbtt_PackFontRange(&context, fontData.data(), 0, fb.fontSize, fb.firstChar, fb.charCount, (stbtt_packedchar*)fb.charInfo.get());
 
 			stbtt_PackEnd(&context);
 
 			if (fontPacked)
 				break;
 
-			fb->textureWidth *= 2;
-			fb->textureHeight *= 2;
-			fb->data = std::make_unique<unsigned char[]>(fb->textureWidth * fb->textureHeight);
+			fb.textureWidth *= 2;
+			fb.textureHeight *= 2;
+			fb.data = std::make_unique<unsigned char[]>(fb.textureWidth * fb.textureHeight);
 		}
 
 		if (!fontPacked)
@@ -339,51 +339,59 @@ namespace vel
 			return nullptr;
 		}
 
+		this->fontBitmaps.emplace(fb.fontName, fb);
 
-		FontBitmap* rawPtr = fb.get();
-		this->fontBitmaps.emplace(fb->fontName, std::move(fb));
-
-		Runtime::_gpu->loadFontBitmapTexture(rawPtr);
-
-		return rawPtr;
+		return &this->fontBitmaps[fb.fontName];
 	}
 
-	std::unique_ptr<Mesh> Scene::loadTextMesh(Text* ta)
+	std::unique_ptr<Mesh> Scene::loadTextMesh(Text& text)
 	{
 		std::unique_ptr<GeoPoolT<VtxPosNrmlTx>> gp = std::make_unique<GeoPoolT<VtxPosNrmlTx>>();
 
-		std::unique_ptr<Mesh> m = std::make_unique<Mesh>(ta->name + "_mesh");
+		std::unique_ptr<Mesh> m = std::make_unique<Mesh>("TextMesh_" + std::to_string(Runtime::_nextId++));
 		m->gp = gp.get();
 		m->firstIndex = 0;
 		m->baseVertex = 0;
 		m->flags = MESHFLAG_RENDERABLE;
 
-		this->buildTextGeometry(ta, m.get());
+		this->buildTextGeometry(text, m.get());
 
 		this->renderSoloGeoPools.emplace(m->name, std::move(gp));
 
 		return m;
 	}
 
-	FontBitmap* Scene::loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath)
+	FontBitmap* Scene::loadFontBitmap(const std::string& fontName, int fontSize)
 	{
-		return this->loadFontBitmapRaw(fontName, fontSize, fontPath);
+		std::string fontPath = Runtime::_config.dataDir + "/fonts/" + fontName + ".ttf";
+		std::string fontName2 = fontName + std::to_string(fontSize);
+		
+		FontBitmap* fb = this->loadFontBitmapRaw(fontName2, fontSize, fontPath);
+
+		Texture t = Runtime::_gpu->generateFontBitmapTexture(fb);
+		texture_handle th = this->textures.size();
+		this->textures.push_back(t);
+
+		fb->texture = th;
 	}
 
-	FontBitmap* Scene::loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath)
+	FontBitmap* Scene::loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx)
 	{
-		if (this->fontBitmaps.contains(fontName))
-		{
-			SPDLOG_DEBUG("Scene::loadFontBitmapVisualHeight(): Existing FontBitmap, bypass reload: {}", fontName);
+		std::string fontPath = Runtime::_config.dataDir + "/fonts/" + fontName + ".ttf";
+		std::string fontName2 = fontName + std::to_string(desiredVisiblePx) + "DVPX";
 
-			return this->fontBitmaps.at(fontName).get();
+		if (this->fontBitmaps.contains(fontName2))
+		{
+			SPDLOG_DEBUG("Scene::loadFontBitmapVisualHeight(): Existing FontBitmap, bypass reload: {}", fontName2);
+
+			return &this->fontBitmaps.at(fontName2);
 		}
 
-		SPDLOG_DEBUG("Scene::loadFontBitmapVisualHeight(): Loading new FontBitmap: {}", fontName);
+		SPDLOG_DEBUG("Scene::loadFontBitmapVisualHeight(): Loading new FontBitmap: {}", fontName2);
 
 		const std::string referenceText = "Hg";
 
-		FontBitmap* testFont = this->loadFontBitmapRaw(fontName + "_calibration", desiredVisiblePx, fontPath);
+		FontBitmap* testFont = this->loadFontBitmapRaw(fontName2 + "_calibration", desiredVisiblePx, fontPath);
 
 		float measuredHeight = this->measureFontHeight(referenceText, testFont);
 
@@ -393,74 +401,57 @@ namespace vel
 		float correction = desiredVisiblePx / measuredHeight;
 		int correctedSize = (int)std::round(desiredVisiblePx * correction);
 
-		this->removeFontBitmap(testFont);
+		this->fontBitmaps.erase(testFont->fontName);
 
-		return this->loadFontBitmapRaw(fontName, correctedSize, fontPath);
+
+		FontBitmap* fb = this->loadFontBitmapRaw(fontName2, correctedSize, fontPath);
+
+		Texture t = Runtime::_gpu->generateFontBitmapTexture(fb);
+		texture_handle th = this->textures.size();
+		this->textures.push_back(t);
+
+		fb->texture = th;
+
+
+		return fb;
 	}
 
-	FontBitmap* Scene::getFontBitmap(const std::string& name)
+	text_handle Scene::addText(Stage* stage, const std::string& font, int fontSize, glm::vec4 color, const std::string& theText, PlaneOrigin originType)
 	{
-		auto it = this->fontBitmaps.find(name);
+		Text t;
+		t.text = theText;
+		t.fontBitmap = this->loadFontBitmap(font, fontSize);
+		t.originType = originType;
 
-		if (it == this->fontBitmaps.end())
-		{
-			SPDLOG_ERROR("Scene::getFontBitmap(): Attempting to get FontBitmap that does not exist: {}", name);
-			return nullptr;
-		}
 
-		return it->second.get();
-	}
+		Mesh* mesh = this->addMesh(std::move(this->loadTextMesh(t)));
 
-	void Scene::removeFontBitmap(FontBitmap* pFontBitmap)
-	{
-		auto it = this->fontBitmaps.find(pFontBitmap->fontName);
 
-		if (it == this->fontBitmaps.end())
-			return;
+		material_handle tMaterialHandle = this->addMaterial(MTLFLG_IS_TEXT | MTLFLG_IS_TRANSPARENT);
+		Material& tMaterial = this->materials[tMaterialHandle];
+		tMaterial.textures.push_back(t.fontBitmap->texture);
 
-		SPDLOG_DEBUG("Scene::removeFontBitmap(): Remove FontBitmap: {}", pFontBitmap->fontName);
 
-		Runtime::_gpu->clearTexture(pFontBitmap->texture);
+		t.actor = this->addActor(stage, mesh, { tMaterialHandle }, ACTFLG_VISIBLE);
 
-		this->fontBitmaps.erase(pFontBitmap->fontName);
-	}
 
-	Text* Scene::addText(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb,
-		glm::vec4 color, PlaneOrigin originType)
-	{
-		std::unique_ptr<Text> t = std::make_unique<Text>();
-		t->name = name;
-		t->text = theText;
-		t->fontBitmap = fb;
-		t->originType = originType;
-
-		// create the mesh using provided FontBitmap and text string
-		Mesh* mesh = this->addMesh(std::move(this->loadTextMesh(t.get())));
-
-		// create material
-		Material* tMaterial = this->addTextMaterial(name + "_material", MTRL_OPT_TRANSLUCENT);
-		tMaterial->addTexture(&fb->texture);
-		tMaterial->setColor(color);
-
-		// add actor pointer to Text.actor
-		t->actor = stage->addActor(name, mesh, tMaterial);
-
-		// add new text actor to stage and return pointer
-		return stage->addText(std::move(t));
+		return this->texts.insert(t);
 	}
 
 	void Scene::updateTexts()
 	{
 		for (auto& t : this->texts)
 		{
-			if (!t->requiresUpdate)
+			if (!t.requiresUpdate)
 				continue;
 
-			this->buildTextGeometry(t.get(), t->actor->mesh);
+			Actor& a = this->actors[t.actor];
 
-			Runtime::_gpu->updateGeoPool(t->actor->mesh->gp);
+			this->buildTextGeometry(t, a.mesh);
+			
+			Runtime::_gpu->updateGeoPool(a.mesh->gp);
 
-			t->requiresUpdate = false;
+			t.requiresUpdate = false;
 		}
 	}
 

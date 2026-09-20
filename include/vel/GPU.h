@@ -80,7 +80,7 @@ namespace vel
 		void								loadGeoPool(GeoPool* gp);
 		void								updateGeoPool(GeoPool* m);
 		void								loadTexture(Texture& t);
-		void								loadFontBitmapTexture(FontBitmap* fb);
+		Texture								generateFontBitmapTexture(FontBitmap* fb);
 
 		RenderTarget						createRenderTarget(unsigned int width, unsigned int height);
 		bool								updateRenderTarget(RenderTarget& rt);

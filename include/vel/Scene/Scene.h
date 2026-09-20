@@ -124,16 +124,16 @@ namespace vel
 		std::unordered_map<unsigned int, shader_handle>					shaderHandleMap;
 		std::vector<Shader>												shaders;
 
-		std::vector<Material>											materials;
-		std::vector<MaterialGpuData>									materialsGpu;
+		std::vector<Material>											materials; // contiguous array of every material, added during load(), NOT modified at runtime
+		std::vector<MaterialGpuData>									materialsGpu; // contiguous array of every material's gpu representation, generated once during load
 		std::vector<uint64_t>											materialTexturesGpu; // contiguous array of every texture in every material, generated once during load
 		
 		std::vector<ActorGpuData> 										actorsGpu;
 		std::vector<glm::vec4> 											actorAmbientCube;
 		std::vector<glm::mat4> 											actorBoneMatrices;
 		
-		std::unordered_map<std::string, std::unique_ptr<FontBitmap>>	fontBitmaps;
-		std::vector<std::unique_ptr<Text>>								texts;
+		std::unordered_map<std::string, FontBitmap>						fontBitmaps;
+		slot_map<Text>													texts;
 
 		std::unordered_map<VtxLayout, std::unique_ptr<GeoPool>>			renderGeoPools;
 		std::unordered_map<std::string, std::unique_ptr<GeoPool>>		renderSoloGeoPools;
@@ -148,40 +148,38 @@ namespace vel
 		void			draw(float frameTime, float alpha);
 		virtual void	immediateLoop(float frameTime, float renderLerpInterval) = 0;
 	
-
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	// SceneActor
-	////////////////////////////////////////////////////////////////////////////////////////////////
-	private:
-		DrawBucketLocation	findOrCreateDrawBucket(Stage* stage, RenderPass pass, uint32_t shader, uint32_t vao);
-	protected:
-		actor_handle		addActor(Stage* stage, Mesh* mesh, std::vector<material_handle> materials, uint32_t flags);
-		actor_handle		addActor(Stage* stage, Mesh* mesh, SkelAnimator* animator, std::vector<material_handle> materials, uint32_t flags);
-		void				hideActor(actor_handle h);
-		void				showActor(actor_handle h);
-		glm::mat4			getActorWorldRenderMatrix(actor_handle h, float alpha);
-
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneStage
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	protected:
 		Stage*						addStage(int pos = -1);
-	
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// SceneActor
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	private:
+		DrawBucketLocation			findOrCreateDrawBucket(Stage* stage, RenderPass pass, uint32_t shader, uint32_t vao);
+	protected:
+		actor_handle				addActor(Stage* stage, Mesh* mesh, std::vector<material_handle> materials, uint32_t flags);
+		actor_handle				addActor(Stage* stage, Mesh* mesh, SkelAnimator* animator, std::vector<material_handle> materials, uint32_t flags);
+		void						hideActor(actor_handle h);
+		void						showActor(actor_handle h);
+		glm::mat4					getActorWorldRenderMatrix(actor_handle h, float alpha);
+
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneText
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	private:
 		FontGlyphInfo				getFontGlyphInfo(uint32_t character, float offsetX, float offsetY, FontBitmap* fb);
-		void						buildTextGeometry(Text* ta, Mesh* mesh);
+		void						buildTextGeometry(Text& ta, Mesh* mesh);
 		float						measureFontHeight(const std::string& text, FontBitmap* fb);
 		FontBitmap*					loadFontBitmapRaw(const std::string& fontName, int stbFontSize, const std::string& fontPath);
-		std::unique_ptr<Mesh>		loadTextMesh(Text* ta);
-	protected:
-		FontBitmap*					loadFontBitmap(const std::string& fontName, int fontSize, const std::string& fontPath);
-		FontBitmap*					loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx, const std::string& fontPath);
-		FontBitmap*					getFontBitmap(const std::string& name);
+		std::unique_ptr<Mesh>		loadTextMesh(Text& ta);
 		void						removeFontBitmap(FontBitmap* pFontBitmap);
-		Text*						addText(Stage* stage, const std::string& name, const std::string& theText, FontBitmap* fb, glm::vec4 color, PlaneOrigin originType = PlaneOrigin::LEFT_BOTTOM);
+	protected:
+		FontBitmap*					loadFontBitmap(const std::string& fontName, int fontSize);
+		FontBitmap*					loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx); // for ui elements where you would expect that font size is in pixels
+		text_handle					addText(Stage* stage, const std::string& font, int fontSize, glm::vec4 color, const std::string& theText, PlaneOrigin originType = PlaneOrigin::LEFT_BOTTOM);
 	public:
 		void						updateTexts();
 	

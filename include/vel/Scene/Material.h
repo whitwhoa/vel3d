@@ -16,17 +16,14 @@ namespace vel
 
 	enum MtlFlg : uint32_t
 	{
-		//MTLFLG_TEXTURES_ANIMATED = 1 << 4, // TODO: this needs to be an actor flag
-		//MTLFLG_SELECTABLE_TEXTURE = 1 << 8, // TODO: this likely needs to be an actor flag
-
 		MTLFLG_NONE = 0,
 		MTLFLG_IS_TRANSPARENT = 1 << 0, // used to be HAS_ALPHA
 		MTLFLG_IS_ALPHA_CUTOUT = 1 << 1, // used to be IS_CUTOUT
 		MTLFLG_IS_ALPHA_MASK = 1 << 2,
 		MTLFLG_IS_BILLBOARD = 1 << 3,
 		MTLFLG_IS_SKINNED = 1 << 4,
-		MTLFLG_IS_RGB = 1 << 5, // NOTE: use white when wanting to control rgba color from actor
-		MTLFLG_IS_RGBA = 1 << 6, // NOTE: use white when wanting to control rgba color from actor
+		MTLFLG_IS_RGB = 1 << 5,
+		MTLFLG_IS_RGBA = 1 << 6,
 		MTLFLG_IS_TEXT = 1 << 7,
 		MTLFLG_IS_LINE = 1 << 8,
 
