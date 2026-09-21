@@ -139,14 +139,17 @@ namespace vel
 		std::unordered_map<std::string, std::unique_ptr<GeoPool>>		renderSoloGeoPools;
 
 		std::vector<std::string>										soundsInUse;
-		
+	
+	private:
+		void			initMaterialData();
 	public:
 		Scene();
 		~Scene();
+		virtual void	immediateLoop(float frameTime, float renderLerpInterval) = 0;
 		virtual void	internalImmediateLoop(float frameTime, float renderLerpInterval);
 		bool			internalLoad() override;
 		void			draw(float frameTime, float alpha);
-		virtual void	immediateLoop(float frameTime, float renderLerpInterval) = 0;
+		
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneStage

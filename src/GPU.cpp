@@ -1444,6 +1444,11 @@ void main()
 		glDeleteBuffers(1, id);
 	}
 
+	void GPU::uploadStaticBufferData(uint32_t id, uint32_t size, void* data)
+	{
+		glNamedBufferData(id, size, data, GL_STATIC_DRAW);
+	}
+
 	void GPU::initSceneBuffers(BufferIds& b)
 	{
 		glCreateBuffers(1, &b.cameraUbo);

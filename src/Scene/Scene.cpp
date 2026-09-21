@@ -30,7 +30,7 @@ namespace vel
 		sceneRenderTarget(),
 		bufferIds()
 	{
-		// TODO: did we forget one?
+		this->renderGeoPools.emplace(VtxLayout::VTX_POS, std::make_unique<GeoPoolT<VtxPos>>());
 		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML, std::make_unique<GeoPoolT<VtxPosNrml>>());
 		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML_TX, std::make_unique<GeoPoolT<VtxPosNrmlTx>>());
 		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML_TX_LM, std::make_unique<GeoPoolT<VtxPosNrmlTxLm>>());
@@ -109,6 +109,48 @@ namespace vel
 		this->immediateLoop(frameTime, renderLerpInterval);
 	}
 
+	void Scene::initMaterialData()
+	{ 
+		this->materialsGpu.clear();
+		this->materialsGpu.reserve(this->materials.size());
+
+		this->materialTexturesGpu.clear();
+
+		for (const Material& material : this->materials)
+		{
+			MaterialGpuData gpuData = {
+				.flags = material.flags,
+				.f1 = material.f1,
+				.f2 = material.f2
+			};
+
+			gpuData.textureOffset = this->materialTexturesGpu.size();
+			gpuData.textureCount = material.textures.size();
+			for (texture_handle th : material.textures)
+				this->materialTexturesGpu.push_back(this->textures[th].dsaHandle);
+
+			this->materialsGpu.push_back(gpuData);
+		}
+
+		if (!this->materialsGpu.empty())
+		{
+			Runtime::_gpu->uploadStaticBufferData(
+				this->bufferIds.materialDataSsbo,
+				this->materialsGpu.size() * sizeof(MaterialGpuData),
+				this->materialsGpu.data()
+			);
+		}
+
+		if (!this->materialTexturesGpu.empty())
+		{
+			Runtime::_gpu->uploadStaticBufferData(
+				this->bufferIds.materialTextureHandlesSsbo,
+				this->materialTexturesGpu.size() * sizeof(uint64_t),
+				this->materialTexturesGpu.data()
+			);
+		}
+	}
+
 	bool HeadlessScene::internalLoad()
 	{
 		return this->load();
@@ -121,6 +163,7 @@ namespace vel
 			Runtime::_gpu->initSceneBuffers(this->bufferIds);
 
 			// TODO: load immutable scene buffers
+
 
 			for (auto& renderGeoPoolKV : this->renderGeoPools)
 				Runtime::_gpu->loadGeoPool(renderGeoPoolKV.second.get());

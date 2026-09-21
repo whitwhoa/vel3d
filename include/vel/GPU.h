@@ -160,6 +160,7 @@ namespace vel
 		////////////////////////////////////
 		void								createBuffer(uint32_t* id);
 		void								deleteBuffer(uint32_t* id);
+		void								uploadStaticBufferData(uint32_t id, uint32_t size, void* data);
 		void								initSceneBuffers(BufferIds& b);
 		void								bindSceneBuffers(BufferIds& b);
 		void								freeSceneBuffers(BufferIds& b);
