@@ -1,4 +1,4 @@
-#include <vel/Util/FrameAnimator.h>
+#include <vel/Scene/Actor/FrameAnimator.h>
 
 namespace vel
 {

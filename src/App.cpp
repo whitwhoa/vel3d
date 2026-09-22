@@ -89,16 +89,16 @@ namespace vel
 			if (s->getId() == id)
 			{
 				// pause current scene audio if it holds a valid group key
-				if (this->activeScene && this->activeScene->getAudioDeviceGroupKey() != -1)
+				if (this->activeScene && this->activeScene->getAudioGroupKey() != -1)
 					Runtime::_audioDevice->pauseCurrentGroup();
 
 				// update active scene
 				this->activeScene = s.get();
 				
 				// swap group keys in audio device and unpause all sounds if scene holds valid group key
-				if (this->activeScene->getAudioDeviceGroupKey() != -1)
+				if (this->activeScene->getAudioGroupKey() != -1)
 				{
-					Runtime::_audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
+					Runtime::_audioDevice->setCurrentGroupKey(this->activeScene->getAudioGroupKey());
 					Runtime::_audioDevice->unpauseCurrentGroup();
 				}
 			}
@@ -117,8 +117,8 @@ namespace vel
 		{
 			this->activeScene = ptrScene;
 
-			if (this->activeScene->getAudioDeviceGroupKey() != -1)
-				Runtime::_audioDevice->setCurrentGroupKey(this->activeScene->getAudioDeviceGroupKey());
+			if (this->activeScene->getAudioGroupKey() != -1)
+				Runtime::_audioDevice->setCurrentGroupKey(this->activeScene->getAudioGroupKey());
 		}
 
 		return ptrScene->internalLoad();

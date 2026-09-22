@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include <vel/Scene/HeadlessScene.h>
+#include <vel/Scene/Scene.h>
 
 namespace vel
 {

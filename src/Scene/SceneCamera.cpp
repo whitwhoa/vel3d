@@ -37,7 +37,7 @@ namespace vel
 		for (auto& c : this->cameras)
 			Runtime::_gpu->clearRenderTargetBuffers(c->renderTarget, 0.0f, 0.0f, 0.0f, 0.0f);
 
-		Runtime::_gpu->clearFinalRenderTarget(this->sceneRenderTarget.get(), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+		Runtime::_gpu->clearFinalRenderTarget(this->sceneRenderTarget, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	}
 
 

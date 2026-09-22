@@ -45,31 +45,27 @@ namespace vel
 			childActors.erase(it);
 	}
 
-	glm::mat4 HeadlessScene::getActorWorldMatrix(actor_handle h)
+	glm::mat4 HeadlessScene::getActorWorldMatrix(Actor& a)
 	{
-		Actor& a = this->actors[h];
-
 		// if this actor has no parent, simply return the matrix of it's transform
 		if (!a.parentActor)
 			return a.getTransform().getMatrix();
 
 		// if this actor is parented to another actor, and not to that actor's bone
 		if (a.parentActorBone == -1)
-			return this->getActorWorldMatrix(a.parentActor) * a.getTransform().getMatrix();
+			return this->getActorWorldMatrix(this->actors[a.parentActor]) * a.getTransform().getMatrix();
 
 		// if this actor is parented to the bone of its parent actor
-		return this->getActorWorldMatrix(a.parentActor) *
+		return this->getActorWorldMatrix(this->actors[a.parentActor]) *
 			ozzFloat4x4ToGlmMat4(this->actors[a.parentActor].animator->getSimBoneMatrix(a.parentActorBone)) *
 			a.getTransform().getMatrix();
 	}
 
-	glm::mat4 Scene::getActorWorldRenderMatrix(actor_handle h, float alpha)
+	glm::mat4 Scene::getActorWorldRenderMatrix(Actor& a, float alpha)
 	{
-		Actor& a = this->actors[h];
-
 		// actor is not dynamic (does not move) so interpolation is not required, simply return it's world matrix
 		if (!(a.flags & ACTFLG_DYNAMIC) || !(a.flags & ACTFLG_LERPABLE))
-			return this->getActorWorldMatrix(h);
+			return this->getActorWorldMatrix(a);
 
 		glm::mat4 selfMat = Transform::interpolateTransforms(a.getPreviousTransform(), a.getTransform(), alpha);
 
@@ -79,10 +75,10 @@ namespace vel
 
 		// if this actor is parented to another actor
 		if (a.parentActorBone == -1)
-			return this->getActorWorldRenderMatrix(a.parentActor, alpha) * selfMat;
+			return this->getActorWorldRenderMatrix(this->actors[a.parentActor], alpha) * selfMat;
 
 		// if we made it here, we know that this actor is parented to a bone of its parent actor
-		return this->getActorWorldRenderMatrix(a.parentActor, alpha) *
+		return this->getActorWorldRenderMatrix(this->actors[a.parentActor], alpha) *
 			ozzFloat4x4ToGlmMat4(this->actors[a.parentActor].animator->getRenderBoneMatrix(a.parentActorBone)) *
 			selfMat;
 	}

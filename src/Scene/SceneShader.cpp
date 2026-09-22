@@ -53,8 +53,8 @@ struct DrawBucketCommand
 	uint	activeFrame;
 };
 
-const uint ACTOR_GPU_IS_BILLBOARD     = 1u << 1;
-const uint ACTOR_GPU_BILLBOARD_LOCK_Y = 1u << 2;
+const uint ACTFLG_BILLBOARD			= 1u << 6;
+const uint ACTFLG_BILLBOARD_LOCK_Y	= 1u << 7;
 
 struct ActorGpuData
 {
@@ -141,7 +141,7 @@ void main()
 	vec4 worldPosition;
 	vec3 worldNormal;
 
-	if ((actor.flags & ACTOR_GPU_IS_BILLBOARD) != 0u)
+	if ((actor.flags & ACTFLG_BILLBOARD) != 0u)
 	{
 		const vec3 actorPosition = actor.model[3].xyz;
 		const vec2 billboardScale = vec2(length(actor.model[0].xyz), length(actor.model[1].xyz));
@@ -154,7 +154,7 @@ void main()
 		vec3 billboardUp = cameraUp;
 		vec3 billboardBackward = cameraBackward;
 
-		if ((actor.flags & ACTOR_GPU_BILLBOARD_LOCK_Y) != 0u)
+		if ((actor.flags & ACTFLG_BILLBOARD_LOCK_Y) != 0u)
 		{
 			billboardUp = vec3(0.0, 1.0, 0.0);
 

@@ -29,6 +29,7 @@
 #include <vel/Scene/Text.h>
 #include <vel/Scene/Mesh/PlaneOrigin.h>
 #include <vel/Scene/ActorGpuData.h>
+#include <vel/Scene/Stage/Stage.h>
 
 
 
@@ -69,7 +70,7 @@ namespace vel
 		void				clearActorParent(actor_handle child);
 		void				setActorParentBone(actor_handle child, actor_handle parent, int32_t parentBoneId);
 		void				clearActorParentBone(actor_handle child);
-		glm::mat4			getActorWorldMatrix(actor_handle h);
+		glm::mat4			getActorWorldMatrix(Actor& a);
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -142,9 +143,12 @@ namespace vel
 	
 	private:
 		void			initMaterialData();
+		DrawBucket&		getDrawBucket(Stage& stage, const DrawBucketLocation& location);
+		void			uploadDrawBuckets(std::vector<DrawBucket>& buckets);
 	public:
 		Scene();
 		~Scene();
+		int				getAudioGroupKey() const;
 		virtual void	immediateLoop(float frameTime, float renderLerpInterval) = 0;
 		virtual void	internalImmediateLoop(float frameTime, float renderLerpInterval);
 		bool			internalLoad() override;
@@ -167,7 +171,7 @@ namespace vel
 		actor_handle				addActor(Stage* stage, Mesh* mesh, SkelAnimator* animator, std::vector<material_handle> materials, uint32_t flags);
 		void						hideActor(actor_handle h);
 		void						showActor(actor_handle h);
-		glm::mat4					getActorWorldRenderMatrix(actor_handle h, float alpha);
+		glm::mat4					getActorWorldRenderMatrix(Actor& a, float alpha);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneText
@@ -178,7 +182,6 @@ namespace vel
 		float						measureFontHeight(const std::string& text, FontBitmap* fb);
 		FontBitmap*					loadFontBitmapRaw(const std::string& fontName, int stbFontSize, const std::string& fontPath);
 		std::unique_ptr<Mesh>		loadTextMesh(Text& ta);
-		void						removeFontBitmap(FontBitmap* pFontBitmap);
 	protected:
 		FontBitmap*					loadFontBitmap(const std::string& fontName, int fontSize);
 		FontBitmap*					loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx); // for ui elements where you would expect that font size is in pixels

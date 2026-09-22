@@ -99,6 +99,11 @@ namespace vel
 		return this->id;
 	}
 
+	int Scene::getAudioGroupKey() const
+	{
+		return this->audioGroupKey;
+	}
+
 	void HeadlessScene::internalFixedLoop(float deltaTime)
 	{
 		this->fixedLoop(deltaTime);
@@ -162,8 +167,7 @@ namespace vel
 		{
 			Runtime::_gpu->initSceneBuffers(this->bufferIds);
 
-			// TODO: load immutable scene buffers
-
+			this->initMaterialData();
 
 			for (auto& renderGeoPoolKV : this->renderGeoPools)
 				Runtime::_gpu->loadGeoPool(renderGeoPoolKV.second.get());
@@ -177,60 +181,206 @@ namespace vel
 		return false;
 	}
 
-	void Scene::draw(float frameTime, float alpha)
+	DrawBucket& Scene::getDrawBucket(Stage& stage, const DrawBucketLocation& location)
 	{
-		for (auto& s : this->stages)
+		switch (location.pass)
 		{
-			if (!s->getVisible())
+		case RENDER_PASS_OPAQUE:
+			return stage.opaqueBuckets[location.index];
+		case RENDER_PASS_TRANSPARENT:
+			return stage.transparentBuckets[location.index];
+		}
+	}
+
+	void Scene::uploadDrawBuckets(std::vector<DrawBucket>& buckets)
+	{
+		for (DrawBucket& bucket : buckets)
+		{
+			if (bucket.drawCommands.empty())
 				continue;
 
-			bool actorsFirstPass = true;
+			Runtime::_gpu->uploadStreamBufferData(
+				bucket.indirectBuffer, 
+				bucket.drawCommands.size() * sizeof(DrawBucketCommand),
+				bucket.drawCommands.data()
+			);
+		}
+	}
 
-			for (auto& c : s->getCameras())
+	void Scene::draw(float frameTime, float alpha)
+	{
+		Runtime::_gpu->bindSceneBuffers(this->bufferIds);
+
+		// ---------------------------------------------------------
+		// 1. Clear CPU-side frame data.
+		// ---------------------------------------------------------
+		this->actorsGpu.clear();
+		this->actorAmbientCube.clear();
+		this->actorBoneMatrices.clear();
+
+		for (auto& stage : this->stages)
+		{
+			for (DrawBucket& bucket : stage->opaqueBuckets)
+				bucket.drawCommands.clear();
+
+			for (DrawBucket& bucket : stage->transparentBuckets)
+				bucket.drawCommands.clear();
+		}
+
+		// ---------------------------------------------------------
+		// 2. Iterate each visible Actor ONCE.
+		// ---------------------------------------------------------
+		for (auto& actor : this->actors)
+		{
+			if (!(actor.flags & ACTFLG_VISIBLE))
+				continue;
+
+			Stage& stage = *actor.stage;
+
+			if (!stage.enabled)
+				continue;
+
+			if (actor.flags & ACTFLG_ANIMATED_MATERIAL)
+				for (auto& materialAnimator : actor.materialAnimators)
+					materialAnimator.update(frameTime);
+
+			const uint32_t actorDataIndex = static_cast<uint32_t>(this->actorsGpu.size());
+			const uint32_t ambientCubeOffset = static_cast<uint32_t>(this->actorAmbientCube.size());
+			const uint32_t boneMatrixOffset = static_cast<uint32_t>(this->actorBoneMatrices.size());
+
+			for (const glm::vec3& value : actor.ambientCube)
+				this->actorAmbientCube.push_back(glm::vec4(value, 1.0f));
+
+			if (actor.animator != nullptr)
 			{
-				c->update();
+				this->actorBoneMatrices.resize(this->actorBoneMatrices.size() + actor.activeBones.size(), glm::mat4(1.0f));
 
-				Runtime::_gpu->updateCameraViewportSize(c->getResolution().x, c->getResolution().y); // different cameras can have different resolutions
-
-				Runtime::_gpu->setRenderTarget(&c->getRenderTarget());
-
-				Runtime::_gpu->setOpaqueRenderState();
-
-				bool foundFirstAlpha = false;
-
-				for (auto& pair : s->getActors())
+				for (auto& activeBone : actor.activeBones)
 				{
-					for (auto& a : pair.second)
-					{
-						if (!a->getMesh() || !a->isVisible() || !a->getMaterial()->getShader())
-							continue;
-
-						if (a->getMaterial()->getHasAlphaChannel() && !foundFirstAlpha)
-						{
-							foundFirstAlpha = true;
-							Runtime::_gpu->setAlphaRenderState();
-						}
-
-						if (actorsFirstPass)
-							a->getMaterial()->preDraw(frameTime);
-
-						Runtime::_gpu->useShader(a->getMaterial()->getShader()); // only alters gpu state if necessary
-						Runtime::_gpu->useMesh(a->getMesh()); // only alters gpu state if necessary
-						Runtime::_gpu->setActiveMaterial(a->getMaterial());
-
-						a->getMaterial()->draw(alpha, Runtime::_gpu.get(), a.get(), c->getViewMatrix(), c->getProjectionMatrix());
-					}
+					this->actorBoneMatrices[boneMatrixOffset + activeBone.second] =
+						ozzFloat4x4ToGlmMat4(actor.animator->getRenderBoneMatrix(activeBone.first)) *
+						actor.mesh->bones[activeBone.second].offsetMatrix;
 				}
+			}
 
-				actorsFirstPass = false;
+			this->actorsGpu.push_back({
+				.model                  = this->getActorWorldRenderMatrix(actor, alpha),
+				.colorMultiplier        = actor.colorMultiplier,
+				.lightmapHandle         = actor.lightmapTexture ? 0 : this->textures[actor.lightmapTexture].dsaHandle,
+				.flags                  = actor.flags,
+				.ambientCubeOffset      = ambientCubeOffset,
+				.boneMatrixOffset       = boneMatrixOffset
+			});
 
-				Runtime::_gpu->composeFBOs();
+			const Mesh& mesh = *actor.mesh;
+
+			for (const MeshSection& section : mesh.sections)
+			{
+				DrawBucket& bucket = getDrawBucket(stage, actor.drawBuckets[section.actorMaterialIndex]);
+
+				DrawBucketCommand drawCommand = {
+					.count = section.indexCount,
+					.instanceCount = 1,
+					.firstIndex = section.firstIndex,
+					.baseVertex = mesh.baseVertex,
+					.baseInstance = actorDataIndex,
+
+					.materialIndex = actor.materialIndices[section.actorMaterialIndex],
+					.activeFrame = (actor.flags & ACTFLG_ANIMATED_MATERIAL) ? actor.materialAnimators[section.actorMaterialIndex].getCurrentFrame() : 0
+				};
+
+				bucket.drawCommands.push_back(drawCommand);
 			}
 		}
 
+		// ---------------------------------------------------------
+		// 3. Upload Actor data.
+		// ---------------------------------------------------------
+		if (!this->actorsGpu.empty())
+		{
+			Runtime::_gpu->uploadStreamBufferData(
+				this->bufferIds.actorDataSsbo,
+				this->actorsGpu.size() * sizeof(ActorGpuData),
+				this->actorsGpu.data()
+			);
+		}
 
-		// all stage camera's framebuffers are now updated, loop through each stage camera and check if it should display it's contents 
+		// ---------------------------------------------------------
+		// 4. Upload Actor ambient cube data.
+		// ---------------------------------------------------------
+		if (!this->actorAmbientCube.empty())
+		{
+			Runtime::_gpu->uploadStreamBufferData(
+				this->bufferIds.actorAmbientCubeSsbo,
+				this->actorAmbientCube.size() * sizeof(glm::vec4),
+				this->actorAmbientCube.data()
+			);
+		}
 
+		// ---------------------------------------------------------
+		// 5. Upload Actor bone matrix data.
+		// ---------------------------------------------------------
+		if (!this->actorBoneMatrices.empty())
+		{
+			Runtime::_gpu->uploadStreamBufferData(
+				this->bufferIds.actorBoneMatricesSsbo,
+				this->actorBoneMatrices.size() * sizeof(glm::mat4),
+				this->actorBoneMatrices.data()
+			);
+		}
+
+		// ---------------------------------------------------------
+		// 6. Upload every bucket's combined indirect commands + Material indices + active frames.
+		// ---------------------------------------------------------
+		for (auto& stage : this->stages)
+		{
+			if (!stage->enabled)
+				continue;
+
+			this->uploadDrawBuckets(stage->opaqueBuckets);
+			this->uploadDrawBuckets(stage->transparentBuckets);
+		}
+
+		// ---------------------------------------------------------
+		// 7. Render every Stage through every camera.
+		// ---------------------------------------------------------
+		for (auto& s : this->stages)
+		{
+			Stage& stage = *s;
+
+			if (!stage.enabled)
+				continue;
+
+
+			for (auto& c : stage.cameras)
+			{
+				Camera& camera = *c;
+
+				Runtime::_gpu->updateCameraViewportSize(camera.resolution.x, camera.resolution.y); // different cameras can have different resolutions
+
+				Runtime::_gpu->uploadStreamBufferSubData(this->bufferIds.cameraUbo, 0, sizeof(CameraGpuData), &camera.gpuData);
+
+
+				Runtime::_gpu->setOpaqueRenderState(camera.renderTarget);
+				for (const DrawBucket& bucket : stage.opaqueBuckets)
+					Runtime::_gpu->submitDrawBucket(bucket);
+				
+
+				Runtime::_gpu->setTransparentRenderState(camera.renderTarget);
+				for (const DrawBucket& bucket : stage.transparentBuckets)
+					Runtime::_gpu->submitDrawBucket(bucket);
+
+
+				Runtime::_gpu->composeFBOs(camera.renderTarget);
+			}
+
+		}
+
+
+		//
+		// all  camera framebuffers are updated, loop through each stage camera and check if it should display it's contents 
+		//
+		
 		// now bind the scene's FinalRenderTarget. It's viewport size should always be the full size of the window, or screen in fullscreen mode
 		std::optional<FinalRenderTarget> updatedFRT = Runtime::_gpu->updateFinalRenderTargetVPSize(
 			this->sceneRenderTarget, 
@@ -256,21 +406,6 @@ namespace vel
 
 		// If you don't set glviewport back to the render resolution (vs leaving it at the window size), mouse movement gets jacked up 
 		Runtime::_gpu->setViewportSize(Runtime::_window->getResolution().x, Runtime::_window->getResolution().y);
-
-
-		// moving collision debug draw event as final thing as it draws directly to the screen buffer, and I don't want to have to 
-		// think about updating it right now
-		for (auto& cw : this->collisionWorlds)
-		{
-			if (cw->getIsActive() && cw->getDebugDrawer() != nullptr)
-			{
-				cw->getDynamicsWorld()->debugDrawWorld(); // load vertices into associated CollisionDebugDrawer
-				Runtime::_gpu->useShader(cw->getDebugDrawer()->getShaderProgram());
-				Runtime::_gpu->setShaderMat4("vp", cw->getCamera()->getProjectionMatrix() * cw->getCamera()->getViewMatrix());
-				Runtime::_gpu->debugDrawCollisionWorld(cw->getDebugDrawer()); // draw all loaded vertices with a single call and clear
-			}
-		}
-
 	}
 
 } // END VEL NAMESPACE

@@ -1,3 +1,5 @@
+#include <filesystem>
+
 #include <spdlog/spdlog.h>
 
 #include <stb_headers/stb_image.h>

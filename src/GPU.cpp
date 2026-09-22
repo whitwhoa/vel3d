@@ -169,7 +169,7 @@ namespace vel
 		this->bindFrameBuffer(rt.opaqueFBO);		
 	}
 
-	void GPU::setAlphaRenderState(RenderTarget& rt)
+	void GPU::setTransparentRenderState(RenderTarget& rt)
 	{
 		glDepthMask(GL_FALSE);
 		glEnable(GL_BLEND);
@@ -216,7 +216,7 @@ namespace vel
 		
 		this->useVao(this->screenSpaceMesh->gp->gpuGeoPool->VAO);
 
-		this->drawGpuMesh();		
+		glDrawElements(GL_TRIANGLES, this->screenSpaceMesh->gp->vertexCount(), GL_UNSIGNED_INT, 0);
 	}
 
 	void GPU::setGLDebugMessage(const std::string& message)
@@ -233,7 +233,7 @@ namespace vel
 
 		this->useVao(this->screenSpaceMesh->gp->gpuGeoPool->VAO);
 
-		this->drawGpuMesh();
+		glDrawElements(GL_TRIANGLES, this->screenSpaceMesh->gp->vertexCount(), GL_UNSIGNED_INT, 0);
 	}
 
 	void GPU::drawToScreen(FinalRenderTarget& frt)
@@ -249,7 +249,7 @@ namespace vel
 		
 		this->useVao(this->screenSpaceMesh->gp->gpuGeoPool->VAO);
 
-		this->drawGpuMesh();
+		glDrawElements(GL_TRIANGLES, this->screenSpaceMesh->gp->vertexCount(), GL_UNSIGNED_INT, 0);
 
 		this->enableBlend();
 	}
@@ -1212,11 +1212,6 @@ namespace vel
 		}
 	}
 
-	void GPU::drawGpuMesh() // TODO: this will be replaced with MDI pipelilne
-	{
-		glDrawElements(GL_TRIANGLES, this->activeMesh->getGpuMesh()->indiceCount, GL_UNSIGNED_INT, 0);
-	}
-
 	void GPU::drawLines(unsigned int pointCount)
 	{
 		glDrawArrays(GL_LINES, 0, pointCount);
@@ -1447,6 +1442,38 @@ void main()
 	void GPU::uploadStaticBufferData(uint32_t id, uint32_t size, void* data)
 	{
 		glNamedBufferData(id, size, data, GL_STATIC_DRAW);
+	}
+
+	void GPU::uploadStreamBufferData(uint32_t id, uint32_t size, void* data)
+	{
+		glNamedBufferData(id, size, data, GL_STREAM_DRAW);
+	}
+
+	void GPU::uploadStreamBufferSubData(uint32_t buffer, uint32_t offset, uint32_t size, void* data)
+	{
+		glNamedBufferSubData(buffer, offset, size, data);
+	}
+
+	void GPU::submitDrawBucket(const DrawBucket& bucket)
+	{
+		if (bucket.drawCommands.empty())
+			return;
+
+		glUseProgram(bucket.shader);
+
+		glBindVertexArray(bucket.vao);
+
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, bucket.indirectBuffer); // provides both the MDI commands and the per-draw Material index.
+
+		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, bucket.indirectBuffer);
+
+		glMultiDrawElementsIndirect(
+			GL_TRIANGLES,
+			GL_UNSIGNED_INT,
+			nullptr,
+			static_cast<GLsizei>(bucket.drawCommands.size()),
+			sizeof(DrawBucketCommand)
+		);
 	}
 
 	void GPU::initSceneBuffers(BufferIds& b)

@@ -8,6 +8,7 @@
 
 #include <glm/glm.hpp>
 
+#include <vel/Scene/Stage/DrawBucket/DrawBucket.h>
 #include <vel/Scene/BufferIds.h>
 #include <vel/Scene/Mesh/Mesh.h>
 #include <vel/Scene/Texture.h>
@@ -89,7 +90,6 @@ namespace vel
 		void								useShader(Shader s);
 		void								useVao(unsigned int vao);
 
-		void								drawGpuMesh();
 		void								clearDepthBuffer();
 
 		void								finish();
@@ -121,7 +121,7 @@ namespace vel
 
 
 		void								setOpaqueRenderState(RenderTarget& rt);
-		void								setAlphaRenderState(RenderTarget& rt);
+		void								setTransparentRenderState(RenderTarget& rt);
 		void								setCompositeRenderState(RenderTarget& rt);
 		void								composeFBOs(RenderTarget& rt);
 		void								setDefaultFrameBuffer();
@@ -160,9 +160,15 @@ namespace vel
 		////////////////////////////////////
 		void								createBuffer(uint32_t* id);
 		void								deleteBuffer(uint32_t* id);
-		void								uploadStaticBufferData(uint32_t id, uint32_t size, void* data);
+
 		void								initSceneBuffers(BufferIds& b);
 		void								bindSceneBuffers(BufferIds& b);
+
+		void								uploadStaticBufferData(uint32_t id, uint32_t size, void* data);
+		void								uploadStreamBufferData(uint32_t id, uint32_t size, void* data);
+		void								uploadStreamBufferSubData(uint32_t buffer, uint32_t offset, uint32_t size, void* data);
+		void								submitDrawBucket(const DrawBucket& bucket);
+
 		void								freeSceneBuffers(BufferIds& b);
 
 

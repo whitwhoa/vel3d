@@ -15,7 +15,7 @@
 #include <vel/Scene/Stage/Stage.h>
 
 #include <vel/Util/slot_map.h>
-#include <vel/Util/FrameAnimator.h>
+#include <vel/Scene/Actor/FrameAnimator.h>
 
 
 
@@ -30,8 +30,9 @@ namespace vel
 		ACTFLG_DYNAMIC = 1 << 1,
 		ACTFLG_LERPABLE = 1 << 2,
 		ACTFLG_ANIMATED_MATERIAL = 1 << 4,
-		ACTFLG_BILLBOARD = 1 << 5,
-		ACTFLG_BILLBOARD_LOCK_Y = 1 << 6
+		ACTFLG_AMBIENT_CUBE = 1 << 5,
+		ACTFLG_BILLBOARD = 1 << 6, // used in shader, do not change
+		ACTFLG_BILLBOARD_LOCK_Y = 1 << 7 // used in shader, do not change
 	};
 
 	class Actor
