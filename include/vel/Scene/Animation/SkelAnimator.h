@@ -40,6 +40,7 @@ namespace vel
 
 	public:
 		SkelAnimator(ozz::animation::Skeleton* skeleton);
+		virtual ~SkelAnimator() = default;
 
 		virtual bool	init() = 0;
 		virtual bool	onUpdate(float logicTick) = 0;

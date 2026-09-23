@@ -26,7 +26,7 @@ namespace vel
 
 			if (it == this->meshes.end())
 			{
-				SPDLOG_DEBUG("HeadlessScene::loadMesh(): new mesh load: {}", pld);
+				SPDLOG_DEBUG("HeadlessScene::loadMesh(): new mesh load: {}", pld.first);
 
 				std::unique_ptr<GeoPool> soloGeoPool = std::make_unique<GeoPoolT<VtxPos>>();
 
@@ -38,7 +38,7 @@ namespace vel
 			}
 			else
 			{
-				SPDLOG_DEBUG("HeadlessScene::loadMesh(): existing mesh (load bypassed): {}", pld);
+				SPDLOG_DEBUG("HeadlessScene::loadMesh(): existing mesh (load bypassed): {}", pld.first);
 				out.push_back(it->second.get());
 			}
 		}
@@ -80,7 +80,7 @@ namespace vel
 
 			if (it == this->meshes.end())
 			{
-				SPDLOG_DEBUG("Scene::loadMesh(): new mesh load: {}", pld);
+				SPDLOG_DEBUG("Scene::loadMesh(): new mesh load: {}", pld.first);
 
 				if (meshFlags & MESHFLAG_POOLED)
 				{
@@ -90,13 +90,13 @@ namespace vel
 				{
 					std::unique_ptr<GeoPool> renderSoloGeoPool = nullptr;
 					if (pld.second == VtxLayout::VTX_POS_NRML)
-						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrml>>(true);
+						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrml>>();
 					else if (pld.second == VtxLayout::VTX_POS_NRML_TX)
-						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrmlTx>>(true);
+						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrmlTx>>();
 					else if (pld.second == VtxLayout::VTX_POS_NRML_TX_LM)
-						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrmlTxLm>>(true);
+						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrmlTxLm>>();
 					else if (pld.second == VtxLayout::VTX_POS_NRML_TX_SKN)
-						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrmlTxSkn>>(true);
+						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrmlTxSkn>>();
 
 					GeoPool* standAlonePoolRawPtr = renderSoloGeoPool.get();
 
@@ -107,7 +107,7 @@ namespace vel
 			}
 			else
 			{
-				SPDLOG_DEBUG("Scene::loadMesh(): existing mesh (load bypassed): {}", pld);
+				SPDLOG_DEBUG("Scene::loadMesh(): existing mesh (load bypassed): {}", pld.first);
 				out.push_back(it->second.get());
 			}
 		}
@@ -133,10 +133,9 @@ namespace vel
 
 		std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>(name);
 		mesh->gp = gp;
-		mesh->firstIndex = gp->indices.size();
+		mesh->firstIndex = static_cast<uint32_t>(gp->indices.size());
 		mesh->baseVertex = gp->vertexCount();
 		mesh->flags = MESHFLAG_RENDERABLE | MESHFLAG_POOLED;
-
 
 		const float halfWidth = width * 0.5f;
 		const float halfHeight = height * 0.5f;
@@ -176,8 +175,10 @@ namespace vel
 		gp->indices.push_back(3);
 		gp->indices.push_back(2);
 
+		mesh->indexCount = static_cast<uint32_t>(gp->indices.size()) - mesh->firstIndex;
 
-		mesh->indexCount = mesh->gp->indices.size() - mesh->firstIndex;
+		// Billboard meshes contain one section using actor material slot 0.
+		mesh->sections.emplace_back(mesh->firstIndex, mesh->indexCount, 0);
 
 		mesh->refreshAABB();
 

@@ -112,10 +112,14 @@ namespace vel
 		}
 
 		mesh->indexCount = gp->indices.size();
+
+		mesh->sections.clear();
+		mesh->sections.emplace_back(mesh->firstIndex, mesh->indexCount, 0);
+
 		mesh->refreshAABB();
 
-		float minX = mesh->aabb.getMinEdge().x;
-		float maxX = mesh->aabb.getMaxEdge().x;
+		float minX = mesh->aabb.minEdge.x;
+		float maxX = mesh->aabb.maxEdge.x;
 		float logicalMaxY = text.fontBitmap->ascent;
 		float logicalMinY = text.fontBitmap->descent - static_cast<float>(lineCount - 1) * text.fontBitmap->lineHeight;
 
@@ -339,9 +343,9 @@ namespace vel
 			return nullptr;
 		}
 
-		this->fontBitmaps.emplace(fb.fontName, fb);
+		auto [it, inserted] = this->fontBitmaps.emplace(fontName, std::move(fb));
 
-		return &this->fontBitmaps[fb.fontName];
+		return &it->second;
 	}
 
 	std::unique_ptr<Mesh> Scene::loadTextMesh(Text& text)
@@ -373,6 +377,8 @@ namespace vel
 		this->textures.push_back(t);
 
 		fb->texture = th;
+
+		return fb;
 	}
 
 	FontBitmap* Scene::loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx)
@@ -427,7 +433,7 @@ namespace vel
 		Mesh* mesh = this->addMesh(std::move(this->loadTextMesh(t)));
 
 
-		material_handle tMaterialHandle = this->addMaterial(MTLFLG_IS_TEXT | MTLFLG_IS_TRANSPARENT);
+		material_handle tMaterialHandle = this->addMaterial(MTLFLG_IS_TEXT | MTLFLG_HAS_TEXTURES | MTLFLG_IS_TRANSPARENT);
 		Material& tMaterial = this->materials[tMaterialHandle];
 		tMaterial.textures.push_back(t.fontBitmap->texture);
 

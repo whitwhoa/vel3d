@@ -70,11 +70,6 @@ namespace vel
 		//Actor(const Actor& original);
 		//Actor& operator=(const Actor& a);
 
-		// TODO: move to HeadlessScene
-		bool						setAnimator(SkelAnimator* a); // TODO: this logic will be part of the Scene::addActor(...) method that includes animator
-		// END
-
-
 		void						setTranslation(glm::vec3 t);
 		void						setRotation(float angle, glm::vec3 axis);
 		void						setRotation(glm::quat r);
@@ -83,9 +78,6 @@ namespace vel
 
 		const Transform&			getTransform() const;
 		const Transform&			getPreviousTransform() const;
-
-		glm::mat4					getWorldMatrix();
-		glm::mat4					getWorldRenderMatrix(float alpha);
 
 		glm::vec3					getInterpolatedTranslation(float alpha);
 		glm::quat					getInterpolatedRotation(float alpha);

@@ -16,7 +16,7 @@ namespace vel
         VtxLayout                   vtxLayout;
 
         virtual ~GeoPool() = default;
-        virtual unsigned int vertexCount() = 0;
+        virtual int vertexCount() = 0;
 
     protected:
         GeoPool(VtxLayout layout) :
@@ -35,7 +35,7 @@ namespace vel
             GeoPool(T::layout)
         {}
 
-        unsigned int vertexCount() override
+        int vertexCount() override
         {
             return this->vertices.size();
         }

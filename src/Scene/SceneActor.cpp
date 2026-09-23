@@ -134,20 +134,26 @@ namespace vel
 		a.flags = flags;
 		a.materialIndices = materials;
 
-		for (uint32_t i = 0; i < materials.size(); i++)
-		{
-			Material& m = this->materials[materials[i]];
-
-			if (m.flags & MTLFLG_IS_TRANSPARENT)
-				a.drawBuckets.push_back(this->findOrCreateDrawBucket(stage, RENDER_PASS_TRANSPARENT, m.shaderProgramId, mesh->gp->gpuGeoPool->VAO));
-			else
-				a.drawBuckets.push_back(this->findOrCreateDrawBucket(stage, RENDER_PASS_OPAQUE, m.shaderProgramId, mesh->gp->gpuGeoPool->VAO));
-
-			if (flags & ACTFLG_ANIMATED_MATERIAL)
-				a.materialAnimators.emplace_back(m.textures.size(), 24.f);
-		}
-
 		return this->actors.insert(a);
+	}
+
+	void Scene::initActorDrawBuckets()
+	{
+		for (auto& a : this->actors)
+		{
+			for (uint32_t i = 0; i < a.materialIndices.size(); i++)
+			{
+				Material& m = this->materials[a.materialIndices[i]];
+
+				if (m.flags & MTLFLG_IS_TRANSPARENT)
+					a.drawBuckets.push_back(this->findOrCreateDrawBucket(a.stage, RENDER_PASS_TRANSPARENT, m.shaderProgramId, a.mesh->gp->gpuGeoPool->VAO));
+				else
+					a.drawBuckets.push_back(this->findOrCreateDrawBucket(a.stage, RENDER_PASS_OPAQUE, m.shaderProgramId, a.mesh->gp->gpuGeoPool->VAO));
+
+				if (a.flags & ACTFLG_ANIMATED_MATERIAL)
+					a.materialAnimators.emplace_back(m.textures.size(), 24.f);
+			}
+		}
 	}
 
 	actor_handle Scene::addActor(Stage* stage, Mesh* mesh, SkelAnimator* animator, std::vector<material_handle> materials, uint32_t flags)

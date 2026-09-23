@@ -33,7 +33,7 @@ namespace vel
 		screenShader({.programId = 0}),
 		postShader({ .programId = 0 }),
 		compositeShader({ .programId = 0 }),
-		activeCameraViewportSize(glm::ivec2(1280, 720)),
+		activeViewportSize(glm::ivec2(-1, -1)), // previously defaulted to 1280 x 720
 		prevFrameFence(0),
 
 		bonesUBO(0),
@@ -164,9 +164,9 @@ namespace vel
 		glDepthFunc(GL_LESS);
 		glDepthMask(GL_TRUE);
 		glDisable(GL_BLEND);
-		//glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-		this->bindFrameBuffer(rt.opaqueFBO);		
+		this->bindFrameBuffer(rt.opaqueFBO);	
+		this->setViewportSize(rt.resolution.x, rt.resolution.y);
 	}
 
 	void GPU::setTransparentRenderState(RenderTarget& rt)
@@ -178,6 +178,7 @@ namespace vel
 		glBlendEquation(GL_FUNC_ADD);
 
 		this->bindFrameBuffer(rt.alphaFBO);
+		this->setViewportSize(rt.resolution.x, rt.resolution.y);
 	}
 
 	//void GPU::setCompositeRenderState()
@@ -201,6 +202,7 @@ namespace vel
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 		this->bindFrameBuffer(rt.opaqueFBO);
+		this->setViewportSize(rt.resolution.x, rt.resolution.y);
 	}
 
 	void GPU::composeFBOs(RenderTarget& rt)
@@ -216,7 +218,7 @@ namespace vel
 		
 		this->useVao(this->screenSpaceMesh->gp->gpuGeoPool->VAO);
 
-		glDrawElements(GL_TRIANGLES, this->screenSpaceMesh->gp->vertexCount(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, this->screenSpaceMesh->gp->indices.size(), GL_UNSIGNED_INT, 0);
 	}
 
 	void GPU::setGLDebugMessage(const std::string& message)
@@ -233,7 +235,7 @@ namespace vel
 
 		this->useVao(this->screenSpaceMesh->gp->gpuGeoPool->VAO);
 
-		glDrawElements(GL_TRIANGLES, this->screenSpaceMesh->gp->vertexCount(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, this->screenSpaceMesh->gp->indices.size(), GL_UNSIGNED_INT, 0);
 	}
 
 	void GPU::drawToScreen(FinalRenderTarget& frt)
@@ -249,24 +251,20 @@ namespace vel
 		
 		this->useVao(this->screenSpaceMesh->gp->gpuGeoPool->VAO);
 
-		glDrawElements(GL_TRIANGLES, this->screenSpaceMesh->gp->vertexCount(), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, this->screenSpaceMesh->gp->indices.size(), GL_UNSIGNED_INT, 0);
 
 		this->enableBlend();
 	}
 
-	void GPU::updateCameraViewportSize(unsigned int width, unsigned int height)
-	{
-		if (width != this->activeCameraViewportSize.x || height != this->activeCameraViewportSize.y)
-		{
-			//std::cout << "Altering camera viewport size: " << this->activeCameraViewportSize.x << ", " << this->activeCameraViewportSize.y << std::endl;
-			this->activeCameraViewportSize = glm::ivec2(width, height);
-			glViewport(0, 0, width, height);
-		}
-	}
-
 	void GPU::setViewportSize(unsigned int width, unsigned int height)
 	{
+		glm::ivec2 viewportSize(width, height);
+
+		if (viewportSize == this->activeViewportSize)
+			return;
+
 		glViewport(0, 0, width, height);
+		this->activeViewportSize = viewportSize;
 	}
 
 	std::optional<FinalRenderTarget> GPU::updateFinalRenderTargetVPSize(FinalRenderTarget& frt, unsigned int width, unsigned int height)
@@ -276,25 +274,27 @@ namespace vel
 
 		frt.resolution = glm::ivec2(width, height);
 
-		glViewport(0, 0, width, height);
-
 		if (frt.resolution.x != 0 && frt.resolution.y != 0)
 		{
 			this->freeFinalRenderTarget(frt);
 			return this->createFinalRenderTarget(width, height);
 		}
+
+		return std::nullopt;
 	}
 
 	void GPU::setFinalRenderTarget(FinalRenderTarget& frt)
 	{
-		glDepthMask(GL_TRUE); // insure we're writing to depth buffer (without this, we had to have two stages 
-							// each with a camera for rendering to work right, so i must be disabling it somewhere.
+		glDepthMask(GL_TRUE); // insure we're writing to depth buffer (without this, we had to have two stages each with a camera for rendering to work right, so i must be disabling it somewhere.
+
 		this->bindFrameBuffer(frt.fbo);
+		this->setViewportSize(frt.resolution.x, frt.resolution.y);
 	}
 
-	void GPU::setDefaultFrameBuffer()
+	void GPU::setDefaultFrameBuffer(unsigned int width, unsigned int height)
 	{
 		this->bindFrameBuffer(0);
+		this->setViewportSize(width, height);
 	}
 
 	void GPU::initScreenSpaceMesh()
@@ -648,10 +648,10 @@ namespace vel
 		rt.accumDsaHandle = glGetTextureHandleARB(rt.accumBufferId);
 		rt.revealDsaHandle = glGetTextureHandleARB(rt.revealBufferId);
 
-		glMakeTextureHandleResidentARB(rt.opaqueBufferId);
-		glMakeTextureHandleResidentARB(rt.depthBufferId);
-		glMakeTextureHandleResidentARB(rt.accumBufferId);
-		glMakeTextureHandleResidentARB(rt.revealBufferId);
+		glMakeTextureHandleResidentARB(rt.opaqueDsaHandle);
+		glMakeTextureHandleResidentARB(rt.depthDsaHandle);
+		glMakeTextureHandleResidentARB(rt.accumDsaHandle);
+		glMakeTextureHandleResidentARB(rt.revealDsaHandle);
 
 		return rt;
 	}
@@ -895,6 +895,9 @@ namespace vel
 
 	void GPU::loadGeoPool(GeoPool* gp)
 	{
+		if (gp->vertexCount() == 0)
+			return;
+
 		switch (gp->vtxLayout)
 		{
 		case VtxLayout::VTX_POS:
@@ -928,19 +931,19 @@ namespace vel
 		switch (gp->vtxLayout)
 		{
 		case VtxLayout::VTX_POS:
-			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPos), &static_cast<GeoPoolT<VtxPos>*>(gp)[0], GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPos), static_cast<GeoPoolT<VtxPos>*>(gp)->vertices.data(), GL_STATIC_DRAW);
 			break;
 		case VtxLayout::VTX_POS_NRML:
-			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrml), &static_cast<GeoPoolT<VtxPosNrml>*>(gp)[0], GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrml), static_cast<GeoPoolT<VtxPosNrml>*>(gp)->vertices.data(), GL_STATIC_DRAW);
 			break;
 		case VtxLayout::VTX_POS_NRML_TX:
-			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTx), &static_cast<GeoPoolT<VtxPosNrmlTx>*>(gp)[0], GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTx), static_cast<GeoPoolT<VtxPosNrmlTx>*>(gp)->vertices.data(), GL_STATIC_DRAW);
 			break;
 		case VtxLayout::VTX_POS_NRML_TX_LM:
-			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTxLm), &static_cast<GeoPoolT<VtxPosNrmlTxLm>*>(gp)[0], GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTxLm), static_cast<GeoPoolT<VtxPosNrmlTxLm>*>(gp)->vertices.data(), GL_STATIC_DRAW);
 			break;
 		case VtxLayout::VTX_POS_NRML_TX_SKN:
-			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTxSkn), &static_cast<GeoPoolT<VtxPosNrmlTxSkn>*>(gp)[0], GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, gp->vertexCount() * sizeof(VtxPosNrmlTxSkn), static_cast<GeoPoolT<VtxPosNrmlTxSkn>*>(gp)->vertices.data(), GL_STATIC_DRAW);
 			break;
 		}
 
@@ -1319,7 +1322,6 @@ flat out uint TexId;
 void main()
 {
     TexCoords = aTexCoords;
-	TexId = aTexId;
 
 	gl_Position = vec4(aPos, 1.0);
 }
@@ -1331,7 +1333,6 @@ void main()
 #extension GL_ARB_gpu_shader_int64 : require
 
 in vec2 TexCoords;
-flat in uint TexId;
 
 uniform vec4 color;
 uniform uint64_t textureHandle;

@@ -28,6 +28,7 @@ namespace vel
 	class CollisionWorld
 	{
 	private:
+		uint32_t								nextCollisionShapeId;
 		std::string								name;
 		bool									isActive;
 		btDefaultCollisionConfiguration*		collisionConfiguration;
@@ -35,10 +36,12 @@ namespace vel
 		btBroadphaseInterface*					overlappingPairCache;
 		btSequentialImpulseConstraintSolver*	solver;
 		btDiscreteDynamicsWorld*				dynamicsWorld;
+		std::unordered_map<std::string, btTriangleMesh*> collisionTriangleMeshes;
 		std::unordered_map<std::string, btCollisionShape*> collisionShapes;
 		Camera*									camera; // matrices used for debug drawer
 		CollisionDebugDrawer* 					collisionDebugDrawer;
 		std::unordered_map<std::string, CollisionObjectTemplate> collisionObjectTemplates;
+		
 
 
 		//void									removeSensorsUsingCollisionObject(btCollisionObject* co);
@@ -80,6 +83,8 @@ namespace vel
 		const std::string&						getName();
 
 		void									removeCollisionShape(const std::string& name);
+
+		void addMeshTriangles(btTriangleMesh* triangleMesh, const Mesh* mesh, const auto& verts, const glm::mat4& transform, bool applyTransform);
 			
 	};
 

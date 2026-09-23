@@ -234,7 +234,7 @@ namespace vel
 
 	void AssimpMeshLoader::processMesh(aiMesh* aiMesh, Mesh* mesh)
 	{
-		unsigned int indiceOffset = mesh->gp->vertexCount() - mesh->baseVertex;
+		int indiceOffset = mesh->gp->vertexCount() - mesh->baseVertex;
 
 		switch (mesh->gp->vtxLayout)
 		{

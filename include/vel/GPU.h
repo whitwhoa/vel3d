@@ -44,7 +44,7 @@ namespace vel
 		int									postShaderColorLocation;
 
 		Shader								compositeShader;
-		glm::ivec2							activeCameraViewportSize;
+		glm::ivec2							activeViewportSize;
 		GLsync								prevFrameFence;
 
 		unsigned int						bonesUBO;
@@ -110,7 +110,6 @@ namespace vel
 		void								updateTextureUBO(unsigned int index, GLuint64 dsaHandle);
 		void								updateLightmapTextureUBO(GLuint64 dsaHandle);
 
-		void								updateCameraViewportSize(unsigned int width, unsigned int height);
 		std::optional<FinalRenderTarget>	updateFinalRenderTargetVPSize(FinalRenderTarget& frt, unsigned int width, unsigned int height);
 
 		void								drawToFinalRenderTarget(GLuint64 dsaHandle);
@@ -124,7 +123,7 @@ namespace vel
 		void								setTransparentRenderState(RenderTarget& rt);
 		void								setCompositeRenderState(RenderTarget& rt);
 		void								composeFBOs(RenderTarget& rt);
-		void								setDefaultFrameBuffer();
+		void								setDefaultFrameBuffer(unsigned int width, unsigned int height);
 
 		void								clearRenderTargetBuffers(RenderTarget& rt, float r, float g, float b, float a);
 		void								clearScreenBuffer(float r, float g, float b, float a);

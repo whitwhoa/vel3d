@@ -11,7 +11,7 @@ namespace vel
 
 	void Mesh::refreshAABB()
 	{
-		// TODO: implement
+		this->aabb = AABB(this);
 	}
 
 	MeshBone* Mesh::getBone(const std::string& boneName)

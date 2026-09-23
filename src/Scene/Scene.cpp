@@ -175,6 +175,8 @@ namespace vel
 			for (auto& renderSoloGeoPoolKV : this->renderSoloGeoPools)
 				Runtime::_gpu->loadGeoPool(renderSoloGeoPoolKV.second.get());
 
+			this->initActorDrawBuckets();
+
 			return true;
 		}
 
@@ -266,7 +268,7 @@ namespace vel
 			this->actorsGpu.push_back({
 				.model                  = this->getActorWorldRenderMatrix(actor, alpha),
 				.colorMultiplier        = actor.colorMultiplier,
-				.lightmapHandle         = actor.lightmapTexture ? 0 : this->textures[actor.lightmapTexture].dsaHandle,
+				.lightmapHandle         = actor.lightmapTexture ? this->textures[actor.lightmapTexture].dsaHandle : 0,
 				.flags                  = actor.flags,
 				.ambientCubeOffset      = ambientCubeOffset,
 				.boneMatrixOffset       = boneMatrixOffset
@@ -356,30 +358,20 @@ namespace vel
 			{
 				Camera& camera = *c;
 
-				Runtime::_gpu->updateCameraViewportSize(camera.resolution.x, camera.resolution.y); // different cameras can have different resolutions
-
 				Runtime::_gpu->uploadStreamBufferSubData(this->bufferIds.cameraUbo, 0, sizeof(CameraGpuData), &camera.gpuData);
-
 
 				Runtime::_gpu->setOpaqueRenderState(camera.renderTarget);
 				for (const DrawBucket& bucket : stage.opaqueBuckets)
 					Runtime::_gpu->submitDrawBucket(bucket);
 				
-
 				Runtime::_gpu->setTransparentRenderState(camera.renderTarget);
 				for (const DrawBucket& bucket : stage.transparentBuckets)
 					Runtime::_gpu->submitDrawBucket(bucket);
-
 
 				Runtime::_gpu->composeFBOs(camera.renderTarget);
 			}
 
 		}
-
-
-		//
-		// all  camera framebuffers are updated, loop through each stage camera and check if it should display it's contents 
-		//
 		
 		// now bind the scene's FinalRenderTarget. It's viewport size should always be the full size of the window, or screen in fullscreen mode
 		std::optional<FinalRenderTarget> updatedFRT = Runtime::_gpu->updateFinalRenderTargetVPSize(
@@ -391,21 +383,16 @@ namespace vel
 		if (updatedFRT)
 			this->sceneRenderTarget = updatedFRT.value();
 
-
 		Runtime::_gpu->setFinalRenderTarget(this->sceneRenderTarget);
-
 
 		for (auto& c : this->cameras)
 			if (c->finalRenderCam)
 				Runtime::_gpu->drawToFinalRenderTarget(c->renderTarget.opaqueDsaHandle);
 		
-
 		// call post process to apply post process shader while drawing into the default framebuffer for display to screen
-		Runtime::_gpu->setDefaultFrameBuffer();
+		glm::ivec2 windowSize = Runtime::_window->getWindowSize();
+		Runtime::_gpu->setDefaultFrameBuffer(windowSize.x, windowSize.y);
 		Runtime::_gpu->drawToScreen(this->sceneRenderTarget);
-
-		// If you don't set glviewport back to the render resolution (vs leaving it at the window size), mouse movement gets jacked up 
-		Runtime::_gpu->setViewportSize(Runtime::_window->getResolution().x, Runtime::_window->getResolution().y);
 	}
 
 } // END VEL NAMESPACE

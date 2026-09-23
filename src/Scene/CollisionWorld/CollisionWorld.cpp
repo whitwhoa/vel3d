@@ -16,6 +16,7 @@
 namespace vel
 {
 	CollisionWorld::CollisionWorld(const std::string& name, float gravity) :
+		nextCollisionShapeId(0),
 		name(name),
 		isActive(true),
 		collisionConfiguration(new btDefaultCollisionConfiguration()),
@@ -34,11 +35,10 @@ namespace vel
 
 	CollisionWorld::~CollisionWorld()
 	{
-		// remove debug drawer
 		if (this->collisionDebugDrawer)
 			delete this->collisionDebugDrawer;
 
-		//remove the rigidbodies from the dynamics world and delete them (TODO: 90% sure this handles ghostObjects as well)
+		// Remove collision objects from the dynamics world and delete them
 		for (int i = this->dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
 		{
 			btCollisionObject* obj = this->dynamicsWorld->getCollisionObjectArray()[i];
@@ -51,30 +51,25 @@ namespace vel
 			delete obj;
 		}
 
-		//delete collision shapes
+		// Delete collision shapes
 		for (auto& cs : this->collisionShapes)
 		{
-			btCollisionShape* shape = cs.second;
-			cs.second = 0;
-			delete shape;
+			delete cs.second;
+			cs.second = nullptr;
 		}
 
-		//delete dynamics world
+		// Delete triangle meshes AFTER their associated collision shapes
+		for (auto& tm : this->collisionTriangleMeshes)
+		{
+			delete tm.second;
+			tm.second = nullptr;
+		}
+
 		delete this->dynamicsWorld;
-
-		//delete solver
 		delete this->solver;
-
-		//delete broadphase
 		delete this->overlappingPairCache;
-
-		//delete dispatcher
 		delete this->dispatcher;
-
 		delete this->collisionConfiguration;
-
-		//next line is optional: it will be cleared by the destructor when the array goes out of scope
-		this->collisionShapes.clear();
 	}
 
 	void CollisionWorld::removeCollisionShape(const std::string& name)
@@ -178,49 +173,142 @@ namespace vel
 		return this->collisionShapes[name];
 	}
 
+	void CollisionWorld::addMeshTriangles(btTriangleMesh* triangleMesh, const Mesh* mesh, const auto& verts, const glm::mat4& transform, bool applyTransform)
+	{
+		const auto& indices = mesh->gp->indices;
+
+		// Determine how many vertices this mesh references.
+		uint32_t maxIndex = 0;
+
+		for (size_t i = 0; i < mesh->indexCount; ++i)
+			maxIndex = std::max(maxIndex, indices[mesh->firstIndex + i]);
+
+		triangleMesh->preallocateVertices(maxIndex + 1);
+		triangleMesh->preallocateIndices(mesh->indexCount);
+
+		// Add each vertex once.
+		for (size_t i = 0; i <= maxIndex; ++i)
+		{
+			glm::vec3 pos = verts[mesh->baseVertex + i].position;
+
+			if (applyTransform)
+				pos = glm::vec3(transform * glm::vec4(pos, 1.0f));
+
+			triangleMesh->findOrAddVertex(glmToBulletVec3(pos), false);
+		}
+
+		// Add triangles using existing vertex indices.
+		for (size_t i = 0; i < mesh->indexCount; i += 3)
+		{
+			size_t index = mesh->firstIndex + i;
+
+			triangleMesh->addTriangleIndices(
+				indices[index],
+				indices[index + 1],
+				indices[index + 2]
+			);
+		}
+	}
 
 	btCollisionShape* CollisionWorld::collisionShapeFromActor(Actor* actor, bool applyTransform)
 	{
-		if (actor->getMesh() == nullptr)
+		if (actor->mesh == nullptr || actor->mesh->gp == nullptr || actor->mesh->indexCount == 0)
 			return nullptr;
 
-		std::vector<glm::vec3> tmpVerts;
-		std::vector<size_t> tmpInds;
+		auto* mesh = actor->mesh;
+		std::string shapeName = mesh->name + "_shape";
+
+		// Reuse existing collision geometry when no transform is baked into it.
+		if (!applyTransform)
+		{
+			auto it = this->collisionShapes.find(shapeName);
+
+			if (it != this->collisionShapes.end())
+				return it->second;
+		}
+		else
+		{
+			// Transformed shapes are unique to their actor's current transform.
+			shapeName += "_" + std::to_string(this->nextCollisionShapeId++);
+		}
 
 		auto transformMatrix = actor->getWorldMatrix();
-		auto mesh = actor->getMesh();
 
-		size_t vertexOffset = tmpVerts.size();
+		btTriangleMesh* triangleMesh = new btTriangleMesh();
 
-		for (auto& vert : mesh->getVertices())
+		switch (mesh->gp->vtxLayout)
 		{
-			if (applyTransform)
-				tmpVerts.push_back(glm::vec3(transformMatrix * glm::vec4(vert.position, 1.0f)));
-			else
-				tmpVerts.push_back(vert.position);
+		case VtxLayout::VTX_POS:
+			this->addMeshTriangles(triangleMesh, mesh, static_cast<GeoPoolT<VtxPos>*>(mesh->gp)->vertices, transformMatrix, applyTransform);
+			break;
+		case VtxLayout::VTX_POS_NRML:
+			this->addMeshTriangles(triangleMesh, mesh, static_cast<GeoPoolT<VtxPosNrml>*>(mesh->gp)->vertices, transformMatrix, applyTransform);
+			break;
+		case VtxLayout::VTX_POS_NRML_TX:
+			this->addMeshTriangles(triangleMesh, mesh, static_cast<GeoPoolT<VtxPosNrmlTx>*>(mesh->gp)->vertices, transformMatrix, applyTransform);
+			break;
+		case VtxLayout::VTX_POS_NRML_TX_LM:
+			this->addMeshTriangles(triangleMesh, mesh, static_cast<GeoPoolT<VtxPosNrmlTxLm>*>(mesh->gp)->vertices, transformMatrix, applyTransform);
+			break;
+		case VtxLayout::VTX_POS_NRML_TX_SKN:
+			this->addMeshTriangles(triangleMesh, mesh, static_cast<GeoPoolT<VtxPosNrmlTxSkn>*>(mesh->gp)->vertices, transformMatrix, applyTransform);
+			break;
+		default:
+			delete triangleMesh;
+			return nullptr;
 		}
 
-		for (auto& ind : mesh->getIndices())
-			tmpInds.push_back(ind + vertexOffset);
-
-		btTriangleMesh* mergedTriangleMesh = new btTriangleMesh();
-		btVector3 p0, p1, p2;
-		for (int triCounter = 0; triCounter < tmpInds.size() / 3; triCounter++)
-		{
-			p0 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter]]);
-			p1 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 1]]);
-			p2 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 2]]);
-
-			mergedTriangleMesh->addTriangle(p0, p1, p2);
-		}
-
-		btBvhTriangleMeshShape* bvhShape = new btBvhTriangleMeshShape(mergedTriangleMesh, true);
+		btBvhTriangleMeshShape* bvhShape = new btBvhTriangleMeshShape(triangleMesh, true);
 		bvhShape->setMargin(0);
-		btCollisionShape* staticCollisionShape = bvhShape;
-		this->collisionShapes[actor->getName() + "_shape"] = staticCollisionShape;
-		
-		return staticCollisionShape;
+
+		this->collisionShapes.emplace(shapeName, bvhShape);
+		this->collisionTriangleMeshes.emplace(shapeName, triangleMesh);
+
+		return bvhShape;
 	}
+
+	//btCollisionShape* CollisionWorld::collisionShapeFromActor(Actor* actor, bool applyTransform)
+	//{
+	//	if (actor->mesh == nullptr)
+	//		return nullptr;
+
+	//	std::vector<glm::vec3> tmpVerts;
+	//	std::vector<size_t> tmpInds;
+
+	//	auto transformMatrix = actor->getWorldMatrix();
+	//	auto mesh = actor->mesh;
+
+	//	size_t vertexOffset = tmpVerts.size();
+
+	//	for (auto& vert : mesh->getVertices())
+	//	{
+	//		if (applyTransform)
+	//			tmpVerts.push_back(glm::vec3(transformMatrix * glm::vec4(vert.position, 1.0f)));
+	//		else
+	//			tmpVerts.push_back(vert.position);
+	//	}
+
+	//	for (auto& ind : mesh->getIndices())
+	//		tmpInds.push_back(ind + vertexOffset);
+
+	//	btTriangleMesh* mergedTriangleMesh = new btTriangleMesh();
+	//	btVector3 p0, p1, p2;
+	//	for (int triCounter = 0; triCounter < tmpInds.size() / 3; triCounter++)
+	//	{
+	//		p0 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter]]);
+	//		p1 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 1]]);
+	//		p2 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 2]]);
+
+	//		mergedTriangleMesh->addTriangle(p0, p1, p2);
+	//	}
+
+	//	btBvhTriangleMeshShape* bvhShape = new btBvhTriangleMeshShape(mergedTriangleMesh, true);
+	//	bvhShape->setMargin(0);
+	//	btCollisionShape* staticCollisionShape = bvhShape;
+	//	this->collisionShapes[actor->mesh->name + "_shape"] = staticCollisionShape;
+	//	
+	//	return staticCollisionShape;
+	//}
 
 	btRigidBody* CollisionWorld::addStaticCollisionBody(Actor* actor, int collisionFilterGroup, int collisionFilterMask)
 	{

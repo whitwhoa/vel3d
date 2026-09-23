@@ -20,10 +20,5 @@ namespace vel
 		return true;
 	}
 
-	int Scene::getAudioGroupKey() const
-	{
-		return this->audioGroupKey;
-	}
-
 
 } // END NAMESPACE

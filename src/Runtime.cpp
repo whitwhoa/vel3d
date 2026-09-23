@@ -15,7 +15,7 @@ namespace vel
     std::unique_ptr<GPU> Runtime::_gpu = nullptr;
     std::unique_ptr<AudioDevice> Runtime::_audioDevice = nullptr;
 
-    unsigned int _nextId = 1;
+    unsigned int Runtime::_nextId = 1;
 
     std::chrono::steady_clock::time_point Runtime::_startTime{};
 

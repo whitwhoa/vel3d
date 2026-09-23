@@ -52,8 +52,8 @@ namespace vel
 		std::vector<std::unique_ptr<SkelAnimator>>									animators;
 		slot_map<Actor>																actors;
 	public:
-		HeadlessScene();
-		~HeadlessScene();
+							HeadlessScene();
+		virtual				~HeadlessScene() = default;
 		unsigned int		getId() const;
 		virtual bool		internalLoad();
 		virtual void		internalFixedLoop(float deltaTime);
@@ -146,8 +146,8 @@ namespace vel
 		DrawBucket&		getDrawBucket(Stage& stage, const DrawBucketLocation& location);
 		void			uploadDrawBuckets(std::vector<DrawBucket>& buckets);
 	public:
-		Scene();
-		~Scene();
+						Scene();
+						~Scene() override = default;
 		int				getAudioGroupKey() const;
 		virtual void	immediateLoop(float frameTime, float renderLerpInterval) = 0;
 		virtual void	internalImmediateLoop(float frameTime, float renderLerpInterval);
@@ -172,6 +172,8 @@ namespace vel
 		void						hideActor(actor_handle h);
 		void						showActor(actor_handle h);
 		glm::mat4					getActorWorldRenderMatrix(Actor& a, float alpha);
+	public:
+		void						initActorDrawBuckets();
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneText
@@ -221,17 +223,15 @@ namespace vel
 	protected:
 		void						loadBGMSound(const std::string& path);
 		bool						loadSFXSound(const std::string& path);
-	public:
-		int							getAudioGroupKey() const;
 		
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneLine
 	////////////////////////////////////////////////////////////////////////////////////////////////
-	protected:
-		Actor*						addLine(const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points, std::vector<glm::vec4> colors, float thickness = 1.f);
-		Actor*						addContinuousLine(const std::vector<glm::vec2>& points, glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float thickness = 1.f);
-		std::unique_ptr<Mesh>		linePointsToMesh(const std::vector<glm::vec2>& points);
-		std::unique_ptr<Mesh>		lineSegmentsToMesh(const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points);
+	//protected:
+	//	Actor*						addLine(const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points, std::vector<glm::vec4> colors, float thickness = 1.f);
+	//	Actor*						addContinuousLine(const std::vector<glm::vec2>& points, glm::vec4 color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), float thickness = 1.f);
+	//	std::unique_ptr<Mesh>		linePointsToMesh(const std::vector<glm::vec2>& points);
+	//	std::unique_ptr<Mesh>		lineSegmentsToMesh(const std::vector<std::tuple<glm::vec2, glm::vec2, unsigned int>>& points);
 		
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneMesh

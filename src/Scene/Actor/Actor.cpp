@@ -148,7 +148,7 @@ namespace vel
 		if (this->mesh == nullptr)
 			return AABB(glm::vec3(0.0f), glm::vec3(0.0f));
 
-		const std::vector<glm::vec3>& localCorners = this->mesh->aabb.getCorners();
+		const std::vector<glm::vec3>& localCorners = this->mesh->aabb.corners;
 
 		std::vector<glm::vec3> worldCorners;
 		worldCorners.reserve(localCorners.size());
