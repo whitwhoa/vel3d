@@ -1,13 +1,13 @@
 #include <spdlog/spdlog.h>
 
+#include <vel/Runtime.h>
 #include <vel/HeadlessApp.h>
 
 
 namespace vel
 {
 	HeadlessApp::HeadlessApp() : 
-		activeScene(nullptr),
-		currentSimTick(0)
+		activeScene(nullptr)
 	{
 		
 	};
@@ -18,29 +18,27 @@ namespace vel
 	{
 		SPDLOG_DEBUG("HeadlessApp::addScene(): Adding new HeadlessScene");
 
-		this->scenes.push_back(std::move(scene));
+		if (scene->internalLoad())
+		{
+			HeadlessScene* rawPtr = scene.get();
+			this->scenes.push_back(std::move(scene));
 
-		HeadlessScene* ptrScene = this->scenes.back().get();
-		ptrScene->internalLoad();
-
-		if (makeActive)
-			this->activeScene = ptrScene;
+			if (makeActive)
+				this->activeScene = rawPtr;
+		}
 	}
 
 	void HeadlessApp::removeScene(unsigned int id)
 	{
 		SPDLOG_DEBUG("HeadlessApp::removeScene(): Removing Scene: {}", id);
 
-		size_t i = 0;
-		for (auto& s : this->scenes)
-		{
-			if (s->getId() == id)
-				break;
+		auto it = std::find_if(this->scenes.begin(), this->scenes.end(),
+			[id](const auto& s) { return s->getId() == id; });
 
-			i++;
-		}
-
-		this->scenes.erase(this->scenes.begin() + i);
+		if (it != this->scenes.end())
+			this->scenes.erase(it);
+		else
+			SPDLOG_WARN("HeadlessApp::removeScene(): Scene not found: {}", id);
 	}
 
 	void HeadlessApp::swapScene(unsigned int id)
@@ -58,7 +56,7 @@ namespace vel
 		if (this->activeScene == nullptr)
 			return;
 
-		this->currentSimTick++;
+		Runtime::_currentSimTick++;
 
 		this->activeScene->stepPhysics(dt);
 		this->activeScene->updateAnimators(dt);

@@ -90,5 +90,7 @@ namespace vel
 		glm::mat4					getMatrix();
 
 		AABB						getWorldAABB();
+
+		bool						transformUpdatedThisTick() const;
 	};
 }

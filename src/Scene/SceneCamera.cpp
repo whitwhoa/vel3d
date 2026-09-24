@@ -40,5 +40,37 @@ namespace vel
 		Runtime::_gpu->clearFinalRenderTarget(this->sceneRenderTarget, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	}
 
+	texture_handle Scene::createCameraTexture(Camera* c)
+	{
+		std::string name = "camera_" + std::to_string(c->getId());
+		auto it = this->textureHandleMap.find(name);
+		if (it != this->textureHandleMap.end())
+			return it->second;
+
+		SPDLOG_DEBUG("Scene::createCameraTexture(): Creating new camera texture: {}", name);
+
+		Texture texture;
+		texture.flags = TXTRFLG_RT_WRAPPER;
+		texture.bufferId = c->renderTarget.opaqueBufferId;
+		texture.dsaHandle = c->renderTarget.opaqueDsaHandle;
+
+		texture_handle handle = this->textures.size();
+		this->textures.push_back(texture);
+		this->textureHandleMap.emplace(name, handle);
+
+		c->renderTargetTextureHandle = handle;
+
+		return handle;
+	}
+
+	void Scene::refreshCameraTexture(Camera& camera)
+	{
+		if (!camera.renderTargetTextureHandle)
+			return;
+
+		texture_handle handle = camera.renderTargetTextureHandle.value();
+
+		this->updateTextureHandle(handle, camera.renderTarget.opaqueBufferId, camera.renderTarget.opaqueDsaHandle);
+	}
 
 } // END NAMESPACE

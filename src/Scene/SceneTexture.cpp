@@ -60,26 +60,31 @@ namespace vel
 		return out;
 	}
 
-	texture_handle Scene::createCameraTexture(Camera* c)
+	void Scene::updateTextureHandle(texture_handle textureHandle, uint32_t bufferId, uint64_t dsaHandle)
 	{
-		std::string name = "camera_" + std::to_string(c->getId());
-		auto it = this->textureHandleMap.find(name);
-		if (it != this->textureHandleMap.end())
-			return it->second;
+		Texture& texture = this->textures[textureHandle];
 
-		SPDLOG_DEBUG("Scene::createCameraTexture(): Creating new camera texture: {}", name);
+		texture.bufferId = bufferId;
+		texture.dsaHandle = dsaHandle;
 
-		Texture texture;
-		texture.flags = TXTRFLG_RT_WRAPPER;
-		texture.bufferId = c->renderTarget.opaqueBufferId;
-		texture.dsaHandle = c->renderTarget.opaqueDsaHandle;
+		auto it = this->materialTextureSlots.find(textureHandle);
+		if (it == this->materialTextureSlots.end())
+			return;
 
-		texture_handle handle = this->textures.size();
-		this->textures.push_back(texture);
-		this->textureHandleMap.emplace(name, handle);
+		for (uint32_t slot : it->second)
+		{
+			this->materialTexturesGpu[slot] = dsaHandle;
 
-		return handle;
+			Runtime::_gpu->uploadBufferSubData(
+				this->bufferIds.materialTextureHandlesSsbo,
+				slot * sizeof(uint64_t),
+				sizeof(uint64_t),
+				&this->materialTexturesGpu[slot]
+			);
+		}
 	}
+
+	
 
 
 } // END NAMESPACE

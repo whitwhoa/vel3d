@@ -11,7 +11,6 @@ namespace vel
 	protected:
 		std::vector<std::unique_ptr<HeadlessScene>>		scenes;
 		HeadlessScene*									activeScene;
-		uint32_t										currentSimTick;
 
 	public:
 		HeadlessApp();

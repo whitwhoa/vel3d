@@ -16,12 +16,12 @@ namespace vel
 
 	void HeadlessScene::clearActorParent(actor_handle child)
 	{
-		this->actors[child].parentActor = actor_handle{};
-
 		auto& childActors = this->actors[this->actors[child].parentActor].childActors;
 		auto it = std::find(childActors.begin(), childActors.end(), child);
 		if (it != childActors.end())
 			childActors.erase(it);
+
+		this->actors[child].parentActor = actor_handle{};
 	}
 
 	void HeadlessScene::setActorParentBone(actor_handle child, actor_handle parent, int32_t parentBoneId)
@@ -35,14 +35,14 @@ namespace vel
 
 	void HeadlessScene::clearActorParentBone(actor_handle child)
 	{
-		Actor& c = this->actors[child];
-		c.parentActor = actor_handle{};
-		c.parentActorBone = -1;
-
 		auto& childActors = this->actors[this->actors[child].parentActor].childActors;
 		auto it = std::find(childActors.begin(), childActors.end(), child);
 		if (it != childActors.end())
 			childActors.erase(it);
+
+		Actor& c = this->actors[child];
+		c.parentActor = actor_handle{};
+		c.parentActorBone = -1;
 	}
 
 	glm::mat4 HeadlessScene::getActorWorldMatrix(Actor& a)
@@ -81,6 +81,36 @@ namespace vel
 		return this->getActorWorldRenderMatrix(this->actors[a.parentActor], alpha) *
 			ozzFloat4x4ToGlmMat4(this->actors[a.parentActor].animator->getRenderBoneMatrix(a.parentActorBone)) *
 			selfMat;
+	}
+
+	glm::mat4 Scene::getActorWorldRenderMatrix(Actor& a, float alpha)
+	{
+		glm::mat4 localMatrix;
+
+		if ((a.flags & ACTFLG_DYNAMIC) && (a.flags & ACTFLG_LERPABLE) && a.transformUpdatedThisTick())
+		{
+			// actor requires interpolation
+			localMatrix = Transform::interpolateTransforms(a.getPreviousTransform(), a.getTransform(), alpha);
+		}
+		else
+		{
+			// actor is not dynamic (does not move) so interpolation is not required, simply return it's world matrix
+			localMatrix = a.getTransform().getMatrix();
+		}
+
+		// if this actor has no parent, simply return the matrix of it's transform
+		if (!a.parentActor)
+			return localMatrix;
+
+		// actor has a parent
+
+		// if actor is parented to a bone of another actor
+		if (a.parentActorBone == -1)
+			return this->getActorWorldRenderMatrix(this->actors[a.parentActor], alpha) * localMatrix;
+
+		return this->getActorWorldRenderMatrix(this->actors[a.parentActor], alpha) *
+			ozzFloat4x4ToGlmMat4(this->actors[a.parentActor].animator->getRenderBoneMatrix(a.parentActorBone)) *
+			localMatrix;
 	}
 
 	void Scene::hideActor(actor_handle h)
@@ -145,7 +175,20 @@ namespace vel
 			{
 				Material& m = this->materials[a.materialIndices[i]];
 
-				if (m.flags & MTLFLG_IS_TRANSPARENT)
+				if (m.flags & MTLFLG_HAS_AMBIENT_CUBE)
+				{
+					a.flags |= ACTFLG_AMBIENT_CUBE; // make sure actor has ambient cube flag if one of its materials has it
+					if (a.ambientCube.size() == 0)
+					{
+						// prime a value (should be overwritten by application specific logic)
+						a.ambientCube = {
+							{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f},
+							{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}
+						};
+					}
+				}
+
+				if ((m.flags & MTLFLG_IS_TRANSPARENT) || (m.flags & MTLFLG_IS_RGBA) || (m.flags & MTLFLG_IS_TEXT) || (m.flags & MTLFLG_IS_ALPHA_MASK))
 					a.drawBuckets.push_back(this->findOrCreateDrawBucket(a.stage, RENDER_PASS_TRANSPARENT, m.shaderProgramId, a.mesh->gp->gpuGeoPool->VAO));
 				else
 					a.drawBuckets.push_back(this->findOrCreateDrawBucket(a.stage, RENDER_PASS_OPAQUE, m.shaderProgramId, a.mesh->gp->gpuGeoPool->VAO));
@@ -164,19 +207,6 @@ namespace vel
 		a.flags = flags;
 		a.materialIndices = materials;
 		a.animator = animator;
-
-		for (uint32_t i = 0; i < materials.size(); i++)
-		{
-			Material& m = this->materials[materials[i]];
-
-			if (m.flags & MTLFLG_IS_TRANSPARENT)
-				a.drawBuckets.push_back(this->findOrCreateDrawBucket(stage, RENDER_PASS_TRANSPARENT, m.shaderProgramId, mesh->gp->gpuGeoPool->VAO));
-			else
-				a.drawBuckets.push_back(this->findOrCreateDrawBucket(stage, RENDER_PASS_OPAQUE, m.shaderProgramId, mesh->gp->gpuGeoPool->VAO));
-
-			if (flags & ACTFLG_ANIMATED_MATERIAL)
-				a.materialAnimators.emplace_back(m.textures.size(), 24.f);
-		}
 
 		unsigned int index = 0;
 		for (auto& meshBone : a.mesh->bones)

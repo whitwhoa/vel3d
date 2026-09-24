@@ -7,6 +7,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <vel/Util/Assert.h>
 #include <vel/Runtime.h>
 #include <vel/Util/functions.h>
 #include <vel/Scene/CollisionWorld/CollisionObjectTemplate.h>
@@ -79,11 +80,11 @@ namespace vel
 		for (auto& s : this->shaders)
 			Runtime::_gpu->clearShader(s.programId);
 
-		for (auto& m : this->meshes)
-		{
-			if ((m.second->flags & MESHFLAG_RENDERABLE) && !(m.second->flags & MESHFLAG_POOLED))
-				Runtime::_gpu->clearGeoPool(m.second->gp->gpuGeoPool.value());
-		}
+		for (auto& rsp : this->renderSoloGeoPools)
+			Runtime::_gpu->clearGeoPool(rsp.second->gpuGeoPool.value());
+
+		for (auto& rp : this->renderGeoPools)
+			Runtime::_gpu->clearGeoPool(rp.second->gpuGeoPool.value());
 
 		for (auto& s : this->soundsInUse)
 			Runtime::_audioDevice->removeSound(s);
@@ -112,6 +113,12 @@ namespace vel
 	void Scene::internalImmediateLoop(float frameTime, float renderLerpInterval)
 	{
 		this->immediateLoop(frameTime, renderLerpInterval);
+
+		for (auto& camera : this->cameras)
+		{
+			camera->update();
+			this->refreshCameraTexture(*camera);
+		}
 	}
 
 	void Scene::initMaterialData()
@@ -120,6 +127,7 @@ namespace vel
 		this->materialsGpu.reserve(this->materials.size());
 
 		this->materialTexturesGpu.clear();
+		this->materialTextureSlots.clear();
 
 		for (const Material& material : this->materials)
 		{
@@ -131,8 +139,20 @@ namespace vel
 
 			gpuData.textureOffset = this->materialTexturesGpu.size();
 			gpuData.textureCount = material.textures.size();
+
+			VEL_ASSERT(
+				(
+					((material.flags & MTLFLG_HAS_TEXTURES) && gpuData.textureCount > 0) || 
+					(!(material.flags & MTLFLG_HAS_TEXTURES) && gpuData.textureCount == 0)
+				),
+			"Attempting to upload material flagged as having textures, that has no textures");
+
 			for (texture_handle th : material.textures)
+			{
 				this->materialTexturesGpu.push_back(this->textures[th].dsaHandle);
+				this->materialTextureSlots[th].push_back(this->materialTexturesGpu.size());
+			}
+				
 
 			this->materialsGpu.push_back(gpuData);
 		}
@@ -358,7 +378,7 @@ namespace vel
 			{
 				Camera& camera = *c;
 
-				Runtime::_gpu->uploadStreamBufferSubData(this->bufferIds.cameraUbo, 0, sizeof(CameraGpuData), &camera.gpuData);
+				Runtime::_gpu->uploadBufferSubData(this->bufferIds.cameraUbo, 0, sizeof(CameraGpuData), &camera.gpuData);
 
 				Runtime::_gpu->setOpaqueRenderState(camera.renderTarget);
 				for (const DrawBucket& bucket : stage.opaqueBuckets)

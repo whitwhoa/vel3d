@@ -68,16 +68,13 @@ namespace vel
 	{
 		SPDLOG_DEBUG("App::removeScene(): Removing Scene: {}", id);
 
-		size_t i = 0;
-		for (auto& s : this->scenes)
-		{
-			if (s->getId() == id)
-				break;
-			
-			i++;
-		}
+		auto it = std::find_if(this->scenes.begin(), this->scenes.end(), 
+			[id](const auto& s) { return s->getId() == id; });
 
-		this->scenes.erase(this->scenes.begin() + i);
+		if (it != this->scenes.end())
+			this->scenes.erase(it);
+		else
+			SPDLOG_WARN("App::removeScene(): Scene not found: {}", id);
 	}
 
 	void App::swapScene(unsigned int id)
@@ -109,19 +106,23 @@ namespace vel
     {
 		SPDLOG_DEBUG("App::addScene(): Adding new Scene");
 		
-		this->scenes.push_back(std::move(scene));
-
-		Scene* ptrScene = this->scenes.back().get();
-
-		if (makeActive)
+		if (scene->internalLoad())
 		{
-			this->activeScene = ptrScene;
+			Scene* rawPtr = scene.get();
+			this->scenes.push_back(std::move(scene));
 
-			if (this->activeScene->getAudioGroupKey() != -1)
-				Runtime::_audioDevice->setCurrentGroupKey(this->activeScene->getAudioGroupKey());
+			if (makeActive)
+			{
+				this->activeScene = rawPtr;
+
+				if (this->activeScene->getAudioGroupKey() != -1)
+					Runtime::_audioDevice->setCurrentGroupKey(this->activeScene->getAudioGroupKey());
+			}
+
+			return true;
 		}
 
-		return ptrScene->internalLoad();
+		return false;
     }
 
     void App::close()

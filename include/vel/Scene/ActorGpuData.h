@@ -6,13 +6,6 @@
 
 namespace vel
 {
-    enum ActorGpuFlags : uint32_t
-    {
-        ACTOR_GPU_HAS_AMBIENT_CUBE = 1u << 0,
-        ACTOR_GPU_IS_BILLBOARD = 1u << 1,
-        ACTOR_GPU_BILLBOARD_LOCK_Y = 1u << 2
-    };
-
     struct alignas(16) ActorGpuData
     {
         glm::mat4 model;

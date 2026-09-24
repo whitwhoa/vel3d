@@ -68,6 +68,11 @@ namespace vel
 		}
 	}
 
+	bool Actor::transformUpdatedThisTick() const
+	{
+		return this->lastTransformUpdateTick == Runtime::_currentSimTick;
+	}
+
 	void Actor::setTranslation(glm::vec3 t)
 	{
 		this->_updatePrevTransform();

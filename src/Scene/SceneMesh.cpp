@@ -2,6 +2,7 @@
 
 #include <vel/Runtime.h>
 #include <vel/Scene/Scene.h>
+#include <vel/Util/Assert.h>
 
 namespace vel
 {
@@ -70,6 +71,19 @@ namespace vel
 			return {};
 		}
 
+		std::unordered_set<std::string> preloadedNames;
+		for (const auto& pld : preLoadData)
+		{
+			if (!preloadedNames.emplace(pld.first).second)
+			{
+				SPDLOG_ERROR("Scene::loadMesh(): File '{}' contains multiple mesh nodes named '{}'.", path, pld.first);
+
+				this->meshLoader->reset();
+				return {};
+			}
+		}
+
+
 		std::vector<Mesh*> out;
 
 		// check for duplicates
@@ -88,7 +102,8 @@ namespace vel
 				}
 				else
 				{
-					std::unique_ptr<GeoPool> renderSoloGeoPool = nullptr;
+					std::unique_ptr<GeoPool> renderSoloGeoPool;
+
 					if (pld.second == VtxLayout::VTX_POS_NRML)
 						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrml>>();
 					else if (pld.second == VtxLayout::VTX_POS_NRML_TX)
@@ -98,11 +113,13 @@ namespace vel
 					else if (pld.second == VtxLayout::VTX_POS_NRML_TX_SKN)
 						renderSoloGeoPool = std::make_unique<GeoPoolT<VtxPosNrmlTxSkn>>();
 
-					GeoPool* standAlonePoolRawPtr = renderSoloGeoPool.get();
+					VEL_ASSERT(renderSoloGeoPool, ("Scene::loadMesh(): Unsupported vertex layout for mesh: " + pld.first).c_str());
 
-					this->renderSoloGeoPools.emplace(pld.first, std::move(renderSoloGeoPool));
+					auto [poolIt, inserted] = this->renderSoloGeoPools.try_emplace(pld.first, std::move(renderSoloGeoPool));
 
-					requiredData.push_back({ pld.first, standAlonePoolRawPtr });
+					VEL_ASSERT(inserted, ("Scene::loadMesh(): A standalone geometry pool named already exists without a matching mesh: " + pld.first).c_str());
+
+					requiredData.push_back({ pld.first, poolIt->second.get() });
 				}
 			}
 			else
@@ -114,12 +131,18 @@ namespace vel
 
 		std::vector<std::unique_ptr<Mesh>> loadedAssets = this->meshLoader->load(&requiredData);
 
-		for (auto& m : loadedAssets)
+		for (auto& mesh : loadedAssets)
 		{
-			Mesh* rawPtr = m.get();
-			this->meshes.emplace(m->name, std::move(m));
+			mesh->flags = meshFlags;
+			mesh->refreshAABB();
 
-			out.push_back(rawPtr);
+			std::string name = mesh->name;
+
+			auto [it, inserted] = this->meshes.try_emplace(name, std::move(mesh));
+
+			VEL_ASSERT(inserted, ("Scene::loadMesh(): The following mesh was unexpectedly produced more than once: " + name).c_str());
+
+			out.push_back(it->second.get());
 		}
 
 		this->meshLoader->reset();
@@ -129,6 +152,10 @@ namespace vel
 
 	Mesh* Scene::loadBillboardMesh(const std::string& name, float width, float height)
 	{
+		auto it = this->meshes.find(name);
+		if (it != this->meshes.end())
+			return it->second.get();
+
 		GeoPoolT<VtxPosNrmlTx>* gp = static_cast<GeoPoolT<VtxPosNrmlTx>*>(this->renderGeoPools[VTX_POS_NRML_TX].get());
 
 		std::unique_ptr<Mesh> mesh = std::make_unique<Mesh>(name);
@@ -188,20 +215,19 @@ namespace vel
 		return rawPtr;
 	}
 
-	Mesh* HeadlessScene::addMesh(std::unique_ptr<Mesh> m)
+	Mesh* HeadlessScene::addMesh(std::unique_ptr<Mesh> mesh)
 	{
-		Mesh* rawPtr = m.get();
-		this->meshes.emplace(m->name, std::move(m));
+		if (!mesh)
+			return nullptr;
 
-		return rawPtr;
-	}
+		std::string name = mesh->name;
 
-	Mesh* Scene::addMesh(std::unique_ptr<Mesh> m)
-	{
-		Mesh* rawPtr = HeadlessScene::addMesh(std::move(m));
-		Runtime::_gpu->loadGeoPool(rawPtr->gp);
+		auto [it, inserted] = this->meshes.try_emplace(name, std::move(mesh));
 
-		return rawPtr;
+		if (!inserted)
+			SPDLOG_WARN("HeadlessScene::addMesh(): A mesh named '{}' already exists.", name);
+
+		return it->second.get();
 	}
 
 	Mesh* HeadlessScene::getMesh(const std::string& name)

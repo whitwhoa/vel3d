@@ -40,9 +40,10 @@ namespace vel
 		glm::vec3			    position;
 		glm::vec3			    lookAt;
 		glm::vec3			    up;
-		CameraGpuData			gpuData;
+		CameraGpuData			gpuData;		
 		bool					finalRenderCam;
 		bool					resolutionFixed;
+		std::optional<texture_handle> renderTargetTextureHandle;
 
 		Camera(CameraType type);
 		unsigned int			getId() const;

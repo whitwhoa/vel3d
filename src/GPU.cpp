@@ -1450,7 +1450,7 @@ void main()
 		glNamedBufferData(id, size, data, GL_STREAM_DRAW);
 	}
 
-	void GPU::uploadStreamBufferSubData(uint32_t buffer, uint32_t offset, uint32_t size, void* data)
+	void GPU::uploadBufferSubData(uint32_t buffer, uint32_t offset, uint32_t size, void* data)
 	{
 		glNamedBufferSubData(buffer, offset, size, data);
 	}

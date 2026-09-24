@@ -165,7 +165,7 @@ namespace vel
 
 		void								uploadStaticBufferData(uint32_t id, uint32_t size, void* data);
 		void								uploadStreamBufferData(uint32_t id, uint32_t size, void* data);
-		void								uploadStreamBufferSubData(uint32_t buffer, uint32_t offset, uint32_t size, void* data);
+		void								uploadBufferSubData(uint32_t buffer, uint32_t offset, uint32_t size, void* data);
 		void								submitDrawBucket(const DrawBucket& bucket);
 
 		void								freeSceneBuffers(BufferIds& b);

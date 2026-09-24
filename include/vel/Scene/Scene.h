@@ -128,7 +128,8 @@ namespace vel
 		std::vector<Material>											materials; // contiguous array of every material, added during load(), NOT modified at runtime
 		std::vector<MaterialGpuData>									materialsGpu; // contiguous array of every material's gpu representation, generated once during load
 		std::vector<uint64_t>											materialTexturesGpu; // contiguous array of every texture in every material, generated once during load
-		
+		std::unordered_map<texture_handle, std::vector<uint32_t>>		materialTextureSlots; // mapping of texture handle to materialTexturesGpu location, for use when needing to update dsaHandle of a texture (for real-time camera re-sizing)
+
 		std::vector<ActorGpuData> 										actorsGpu;
 		std::vector<glm::vec4> 											actorAmbientCube;
 		std::vector<glm::mat4> 											actorBoneMatrices;
@@ -196,6 +197,7 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	private:
 		void						generateTextureData(const std::string& path, Texture& t);
+		void						updateTextureHandle(texture_handle textureHandle, uint32_t bufferId, uint64_t dsaHandle);
 	protected:
 		texture_handle				loadTexture(const std::string& path, uint32_t flags = 0);
 		std::vector<texture_handle>	loadTextureFrames(const std::string& dir, uint32_t flags = 0);
@@ -239,7 +241,6 @@ namespace vel
 	protected:
 		std::vector<Mesh*>			loadMesh(const std::string& path, uint32_t meshFlags = MESHFLAG_POOLED | MESHFLAG_RENDERABLE) override;
 		Mesh*						loadBillboardMesh(const std::string& name, float width, float height);
-		Mesh*						addMesh(std::unique_ptr<Mesh> m) override; // This method assumes that the caller understands no duplication checks are occuring
 		void						removeMesh(Mesh* pMesh) override;
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -251,6 +252,8 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneCamera
 	////////////////////////////////////////////////////////////////////////////////////////////////
+	private:
+		void						refreshCameraTexture(Camera& camera);
 	protected:
 		Camera*						addCamera(CameraType type);
 		Camera*						getCamera(unsigned int id);
@@ -258,6 +261,7 @@ namespace vel
 		void						updateAllCameraResolutions(int x, int y);
 		void						clearAllRenderTargetBuffers();
 		texture_handle				createCameraTexture(Camera* c);
+
 
 	}; // END SCENE CLASS
 
