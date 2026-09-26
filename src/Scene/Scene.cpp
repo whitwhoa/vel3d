@@ -84,11 +84,16 @@ namespace vel
 			Runtime::_gpu->clearShader(s.programId);
 
 		for (auto& rsp : this->renderSoloGeoPools)
-			Runtime::_gpu->clearGeoPool(rsp.second->gpuGeoPool.value());
-
+		{
+			if (rsp.second->gpuGeoPool)
+				Runtime::_gpu->clearGeoPool(rsp.second->gpuGeoPool.value());
+		}
+			
 		for (auto& rp : this->renderGeoPools)
-			Runtime::_gpu->clearGeoPool(rp.second->gpuGeoPool.value());
-
+		{
+			if (rp.second->gpuGeoPool)
+				Runtime::_gpu->clearGeoPool(rp.second->gpuGeoPool.value());
+		}
 
 		Runtime::_audioDevice->removeGroup(static_cast<unsigned int>(this->audioGroupKey));
 
@@ -159,11 +164,10 @@ namespace vel
 
 			for (texture_handle th : material.textures)
 			{
+				this->materialTextureSlots[th].push_back(static_cast<uint32_t>(this->materialTexturesGpu.size()));
 				this->materialTexturesGpu.push_back(this->textures[th].dsaHandle);
-				this->materialTextureSlots[th].push_back(this->materialTexturesGpu.size());
 			}
 				
-
 			this->materialsGpu.push_back(gpuData);
 		}
 
@@ -221,6 +225,8 @@ namespace vel
 			return stage.opaqueBuckets[location.index];
 		case RENDER_PASS_TRANSPARENT:
 			return stage.transparentBuckets[location.index];
+		default:
+			VEL_ASSERT(false, "Scene::getDrawBucket(): Invalid render pass.");
 		}
 	}
 
@@ -264,8 +270,6 @@ namespace vel
 		// ---------------------------------------------------------
 		for (auto& actor : this->actors)
 		{
-			SPDLOG_DEBUG("YEET");
-
 			if (!(actor.flags & ACTFLG_VISIBLE))
 				continue;
 
@@ -300,7 +304,7 @@ namespace vel
 			ActorGpuData agd;
 			agd.model = this->getActorWorldRenderMatrix(actor, alpha);
 			agd.colorMultiplier = actor.colorMultiplier;
-			agd.lightmapHandle = actor.lightmapTexture ? this->textures[actor.lightmapTexture].dsaHandle : 0;
+			agd.lightmapHandle = actor.lightmapTexture != INVALID_TEXTURE_HANDLE ? this->textures[actor.lightmapTexture].dsaHandle : 0;
 			agd.flags = actor.flags;
 			agd.ambientCubeOffset = ambientCubeOffset;
 			agd.boneMatrixOffset = boneMatrixOffset;
@@ -320,6 +324,9 @@ namespace vel
 
 			for (const MeshSection& section : mesh.sections)
 			{
+				if (section.indexCount == 0)
+					continue;
+
 				DrawBucket& bucket = getDrawBucket(stage, actor.drawBuckets[section.actorMaterialIndex]);
 
 				DrawBucketCommand drawCommand = {

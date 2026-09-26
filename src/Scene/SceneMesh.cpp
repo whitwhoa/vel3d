@@ -167,8 +167,7 @@ namespace vel
 		const float halfWidth = width * 0.5f;
 		const float halfHeight = height * 0.5f;
 
-		// Front face is toward -Z (matches billboard code using forward = -dir)
-		const glm::vec3 n(0.0f, 0.0f, -1.0f);
+		const glm::vec3 n(0.0f, 0.0f, 1.0f); // face toward camera
 
 		VtxPosNrmlTx v0;
 		v0.position = glm::vec3(-halfWidth, halfHeight, 0.0f);
@@ -194,13 +193,12 @@ namespace vel
 		v3.textureCoords = glm::vec2(1.0f, 0.0f);
 		gp->vertices.push_back(v3);
 
-		// Flip indices so -Z is front (CCW when viewed from -Z)
 		gp->indices.push_back(0);
-		gp->indices.push_back(2);
 		gp->indices.push_back(1);
-		gp->indices.push_back(0);
-		gp->indices.push_back(3);
 		gp->indices.push_back(2);
+		gp->indices.push_back(0);
+		gp->indices.push_back(2);
+		gp->indices.push_back(3);
 
 		mesh->indexCount = static_cast<uint32_t>(gp->indices.size()) - mesh->firstIndex;
 

@@ -50,7 +50,9 @@ namespace vel
 		setCorners();
 	};
 
-	AABB::AABB(const Mesh* mesh)
+	AABB::AABB(const Mesh* mesh) :
+		minEdge(glm::vec3(0.0f)),
+		maxEdge(glm::vec3(0.0f))
 	{
 		switch (mesh->gp->vtxLayout)
 		{

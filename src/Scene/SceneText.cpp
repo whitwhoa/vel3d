@@ -456,6 +456,9 @@ namespace vel
 
 			Actor& a = this->actors[t.actor];
 
+			VEL_ASSERT(a.mesh && a.mesh->gp, "Scene::updateTexts(): Text actor has no geometry pool.");
+			VEL_ASSERT(a.mesh->gp->gpuGeoPool, "Scene::updateTexts(): Text geometry pool has not been initialized.");
+
 			this->buildTextGeometry(t, a.mesh);
 			
 			Runtime::_gpu->updateGeoPool(a.mesh->gp);

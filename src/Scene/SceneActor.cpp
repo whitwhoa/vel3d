@@ -150,6 +150,9 @@ namespace vel
 	{
 		for (auto& a : this->actors)
 		{
+			VEL_ASSERT(a.mesh && a.mesh->gp, "Scene::initActorDrawBuckets(): Actor has no geometry pool.");
+			VEL_ASSERT(a.mesh->gp->gpuGeoPool, "Scene::initActorDrawBuckets(): Geometry pool has not been initialized.");
+
 			for (uint32_t i = 0; i < a.materialIndices.size(); i++)
 			{
 				Material& m = this->materials[a.materialIndices[i]];
@@ -173,7 +176,11 @@ namespace vel
 					a.drawBuckets.push_back(this->findOrCreateDrawBucket(a.stage, RENDER_PASS_OPAQUE, m.shaderProgramId, a.mesh->gp->gpuGeoPool->VAO));
 
 				if (a.flags & ACTFLG_ANIMATED_MATERIAL)
-					a.materialAnimators.emplace_back(m.textures.size(), 24.f);
+				{
+					VEL_ASSERT(!m.textures.empty(), "Scene::initActorDrawBuckets(): Animated material has no textures.");
+					a.materialAnimators.emplace_back(static_cast<uint32_t>(m.textures.size()), 24.f);
+				}
+					
 			}
 		}
 	}
