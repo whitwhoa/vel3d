@@ -1,24 +1,26 @@
 #pragma once
 
+#include <cstdint>
+
 namespace vel
 {
 	class FrameAnimator
 	{
 	private:
-		float				frameCount;
-		unsigned int		currentFrame;
-		float				currentCycleTime;
-		unsigned int		currentCycle;
+		uint32_t		frameCount;
+		uint32_t		currentFrame;
+		float			currentCycleTime;
+		uint32_t		currentCycle;
 		
 	public:
-		float				framesPerSecond;
-		unsigned int		pauseAfterCycles;
-		bool				reverse;
-		bool				paused;
+		float			framesPerSecond;
+		uint32_t		pauseAfterCycles;
+		bool			reverse;
+		bool			paused;
 
-		FrameAnimator(float frameCount, float fps);
+		FrameAnimator(uint32_t frameCount, float fps);
 
-		unsigned int		update(float frameTime);
-		unsigned int		getCurrentFrame();
+		uint32_t		update(float frameTime);
+		uint32_t		getCurrentFrame();
 	};
 }

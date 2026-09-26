@@ -8,6 +8,10 @@
 #include <vel/AudioDevice.h>
 #include <vel/GPU.h>
 
+#ifdef VEL_USE_NVAPI
+#include <vel/nvapi.h>
+#endif
+
 /*
 
 The intent of this "Runtime" is to carve out a section of global state, but
@@ -34,6 +38,7 @@ namespace vel
         friend class Actor;
 
     private:
+        static bool _initialized;
         static Config _config;
         static std::unique_ptr<Window> _window;
         static std::unique_ptr<GPU> _gpu;
@@ -54,7 +59,7 @@ namespace vel
         Runtime(const Runtime&) = delete;
         Runtime& operator=(const Runtime&) = delete;
 
-        static bool init(const Config& config);
+        static void init(const Config& config);
         static void shutdown();
 
         static const Config& config();

@@ -4,7 +4,9 @@
 #include <GLFW/glfw3.h>
 
 #include <vel/Window.h>
-#include <vel/nvapi.hpp>
+#include <vel/Util/Assert.h>
+
+
 
 
 // stutter caused when not in fullscreen mode: https://stackoverflow.com/a/21663076/1609485
@@ -75,15 +77,15 @@ namespace vel
 	}
 
 
-    Window::Window() :
-		windowMode(true),
-        windowSize(glm::ivec2(1280,720)),
-		lockResToWin(true),
-		resolution(glm::ivec2(1280, 720)),
+    Window::Window(const Config& c) :
+		windowMode(c.windowMode),
+		windowSize({ c.windowWidth, c.windowHeight }),
+		lockResToWin(c.lockResToWin),
+		resolution(c.lockResToWin ? glm::ivec2(c.windowWidth, c.windowHeight) : glm::ivec2(c.resolutionWidth, c.resolutionHeight)),
 		windowSizeChanged(false),
 		resolutionChanged(false),
-		cursorHidden(true),
-		vsync(false),
+		cursorHidden(c.cursorHidden),
+		vsync(c.vsync),
 		glfwWindow(nullptr),
 		scroll(0),
 		mouseAccumDX(0.0),
@@ -92,33 +94,19 @@ namespace vel
 		lastMouseY(0.0),
 		firstMouse(true)
     {
-
-    }
-
-    Window::~Window() 
-    {
-        glfwDestroyWindow(this->glfwWindow);
-        glfwTerminate();
-    }
-
-	bool Window::init(const Config& c)
-	{
-		this->windowMode = c.windowMode;
-		this->windowSize = glm::ivec2(c.windowWidth, c.windowHeight);
-		this->lockResToWin = c.lockResToWin;
-		this->resolution = c.lockResToWin ? glm::ivec2(c.windowWidth, c.windowHeight) : glm::ivec2(c.resolutionWidth, c.resolutionHeight);
-		this->cursorHidden = c.cursorHidden;
-		this->vsync = c.vsync;
-
 		this->inputState.mouseSensitivity = c.mouseSensitivity;
 
+		//
+		// glfw
+		//
+		glfwSetErrorCallback([](int error, const char* description)
+		{
+			SPDLOG_ERROR("GLFW error {}: {}", error, description);
+		});
 
-#ifdef WINDOWS_BUILD
-		initNvidiaApplicationProfile(c.appExeName, c.appName);
-#endif
+		int glfwInitResult = glfwInit();
+		VEL_ASSERT(glfwInitResult == GLFW_TRUE, "Window::init(): Failed to initialize GLFW.");
 
-		// Initialize GLFW
-		glfwInit();
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -128,10 +116,6 @@ namespace vel
 
 		if (c.openglDebugContext)
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
-
-		glfwSetErrorCallback([](int error, const char* description) {
-			SPDLOG_DEBUG("Window::init::glfwSetErrorCallback: {}", description);
-		});
 
 		if (this->windowMode)
 		{
@@ -143,78 +127,76 @@ namespace vel
 		else
 		{
 			GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+			VEL_ASSERT(monitor, "Window::init(): Failed to obtain the primary monitor.");
+
 			const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+			VEL_ASSERT(mode, "Window::init(): Failed to obtain the primary monitor's video mode.");
 
 			this->windowSize = glm::ivec2(mode->width, mode->height);
-
 			this->glfwWindow = glfwCreateWindow(mode->width, mode->height, c.appName.c_str(), monitor, NULL);
 		}
 
-		if (!this->glfwWindow)
+		VEL_ASSERT(this->glfwWindow, "Window::init(): Failed to create GLFW window. Does the system support OpenGL 4.6?");
+
+		glfwMakeContextCurrent(this->glfwWindow);
+		GLFWwindow* currentContext = glfwGetCurrentContext();
+		VEL_ASSERT(currentContext == this->glfwWindow, "Window::init(): Failed to make the OpenGL context current.");
+
+		//
+		// glad
+		//
+		int gladResult = gladLoadGL(glfwGetProcAddress);
+		VEL_ASSERT(gladResult != 0, "Window::init(): Failed to initialize GLAD.");
+		VEL_ASSERT(GLAD_GL_VERSION_4_6, "Window::init(): OpenGL 4.6 is not available.");
+
+		//
+		// window
+		//
+		glfwSetWindowUserPointer(this->glfwWindow, this);
+		this->setCallbacks(); // Set callback functions used by glfw (for when polling is unavailable or it makes better sense to use a callback)
+
+		//
+		// vsync
+		//
+		glfwSwapInterval(this->vsync ? 1 : 0);
+
+		//
+		// cursor
+		//
+		if (this->cursorHidden)
 		{
-			SPDLOG_ERROR("Failed to create window! Does device support OpenGL 4.6?");
-
-			glfwTerminate();
-
-			return false;
+			glfwSetInputMode(this->glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			glfwSetInputMode(this->glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 		}
-		else
+
+		//
+		// opengl debug
+		//
+		if (c.openglDebugContext)
 		{
-			glfwMakeContextCurrent(this->glfwWindow);
+			int flags = 0;
+			glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+			VEL_ASSERT(flags & GL_CONTEXT_FLAG_DEBUG_BIT, "Window::init(): An OpenGL debug context was requested but not created.");
 
-			if (this->vsync)
-				glfwSwapInterval(1); // 0 = no vsync 1 = vsync
-			else
-				glfwSwapInterval(0);
+			glEnable(GL_DEBUG_OUTPUT);
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+			glDebugMessageCallback(glDebugOutput, nullptr);
+			glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 
-			// Initialize glad
-			// GLAD manages function pointers for OpenGL so we want to initialize GLAD before we call any OpenGL functions
-			if (!gladLoadGL(glfwGetProcAddress))
-			{
-				SPDLOG_DEBUG("Window::init: Failed to initialize GLAD");
-				return false;
-			}
-			else
-			{
-				// Associate this object with the window
-				glfwSetWindowUserPointer(this->glfwWindow, this);
-
-				// Set callback functions used by glfw (for when polling is unavailable or it makes better sense to use a callback)
-				this->setCallbacks();
-
-				// Set window input mode
-				if (this->cursorHidden)
-				{
-					glfwSetInputMode(this->glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-					glfwSetInputMode(this->glfwWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-				}
-
-				if (c.openglDebugContext)
-				{
-					int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-					if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
-					{
-						glEnable(GL_DEBUG_OUTPUT);
-						glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-						glDebugMessageCallback(glDebugOutput, nullptr);
-						glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-
-						SPDLOG_DEBUG("OpenGL debug context should be loaded");
-					}
-					else
-					{
-						SPDLOG_DEBUG("OpenGL debug context unable to load");
-					}
-				}
-
-				// Set default viewport size
-				glViewport(0, 0, this->windowSize.x, this->windowSize.y);
-
-
-				return true;
-			}
+			SPDLOG_DEBUG("OpenGL debug context should be loaded");
 		}
-	}
+
+		//
+		// viewport
+		//
+		glViewport(0, 0, this->windowSize.x, this->windowSize.y);
+    }
+
+    Window::~Window() 
+    {
+        glfwDestroyWindow(this->glfwWindow);
+        glfwTerminate();
+    }
 
 	glm::ivec2 Window::getResolution()
 	{

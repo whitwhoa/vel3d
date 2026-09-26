@@ -40,7 +40,7 @@ namespace vel
 		std::unique_ptr<unsigned char[]> data;
 		std::unique_ptr<fb_packedchar[]> charInfo;
 
-		texture_handle	texture;
+		texture_handle	texture = INVALID_TEXTURE_HANDLE;
 	};
 
 	

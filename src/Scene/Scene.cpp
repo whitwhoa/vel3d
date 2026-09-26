@@ -57,6 +57,7 @@ namespace vel
 
 		Runtime::_gpu->freeSceneBuffers(this->bufferIds);
 
+
 		for (auto& s : this->stages)
 		{
 			for (auto& ob : s->opaqueBuckets)
@@ -65,6 +66,7 @@ namespace vel
 			for (auto& tb : s->transparentBuckets)
 				Runtime::_gpu->deleteBuffer(&tb.indirectBuffer);
 		}
+
 
 		for (auto& t : this->textures)
 		{
@@ -77,6 +79,7 @@ namespace vel
 				stbi_image_free(t.data);
 		}
 
+
 		for (auto& s : this->shaders)
 			Runtime::_gpu->clearShader(s.programId);
 
@@ -86,8 +89,15 @@ namespace vel
 		for (auto& rp : this->renderGeoPools)
 			Runtime::_gpu->clearGeoPool(rp.second->gpuGeoPool.value());
 
-		for (auto& s : this->soundsInUse)
-			Runtime::_audioDevice->removeSound(s);
+
+		Runtime::_audioDevice->removeGroup(static_cast<unsigned int>(this->audioGroupKey));
+
+		for (const auto& name : this->sfxInUse)
+			Runtime::_audioDevice->removeSfx(name);
+
+		for (const auto& name : this->bgmInUse)
+			Runtime::_audioDevice->removeBgm(name);
+
 
 		for (auto& c : this->cameras)
 			Runtime::_gpu->clearRenderTarget(c->renderTarget);
@@ -254,6 +264,8 @@ namespace vel
 		// ---------------------------------------------------------
 		for (auto& actor : this->actors)
 		{
+			SPDLOG_DEBUG("YEET");
+
 			if (!(actor.flags & ACTFLG_VISIBLE))
 				continue;
 
@@ -285,14 +297,24 @@ namespace vel
 				}
 			}
 
-			this->actorsGpu.push_back({
-				.model                  = this->getActorWorldRenderMatrix(actor, alpha),
-				.colorMultiplier        = actor.colorMultiplier,
-				.lightmapHandle         = actor.lightmapTexture ? this->textures[actor.lightmapTexture].dsaHandle : 0,
-				.flags                  = actor.flags,
-				.ambientCubeOffset      = ambientCubeOffset,
-				.boneMatrixOffset       = boneMatrixOffset
-			});
+			ActorGpuData agd;
+			agd.model = this->getActorWorldRenderMatrix(actor, alpha);
+			agd.colorMultiplier = actor.colorMultiplier;
+			agd.lightmapHandle = actor.lightmapTexture ? this->textures[actor.lightmapTexture].dsaHandle : 0;
+			agd.flags = actor.flags;
+			agd.ambientCubeOffset = ambientCubeOffset;
+			agd.boneMatrixOffset = boneMatrixOffset;
+
+			this->actorsGpu.push_back(agd);
+
+			//this->actorsGpu.push_back({
+			//	.model                  = this->getActorWorldRenderMatrix(actor, alpha),
+			//	.colorMultiplier        = actor.colorMultiplier,
+			//	.lightmapHandle         = actor.lightmapTexture ? this->textures[actor.lightmapTexture].dsaHandle : 0,
+			//	.flags                  = actor.flags,
+			//	.ambientCubeOffset      = ambientCubeOffset,
+			//	.boneMatrixOffset       = boneMatrixOffset
+			//});
 
 			const Mesh& mesh = *actor.mesh;
 

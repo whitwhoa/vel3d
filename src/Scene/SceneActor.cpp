@@ -63,28 +63,6 @@ namespace vel
 
 	glm::mat4 Scene::getActorWorldRenderMatrix(Actor& a, float alpha)
 	{
-		// actor is not dynamic (does not move) so interpolation is not required, simply return it's world matrix
-		if (!(a.flags & ACTFLG_DYNAMIC) || !(a.flags & ACTFLG_LERPABLE))
-			return this->getActorWorldMatrix(a);
-
-		glm::mat4 selfMat = Transform::interpolateTransforms(a.getPreviousTransform(), a.getTransform(), alpha);
-
-		// if this actor has no parent, simply return the matrix of it's transform
-		if (!a.parentActor)
-			return selfMat;
-
-		// if this actor is parented to another actor
-		if (a.parentActorBone == -1)
-			return this->getActorWorldRenderMatrix(this->actors[a.parentActor], alpha) * selfMat;
-
-		// if we made it here, we know that this actor is parented to a bone of its parent actor
-		return this->getActorWorldRenderMatrix(this->actors[a.parentActor], alpha) *
-			ozzFloat4x4ToGlmMat4(this->actors[a.parentActor].animator->getRenderBoneMatrix(a.parentActorBone)) *
-			selfMat;
-	}
-
-	glm::mat4 Scene::getActorWorldRenderMatrix(Actor& a, float alpha)
-	{
 		glm::mat4 localMatrix;
 
 		if ((a.flags & ACTFLG_DYNAMIC) && (a.flags & ACTFLG_LERPABLE) && a.transformUpdatedThisTick())
@@ -104,10 +82,11 @@ namespace vel
 
 		// actor has a parent
 
-		// if actor is parented to a bone of another actor
+		// if this actor is parented to another actor, and not to that actor's bone
 		if (a.parentActorBone == -1)
 			return this->getActorWorldRenderMatrix(this->actors[a.parentActor], alpha) * localMatrix;
 
+		// if this actor is parented to the bone of its parent actor
 		return this->getActorWorldRenderMatrix(this->actors[a.parentActor], alpha) *
 			ozzFloat4x4ToGlmMat4(this->actors[a.parentActor].animator->getRenderBoneMatrix(a.parentActorBone)) *
 			localMatrix;
@@ -221,7 +200,23 @@ namespace vel
 		return this->actors.insert(a);
 	}
 
+	AABB Scene::getActorWorldAABB(Actor& a)
+	{
+		if (a.mesh == nullptr)
+			return AABB(glm::vec3(0.0f), glm::vec3(0.0f));
 
+		const std::vector<glm::vec3>& localCorners = a.mesh->aabb.corners;
+
+		std::vector<glm::vec3> worldCorners;
+		worldCorners.reserve(localCorners.size());
+
+		glm::mat4 worldMatrix = this->getActorWorldMatrix(a);
+
+		for (const glm::vec3& corner : localCorners)
+			worldCorners.push_back(glm::vec3(worldMatrix * glm::vec4(corner, 1.0f)));
+
+		return AABB(worldCorners);
+	}
 
 
 

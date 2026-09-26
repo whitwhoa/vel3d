@@ -6,6 +6,7 @@
 
 #include <vel/App.h>
 #include <vel/Util/functions.h>
+#include <vel/Util/Assert.h>
 #include <vel/Scene/CollisionWorld/CollisionWorld.h>
 #include <vel/Util/RaycastCallback.h>
 #include <vel/Util/ConvexCastCallback.h>
@@ -27,6 +28,10 @@ namespace vel
 		camera(nullptr),
 		collisionDebugDrawer(nullptr)
 	{
+		///////// added below to handle jitter when objects sliding across faces
+		// https://stackoverflow.com/questions/25605659/avoid-ground-collision-with-bullet/25725502#25725502
+		gContactAddedCallback = &CollisionWorld::contactAddedCallback;
+
 		this->dynamicsWorld->getPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
 		
 		btVector3 gravityVec(0.0f, gravity, 0.0f);
@@ -58,6 +63,8 @@ namespace vel
 			cs.second = nullptr;
 		}
 
+		this->collisionTriangleInfoMaps.clear();
+
 		// Delete triangle meshes AFTER their associated collision shapes
 		for (auto& tm : this->collisionTriangleMeshes)
 		{
@@ -70,16 +77,6 @@ namespace vel
 		delete this->overlappingPairCache;
 		delete this->dispatcher;
 		delete this->collisionConfiguration;
-	}
-
-	void CollisionWorld::removeCollisionShape(const std::string& name)
-	{
-		auto it = this->collisionShapes.find(name);
-		if (it != this->collisionShapes.end())
-		{
-			delete it->second;
-			this->collisionShapes.erase(it);
-		}
 	}
 
 	const std::string& CollisionWorld::getName()
@@ -107,18 +104,24 @@ namespace vel
 		this->isActive = b;
 	}
 
-	void CollisionWorld::addCollisionObjectTemplate(std::string name, CollisionObjectTemplate cot)
+	void CollisionWorld::addCollisionObjectTemplate(const std::string& name, CollisionObjectTemplate cot)
 	{
 		this->collisionObjectTemplates[name] = cot;
 	}
 	
-	CollisionObjectTemplate& CollisionWorld::getCollisionObjectTemplate(std::string name)
+	CollisionObjectTemplate& CollisionWorld::getCollisionObjectTemplate(const std::string& name)
 	{
-		return this->collisionObjectTemplates[name];
+		auto it = this->collisionObjectTemplates.find(name);
+		if (it != this->collisionObjectTemplates.end())
+			return it->second;
+
+		VEL_ASSERT(false, ("CollisionWorld::getCollisionObjectTemplate() - no template with name of: " + name).c_str());
 	}
 
 	void CollisionWorld::useDebugDrawer(Shader* s, int debugMode)
 	{
+		VEL_ASSERT(!this->collisionDebugDrawer, "Debug drawer already initialized. Only one initialization allowed, or we leak memory, and this is not worth adding safety logic since it is intended for development debug");
+		
 		this->collisionDebugDrawer = new CollisionDebugDrawer();
 		this->collisionDebugDrawer->setDebugMode(debugMode);
 		this->collisionDebugDrawer->setShaderProgram(s);
@@ -158,9 +161,13 @@ namespace vel
 		return true;
 	}
 
-	void CollisionWorld::addCollisionShape(std::string name, btCollisionShape* shape)
+	void CollisionWorld::addCollisionShape(const std::string& name, btCollisionShape* shape)
 	{
-		this->collisionShapes[name] = shape;
+		VEL_ASSERT(shape, "CollisionWorld::addCollisionShape(): Collision shape cannot be null.");
+
+		auto [it, inserted] = this->collisionShapes.try_emplace(name, shape);
+
+		VEL_ASSERT(inserted, ("CollisionWorld::addCollisionShape(): A collision shape named '" + name + "' already exists.").c_str());
 	}
 
 	btDiscreteDynamicsWorld* const	CollisionWorld::getDynamicsWorld()
@@ -168,9 +175,13 @@ namespace vel
         return this->dynamicsWorld;
 	}
     
-	btCollisionShape* CollisionWorld::getCollisionShape(std::string name)
+	btCollisionShape* CollisionWorld::getCollisionShape(const std::string& name)
 	{
-		return this->collisionShapes[name];
+		auto it = this->collisionShapes.find(name);
+		if (it != this->collisionShapes.end())
+			return it->second;
+
+		VEL_ASSERT(false, ("CollisionWorld::getCollisionShape() - no collision shape with name of: " + name).c_str());
 	}
 
 	void CollisionWorld::addMeshTriangles(btTriangleMesh* triangleMesh, const Mesh* mesh, const auto& verts, const glm::mat4& transform, bool applyTransform)
@@ -232,7 +243,7 @@ namespace vel
 			shapeName += "_" + std::to_string(this->nextCollisionShapeId++);
 		}
 
-		auto transformMatrix = actor->getWorldMatrix();
+		auto transformMatrix = actor->getTransform().getMatrix(); // this ignores parenting
 
 		btTriangleMesh* triangleMesh = new btTriangleMesh();
 
@@ -261,71 +272,36 @@ namespace vel
 		btBvhTriangleMeshShape* bvhShape = new btBvhTriangleMeshShape(triangleMesh, true);
 		bvhShape->setMargin(0);
 
-		this->collisionShapes.emplace(shapeName, bvhShape);
-		this->collisionTriangleMeshes.emplace(shapeName, triangleMesh);
+		auto triangleInfoMap = std::make_unique<btTriangleInfoMap>();
+		btGenerateInternalEdgeInfo(bvhShape, triangleInfoMap.get());
+
+		auto [shapeIt, shapeInserted] = this->collisionShapes.try_emplace(shapeName, bvhShape);
+		VEL_ASSERT(shapeInserted, ("CollisionWorld::collisionShapeFromActor(): A collision shape named '" + shapeName + "' already exists.").c_str());
+
+		auto [meshIt, meshInserted] = this->collisionTriangleMeshes.try_emplace(shapeName, triangleMesh);
+		VEL_ASSERT(meshInserted, ("CollisionWorld::collisionShapeFromActor(): A collision triangle mesh named '" + shapeName + "' already exists.").c_str());
+
+		auto [infoIt, infoInserted] = this->collisionTriangleInfoMaps.try_emplace(bvhShape, std::move(triangleInfoMap));
+		VEL_ASSERT(infoInserted, "CollisionWorld::collisionShapeFromActor(): Triangle info map already exists for collision shape.");
 
 		return bvhShape;
 	}
 
-	//btCollisionShape* CollisionWorld::collisionShapeFromActor(Actor* actor, bool applyTransform)
-	//{
-	//	if (actor->mesh == nullptr)
-	//		return nullptr;
-
-	//	std::vector<glm::vec3> tmpVerts;
-	//	std::vector<size_t> tmpInds;
-
-	//	auto transformMatrix = actor->getWorldMatrix();
-	//	auto mesh = actor->mesh;
-
-	//	size_t vertexOffset = tmpVerts.size();
-
-	//	for (auto& vert : mesh->getVertices())
-	//	{
-	//		if (applyTransform)
-	//			tmpVerts.push_back(glm::vec3(transformMatrix * glm::vec4(vert.position, 1.0f)));
-	//		else
-	//			tmpVerts.push_back(vert.position);
-	//	}
-
-	//	for (auto& ind : mesh->getIndices())
-	//		tmpInds.push_back(ind + vertexOffset);
-
-	//	btTriangleMesh* mergedTriangleMesh = new btTriangleMesh();
-	//	btVector3 p0, p1, p2;
-	//	for (int triCounter = 0; triCounter < tmpInds.size() / 3; triCounter++)
-	//	{
-	//		p0 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter]]);
-	//		p1 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 1]]);
-	//		p2 = glmToBulletVec3(tmpVerts[tmpInds[3 * triCounter + 2]]);
-
-	//		mergedTriangleMesh->addTriangle(p0, p1, p2);
-	//	}
-
-	//	btBvhTriangleMeshShape* bvhShape = new btBvhTriangleMeshShape(mergedTriangleMesh, true);
-	//	bvhShape->setMargin(0);
-	//	btCollisionShape* staticCollisionShape = bvhShape;
-	//	this->collisionShapes[actor->mesh->name + "_shape"] = staticCollisionShape;
-	//	
-	//	return staticCollisionShape;
-	//}
-
 	btRigidBody* CollisionWorld::addStaticCollisionBody(Actor* actor, int collisionFilterGroup, int collisionFilterMask)
 	{
-		auto staticCollisionShape = this->collisionShapeFromActor(actor);
+		VEL_ASSERT(actor, "CollisionWorld::addStaticCollisionBody(): Actor cannot be null.");
+
+		btCollisionShape* staticCollisionShape = this->collisionShapeFromActor(actor);
 		
+		VEL_ASSERT(staticCollisionShape, "CollisionWorld::addStaticCollisionBody(): Actor did not produce a valid collision shape.");
+
 		btScalar mass(0);
 		btVector3 localInertia(0, 0, 0);
 		btDefaultMotionState* defaultMotionState = new btDefaultMotionState();
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, defaultMotionState, staticCollisionShape, localInertia);
 		btRigidBody* body = new btRigidBody(rbInfo);
 
-		///////// added below to handle jitter when objects sliding across faces
-		// https://stackoverflow.com/questions/25605659/avoid-ground-collision-with-bullet/25725502#25725502
-		gContactAddedCallback = &CollisionWorld::contactAddedCallback;
 		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
-		btTriangleInfoMap* triangleInfoMap = new btTriangleInfoMap();
-		btGenerateInternalEdgeInfo((btBvhTriangleMeshShape*)staticCollisionShape, triangleInfoMap);
 
 		this->dynamicsWorld->addRigidBody(body, collisionFilterGroup, collisionFilterMask);
 
@@ -381,40 +357,16 @@ namespace vel
 		return ccr;
 	}
 
-
-
-	bool CollisionWorld::getTriangleVertices(const btStridingMeshInterface* meshInterface, int triangleIndex, btVector3& v0, btVector3& v1, btVector3& v2, int& index0, int& index1, int& index2) 
+	bool CollisionWorld::getTriangleVertices(const btStridingMeshInterface* meshInterface, int triangleIndex, btVector3& v0, btVector3& v1, btVector3& v2, int& index0, int& index1, int& index2)
 	{
-		int numTrianglesTotal = 0;
+		VEL_ASSERT(meshInterface, "CollisionWorld::getTriangleVertices(): Mesh interface cannot be null.");
 
-		for (int i = 0; i < meshInterface->getNumSubParts(); ++i) 
-		{
-			const unsigned char* vertexBase;
-			int numVerts;
-			PHY_ScalarType vertexType;
-			int vertexStride;
-			const unsigned char* indexBase;
-			int indexStride;
-			int numFaces;
-			PHY_ScalarType indexType;
-
-			meshInterface->getLockedReadOnlyVertexIndexBase(
-				&vertexBase, numVerts, vertexType, vertexStride,
-				&indexBase, indexStride, numFaces, indexType, i
-			);
-
-			numTrianglesTotal += numFaces;
-		}
-
-		if (triangleIndex < 0 || triangleIndex >= numTrianglesTotal) 
-		{
-			SPDLOG_DEBUG("CollisionWorld::getTriangleVertices: Invalid triangle index");
+		if (triangleIndex < 0)
 			return false;
-		}
 
-		int currentTriangle = 0;
+		int triangleOffset = 0;
 
-		for (int part = 0; part < meshInterface->getNumSubParts(); ++part) 
+		for (int part = 0; part < meshInterface->getNumSubParts(); ++part)
 		{
 			const unsigned char* vertexBase;
 			int numVerts;
@@ -430,37 +382,69 @@ namespace vel
 				&indexBase, indexStride, numFaces, indexType, part
 			);
 
-			for (int face = 0; face < numFaces; ++face) 
+			if (triangleIndex >= triangleOffset + numFaces)
 			{
-				if (currentTriangle == triangleIndex) 
-				{
-					int* triangleIndices = reinterpret_cast<int*>(const_cast<unsigned char*>(indexBase) + face * indexStride);
-
-					index0 = triangleIndices[0];
-					index1 = triangleIndices[1];
-					index2 = triangleIndices[2];
-
-					btScalar* vertex0 = reinterpret_cast<btScalar*>(const_cast<unsigned char*>(vertexBase) + index0 * vertexStride);
-					btScalar* vertex1 = reinterpret_cast<btScalar*>(const_cast<unsigned char*>(vertexBase) + index1 * vertexStride);
-					btScalar* vertex2 = reinterpret_cast<btScalar*>(const_cast<unsigned char*>(vertexBase) + index2 * vertexStride);
-
-					v0.setValue(vertex0[0], vertex0[1], vertex0[2]);
-					v1.setValue(vertex1[0], vertex1[1], vertex1[2]);
-					v2.setValue(vertex2[0], vertex2[1], vertex2[2]);
-
-					break;
-				}
-
-				currentTriangle++;
+				triangleOffset += numFaces;
+				meshInterface->unLockReadOnlyVertexBase(part);
+				continue;
 			}
 
-			meshInterface->unLockReadOnlyVertexBase(part);
+			const int localTriangleIndex = triangleIndex - triangleOffset;
+			const unsigned char* triangleData = indexBase + localTriangleIndex * indexStride;
 
-			if (currentTriangle > triangleIndex) 
-				break;
+			VEL_ASSERT(
+				indexType == PHY_INTEGER || indexType == PHY_SHORT || indexType == PHY_UCHAR,
+				"CollisionWorld::getTriangleVertices(): Unsupported index format."
+			);
+
+			if (indexType == PHY_INTEGER)
+			{
+				const int* indices = reinterpret_cast<const int*>(triangleData);
+				index0 = indices[0];
+				index1 = indices[1];
+				index2 = indices[2];
+			}
+			else if (indexType == PHY_SHORT)
+			{
+				const unsigned short* indices = reinterpret_cast<const unsigned short*>(triangleData);
+				index0 = indices[0];
+				index1 = indices[1];
+				index2 = indices[2];
+			}
+			else
+			{
+				index0 = triangleData[0];
+				index1 = triangleData[1];
+				index2 = triangleData[2];
+			}
+
+			VEL_ASSERT(index0 >= 0 && index0 < numVerts && index1 >= 0 && index1 < numVerts && index2 >= 0 && index2 < numVerts, "CollisionWorld::getTriangleVertices(): Triangle contains an invalid vertex index.");
+			VEL_ASSERT(vertexType == PHY_FLOAT || vertexType == PHY_DOUBLE, "CollisionWorld::getTriangleVertices(): Unsupported vertex format.");
+
+			auto readVertex = [&](int index)
+				{
+					const unsigned char* vertexData = vertexBase + index * vertexStride;
+
+					if (vertexType == PHY_FLOAT)
+					{
+						const float* vertex = reinterpret_cast<const float*>(vertexData);
+						return btVector3(vertex[0], vertex[1], vertex[2]);
+					}
+
+					const double* vertex = reinterpret_cast<const double*>(vertexData);
+					return btVector3(static_cast<btScalar>(vertex[0]), static_cast<btScalar>(vertex[1]), static_cast<btScalar>(vertex[2]));
+				};
+
+			v0 = readVertex(index0);
+			v1 = readVertex(index1);
+			v2 = readVertex(index2);
+
+			meshInterface->unLockReadOnlyVertexBase(part);
+			return true;
 		}
 
-		return true;
+		SPDLOG_DEBUG("CollisionWorld::getTriangleVertices(): Invalid triangle index: {}", triangleIndex);
+		return false;
 	}
 
 }

@@ -30,7 +30,8 @@ namespace vel
 			one time and save it in either bgmSounds or sfxSounds, then when sounds are played, they are copied from these template containers.
 			The reason we are tracking usages is so that we can remove unnecessary templates.
 		*/
-		std::unordered_map<std::string, unsigned int> usages;
+		std::unordered_map<std::string, unsigned int> sfxUsages;
+		std::unordered_map<std::string, unsigned int> bgmUsages;
 
 		/* 
 			Key is filename without extension, value is the full path to the file. Since streams are not copyable, when we need a new one,
@@ -207,6 +208,7 @@ namespace vel
 		/*
 			Loop over both bgmSounds and sfxSounds, either decrement their count or perform a full removal
 		*/
-		void removeSound(const std::string& name);
+		void removeSfx(const std::string& name);
+		void removeBgm(const std::string& name);
 	};
 }

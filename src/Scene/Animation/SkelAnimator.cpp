@@ -1,10 +1,12 @@
 
 #include <string>
+#include <algorithm>
 
 #include <ozz/animation/runtime/local_to_model_job.h>
 #include <ozz/animation/runtime/sampling_job.h>
 
 #include <vel/Scene/Animation/SkelAnimator.h>
+#include <vel/Util/Assert.h>
 
 namespace vel
 {
@@ -14,13 +16,35 @@ namespace vel
 		simPrevLocalTransforms(&this->localTransformsA),
 		simLocalTransforms(&this->localTransformsB)
 	{
-		// Allocate runtime buffers.
-		this->localTransformsA.resize(this->skeleton->num_soa_joints());
-		this->localTransformsB.resize(this->skeleton->num_soa_joints());
-		this->renderLocalTransforms.resize(this->skeleton->num_soa_joints());
+		//// Allocate runtime buffers.
+		//this->localTransformsA.resize(this->skeleton->num_soa_joints());
+		//this->localTransformsB.resize(this->skeleton->num_soa_joints());
+		//this->renderLocalTransforms.resize(this->skeleton->num_soa_joints());
+
+		//this->simModelMatrices.resize(this->skeleton->num_joints());
+		//this->renderModelMatrices.resize(this->skeleton->num_joints());
+
+		VEL_ASSERT(this->skeleton, "SkelAnimator::SkelAnimator(): Skeleton cannot be null.");
+
+		const auto restPose = this->skeleton->joint_rest_poses();
+
+		this->localTransformsA.resize(restPose.size());
+		std::copy(restPose.begin(), restPose.end(), this->localTransformsA.begin());
+
+		this->localTransformsB = this->localTransformsA;
+		this->renderLocalTransforms = this->localTransformsA;
 
 		this->simModelMatrices.resize(this->skeleton->num_joints());
 		this->renderModelMatrices.resize(this->skeleton->num_joints());
+
+		ozz::animation::LocalToModelJob ltm;
+		ltm.skeleton = this->skeleton;
+		ltm.input = make_span(*this->simLocalTransforms);
+		ltm.output = make_span(this->simModelMatrices);
+
+		VEL_ASSERT(ltm.Run(), "SkelAnimator::SkelAnimator(): Failed to generate the initial skeleton pose.");
+
+		this->renderModelMatrices = this->simModelMatrices;
 	}
 
 	ozz::math::SimdQuaternion SkelAnimator::extractQuaternionLane(const ozz::math::SoaQuaternion& q, int lane)

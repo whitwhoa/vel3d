@@ -69,7 +69,7 @@ namespace vel
 		void								genVtxPosNrmlTxSknBuffer(GeoPoolT<VtxPosNrmlTxSkn>* gp);
 
 	public:
-		GPU(bool fxaa = false);
+		GPU();
 		~GPU();
 		GPU(GPU&&) = default;
         void								enableDepthTest();
@@ -129,8 +129,6 @@ namespace vel
 		void								clearScreenBuffer(float r, float g, float b, float a);
 
 		void								setGLDebugMessage(const std::string& message);
-
-		glm::ivec2							getActiveCameraViewportSize();
 
 		void								drawLines(unsigned int pointCount);
 

@@ -1,5 +1,9 @@
+#include <cmath>
+#include <utility>
+
 #include <glm/gtx/string_cast.hpp>
 
+#include <vel/Util/Assert.h>
 #include <vel/Util/MultiTweener.h>
 
 
@@ -46,15 +50,22 @@ namespace vel
 		closestPausePointFound(false),
 		directionSwapNeedsCleared(false)
 	{
-		size_t i = 0;
-		for (auto& v : this->vecs)
+		VEL_ASSERT(this->vecs.size() >= 2, "MultiTweener::MultiTweener(): A route must contain at least two points.");
+		VEL_ASSERT(std::isfinite(this->speed) && this->speed > 0.0f, "MultiTweener::MultiTweener(): Speed must be finite and greater than zero.");
+
+		this->speedPerVec = this->speed * static_cast<float>(this->vecs.size());
+		VEL_ASSERT(std::isfinite(this->speedPerVec), "MultiTweener::MultiTweener(): Calculated tween speed is not finite.");
+
+		this->tweens.reserve(this->vecs.size() - 1);
+		for (size_t i = 0; i + 1 < this->vecs.size(); ++i)
 		{
-			i++;
-			if (i < this->vecs.size())
-				this->tweens.push_back(Tweener(v, this->vecs[i], this->speedPerVec, TweenerDirection::Forward));
+			float segmentDistance = glm::distance(this->vecs[i], this->vecs[i + 1]);
+			VEL_ASSERT(std::isfinite(segmentDistance) && segmentDistance > 0.0f, ("MultiTweener::MultiTweener(): Route segment " + std::to_string(i) + " has zero or invalid length.").c_str());
+
+			this->tweens.emplace_back(this->vecs[i], this->vecs[i + 1], this->speedPerVec, TweenerDirection::Forward);
 		}
 
-		this->currentVec = this->vecs[0];
+		this->currentVec = this->vecs.front();
 	};
 
 	void MultiTweener::swapDirection()
@@ -90,8 +101,13 @@ namespace vel
 
 	void MultiTweener::updateSpeed(float newSpeed)
 	{
+		VEL_ASSERT(std::isfinite(newSpeed) && newSpeed > 0.0f, "MultiTweener::updateSpeed(): Speed must be finite and greater than zero.");
+
+		float newSpeedPerVec = newSpeed * static_cast<float>(this->vecs.size());
+		VEL_ASSERT(std::isfinite(newSpeedPerVec), "MultiTweener::updateSpeed(): Calculated tween speed is not finite.");
+
 		this->speed = newSpeed;
-		this->speedPerVec = this->speed * (float)vecs.size();
+		this->speedPerVec = newSpeedPerVec;
 
 		for (auto& t : this->tweens)
 			t.updateSpeed(this->speedPerVec);
@@ -257,7 +273,7 @@ namespace vel
 			
 		this->currentTweenIndex = 0;
 
-		return this->update(dt);
+		return this->currentVec;
 	}
 
 	glm::vec3 MultiTweener::update(float dt)

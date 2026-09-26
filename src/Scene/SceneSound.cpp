@@ -7,7 +7,7 @@ namespace vel
 {
 	void Scene::loadBGMSound(const std::string& path)
 	{
-		this->soundsInUse.push_back(Runtime::_audioDevice->loadBGM(path));
+		this->bgmInUse.push_back(Runtime::_audioDevice->loadBGM(path));
 	}
 
 	bool Scene::loadSFXSound(const std::string& path)
@@ -16,7 +16,7 @@ namespace vel
 		if (!sfxOpt)
 			return false;
 
-		this->soundsInUse.push_back(sfxOpt.value());
+		this->sfxInUse.push_back(sfxOpt.value());
 		return true;
 	}
 

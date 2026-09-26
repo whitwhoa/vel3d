@@ -1,8 +1,12 @@
+#include <cmath>
+
 #include <vel/Scene/Actor/FrameAnimator.h>
+
+#include <vel/Util/Assert.h>
 
 namespace vel
 {
-	FrameAnimator::FrameAnimator(float frameCount, float fps) :
+	FrameAnimator::FrameAnimator(uint32_t frameCount, float fps) :
 		frameCount(frameCount),
 		framesPerSecond(fps),
 		currentFrame(0),
@@ -11,7 +15,10 @@ namespace vel
 		paused(false),
 		pauseAfterCycles(0),
 		reverse(false)
-	{}
+	{
+		VEL_ASSERT(this->frameCount > 0, "FrameAnimator::FrameAnimator(): Frame count must be greater than zero.");
+		VEL_ASSERT(std::isfinite(this->framesPerSecond) && this->framesPerSecond > 0.0f, "FrameAnimator::FrameAnimator(): Frames per second must be finite and greater than zero.");
+	}
 
 	unsigned int FrameAnimator::getCurrentFrame()
 	{
@@ -23,12 +30,12 @@ namespace vel
 		if (this->paused)
 			return this->currentFrame;
 
-		float secondsPerFrame = 1.0f / this->framesPerSecond;
+		float secondsPerFrame = 1.f / this->framesPerSecond;
 
 		this->currentCycleTime += frameTime;
 
 		// Check if we completed a full animation cycle
-		if (this->currentCycleTime >= secondsPerFrame * this->frameCount)
+		if (this->currentCycleTime >= secondsPerFrame * static_cast<float>(this->frameCount))
 		{
 			if (this->pauseAfterCycles == this->currentCycle)
 			{
@@ -37,21 +44,19 @@ namespace vel
 			}
 			else
 			{
-				this->currentCycle += 1;
+				this->currentCycle++;
 			}
 
-			this->currentCycleTime = 0.0f;
+			this->currentCycleTime = 0.f;
 		}
 
-		unsigned int nextFrame = (unsigned int)(this->currentCycleTime / secondsPerFrame);
+		uint32_t nextFrame = static_cast<uint32_t>(this->currentCycleTime / secondsPerFrame);
 
 		// Clamp to last valid frame index
 		if (nextFrame >= this->frameCount)
 			nextFrame = this->frameCount - 1;
 
-		unsigned int nextFrameReversed = (this->frameCount - nextFrame) - 1; // zero-based
-
-		this->currentFrame = this->reverse ? nextFrameReversed : nextFrame;
+		this->currentFrame = this->reverse ? (this->frameCount - 1) - nextFrame : nextFrame;
 
 		return this->currentFrame;
 	}

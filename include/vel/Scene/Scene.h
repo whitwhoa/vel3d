@@ -53,7 +53,7 @@ namespace vel
 		slot_map<Actor>																actors;
 	public:
 							HeadlessScene();
-		virtual				~HeadlessScene() = default;
+		virtual				~HeadlessScene();
 		unsigned int		getId() const;
 		virtual bool		internalLoad();
 		virtual void		internalFixedLoop(float deltaTime);
@@ -140,7 +140,8 @@ namespace vel
 		std::unordered_map<VtxLayout, std::unique_ptr<GeoPool>>			renderGeoPools;
 		std::unordered_map<std::string, std::unique_ptr<GeoPool>>		renderSoloGeoPools;
 
-		std::vector<std::string>										soundsInUse;
+		std::vector<std::string>										sfxInUse;
+		std::vector<std::string>										bgmInUse;
 	
 	private:
 		void			initMaterialData();
@@ -148,7 +149,7 @@ namespace vel
 		void			uploadDrawBuckets(std::vector<DrawBucket>& buckets);
 	public:
 						Scene();
-						~Scene() override = default;
+						~Scene() override;
 		int				getAudioGroupKey() const;
 		virtual void	immediateLoop(float frameTime, float renderLerpInterval) = 0;
 		virtual void	internalImmediateLoop(float frameTime, float renderLerpInterval);
@@ -173,6 +174,7 @@ namespace vel
 		void						hideActor(actor_handle h);
 		void						showActor(actor_handle h);
 		glm::mat4					getActorWorldRenderMatrix(Actor& a, float alpha);
+		AABB						getActorWorldAABB(Actor& a);
 	public:
 		void						initActorDrawBuckets();
 

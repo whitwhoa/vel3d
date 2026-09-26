@@ -13,6 +13,7 @@
 #include <BulletCollision/NarrowPhaseCollision/btGjkPairDetector.h>
 #include <BulletCollision/NarrowPhaseCollision/btPointCollector.h>
 
+
 #include <vel/Scene/Actor/Actor.h>
 #include <vel/Util/RaycastResult.h>
 #include <vel/Scene/CollisionWorld/CollisionDebugDrawer.h>
@@ -38,13 +39,10 @@ namespace vel
 		btDiscreteDynamicsWorld*				dynamicsWorld;
 		std::unordered_map<std::string, btTriangleMesh*> collisionTriangleMeshes;
 		std::unordered_map<std::string, btCollisionShape*> collisionShapes;
+		std::unordered_map<btCollisionShape*, std::unique_ptr<btTriangleInfoMap>> collisionTriangleInfoMaps;
 		Camera*									camera; // matrices used for debug drawer
 		CollisionDebugDrawer* 					collisionDebugDrawer;
 		std::unordered_map<std::string, CollisionObjectTemplate> collisionObjectTemplates;
-		
-
-
-		//void									removeSensorsUsingCollisionObject(btCollisionObject* co);
 
 	public:
 		static bool								contactAddedCallback(btManifoldPoint& cp, const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0, const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1);
@@ -52,7 +50,7 @@ namespace vel
 		CollisionWorld(const std::string& name, float gravity = -10);
 		~CollisionWorld();
 		btDiscreteDynamicsWorld* const			getDynamicsWorld();
-		void									addCollisionShape(std::string name, btCollisionShape* shape);
+		void									addCollisionShape(const std::string& name, btCollisionShape* shape);
 		
 		btRigidBody*							addStaticCollisionBody(Actor* actor, int collisionFilterGroup, int collisionFilterMask);
 		btCollisionShape*						collisionShapeFromActor(Actor* actor, bool applyTransform = true);
@@ -68,9 +66,9 @@ namespace vel
 		CollisionDebugDrawer* 					getDebugDrawer();
 		bool									getDebugEnabled();
         
-        btCollisionShape*                       getCollisionShape(std::string name);
-		void									addCollisionObjectTemplate(std::string name, CollisionObjectTemplate cot);
-		CollisionObjectTemplate&				getCollisionObjectTemplate(std::string name);
+        btCollisionShape*                       getCollisionShape(const std::string& name);
+		void									addCollisionObjectTemplate(const std::string& name, CollisionObjectTemplate cot);
+		CollisionObjectTemplate&				getCollisionObjectTemplate(const std::string& name);
 
 		bool									getIsActive();
 		void									setIsActive(bool b);
@@ -81,8 +79,6 @@ namespace vel
 		static bool								getTriangleVertices(const btStridingMeshInterface* meshInterface, int triangleIndex, btVector3& v0, btVector3& v1, btVector3& v2, int& index0, int& index1, int& index2);
 
 		const std::string&						getName();
-
-		void									removeCollisionShape(const std::string& name);
 
 		void addMeshTriangles(btTriangleMesh* triangleMesh, const Mesh* mesh, const auto& verts, const glm::mat4& transform, bool applyTransform);
 			

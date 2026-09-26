@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <vel/Util/Assert.h>
 #include <vel/AudioDevice.h>
 
 
@@ -18,14 +19,26 @@ namespace vel
 
 	bool AudioDevice::init()
 	{
-		if (ma_engine_init(NULL, &this->engine) != MA_SUCCESS)
+		ma_result result = ma_engine_init(nullptr, &this->engine);
+		if (result != MA_SUCCESS)
 		{
-			SPDLOG_DEBUG("AudioDevice::init: Failed to initialize audio engine.");
+			SPDLOG_ERROR("AudioDevice::init(): Failed to initialize audio engine.");
 			return false;
 		}
 
-		ma_sound_group_init(&this->engine, 0, NULL, &this->sfxVolGroup);
-		ma_sound_group_init(&this->engine, 0, NULL, &this->bgmVolGroup);
+		result = ma_sound_group_init(&this->engine, 0, nullptr, &this->sfxVolGroup);
+		if (result != MA_SUCCESS)
+		{
+			SPDLOG_ERROR("AudioDevice::init(): Failed to initialize SFX sound group.");
+			return false;
+		}
+
+		result = ma_sound_group_init(&this->engine, 0, nullptr, &this->bgmVolGroup);
+		if (result != MA_SUCCESS)
+		{
+			SPDLOG_ERROR("AudioDevice::init(): Failed to initialize BGM sound group.");
+			return false;
+		}
 
 		ma_engine_listener_set_world_up(&this->engine, 0, 0.0f, 1.0f, 0.0f);
 
@@ -105,8 +118,8 @@ namespace vel
 		std::filesystem::path p(path);
 		std::string name = p.stem().string();
 
-		auto it = this->usages.find(name);
-		if (it != this->usages.end()) 
+		auto it = this->bgmUsages.find(name);
+		if (it != this->bgmUsages.end())
 		{
 			it->second += 1;
 
@@ -115,7 +128,7 @@ namespace vel
 		else
 		{
 			this->bgmSounds[name] = path;
-			this->usages[name] = 1;
+			this->bgmUsages[name] = 1;
 			
 			SPDLOG_DEBUG("Loading new BGM: {}", name);
 		}
@@ -128,8 +141,8 @@ namespace vel
 		std::filesystem::path p(path);
 		std::string name = p.stem().string();
 
-		auto it = this->usages.find(name);
-		if (it != this->usages.end())
+		auto it = this->sfxUsages.find(name);
+		if (it != this->sfxUsages.end())
 		{
 			it->second += 1;
 
@@ -147,7 +160,7 @@ namespace vel
 			}
 
 			this->sfxSounds[name] = sfx;
-			this->usages[name] = 1;
+			this->sfxUsages[name] = 1;
 
 			SPDLOG_DEBUG("Loading new SFX: {}", name);
 		}
@@ -328,12 +341,24 @@ namespace vel
 
 	void AudioDevice::pauseBGM(const std::string& name)
 	{
-		ma_sound_stop(this->currentBGM.at(this->currentGroupKey)[name]);
+		auto it1 = this->currentBGM.find(this->currentGroupKey);
+		VEL_ASSERT(it1 != this->currentBGM.end(), "AudioDevice::pauseBGM() - invalid this->currentGroupKey value");
+
+		auto it2 = it1->second.find(name);
+		VEL_ASSERT(it2 != it1->second.end(), ("AudioDevice::pauseBGM() - invalid BGM name: " + name).c_str());
+
+		ma_sound_stop(it2->second);
 	}
 
 	void AudioDevice::unpauseBGM(const std::string& name)
 	{
-		ma_sound_start(this->currentBGM.at(this->currentGroupKey)[name]);
+		auto it1 = this->currentBGM.find(this->currentGroupKey);
+		VEL_ASSERT(it1 != this->currentBGM.end(), "AudioDevice::unpauseBGM() - invalid this->currentGroupKey value");
+
+		auto it2 = it1->second.find(name);
+		VEL_ASSERT(it2 != it1->second.end(), ("AudioDevice::unpauseBGM() - invalid BGM name: " + name).c_str());
+
+		ma_sound_start(it2->second);
 	}
 
 	void AudioDevice::setBGMVolume(float vol)
@@ -376,37 +401,58 @@ namespace vel
 		this->unmanagedSFX.erase(key);
 	}
 
-	void AudioDevice::removeSound(const std::string& name)
+	void AudioDevice::removeSfx(const std::string& name)
 	{
-		auto it = this->usages.find(name);
-		if (it == this->usages.end())
+		auto usageIt = this->sfxUsages.find(name);
+
+		VEL_ASSERT(usageIt != this->sfxUsages.end(), ("AudioDevice::removeSFX(): SFX '" + name + "' is not loaded.").c_str());
+		VEL_ASSERT(usageIt->second > 0, ("AudioDevice::removeSFX(): SFX '" + name + "' has an invalid usage count.").c_str());
+
+		--usageIt->second;
+
+		if (usageIt->second > 0)
 		{
-			SPDLOG_DEBUG("Attempting to remove sound that does not exist: {}", name);
+			SPDLOG_DEBUG("Decrement SFX template usage count, retain: {}", name);
 			return;
 		}
 
-		this->usages[name]--;
+		SPDLOG_DEBUG("Full remove SFX template: {}", name);
 
-		if (this->usages[name] == 0)
-		{
-			SPDLOG_DEBUG("Full remove sound template: {}", name);
+		auto sfxIt = this->sfxSounds.find(name);
 
-			auto itBGM = this->bgmSounds.find(name);
-			if (itBGM != this->bgmSounds.end())
-			{
-				this->bgmSounds.erase(name);
-				return;
-			}
-			
-			ma_sound* tmpSFX = this->sfxSounds[name];
-			ma_sound_uninit(tmpSFX);
-			delete tmpSFX;
-			this->sfxSounds.erase(name);
+		VEL_ASSERT(sfxIt != this->sfxSounds.end(), ("AudioDevice::removeSFX(): No SFX template exists for '" + name + "'.").c_str());
 
-			return;
-		}
+		ma_sound_uninit(sfxIt->second);
+		delete sfxIt->second;
 
-		SPDLOG_DEBUG("Decrement sound template usage count, retain: {}", name);
+		this->sfxSounds.erase(sfxIt);
+		this->sfxUsages.erase(usageIt);
 	}
+
+	void AudioDevice::removeBgm(const std::string& name)
+	{
+		auto usageIt = this->bgmUsages.find(name);
+
+		VEL_ASSERT(usageIt != this->bgmUsages.end(), ("AudioDevice::removeBGM(): BGM '" + name + "' is not loaded.").c_str());
+		VEL_ASSERT(usageIt->second > 0, ("AudioDevice::removeBGM(): BGM '" + name + "' has an invalid usage count.").c_str());
+
+		--usageIt->second;
+
+		if (usageIt->second > 0)
+		{
+			SPDLOG_DEBUG("Decrement BGM path usage count, retain: {}", name);
+			return;
+		}
+
+		SPDLOG_DEBUG("Full remove BGM path: {}", name);
+
+		auto bgmIt = this->bgmSounds.find(name);
+
+		VEL_ASSERT(bgmIt != this->bgmSounds.end(), ("AudioDevice::removeBGM(): No BGM path exists for '" + name + "'.").c_str());
+
+		this->bgmSounds.erase(bgmIt);
+		this->bgmUsages.erase(usageIt);
+	}
+
 
 }

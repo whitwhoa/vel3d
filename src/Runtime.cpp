@@ -6,9 +6,12 @@
 #include <stb_headers/stb_truetype.h>
 
 #include <vel/Runtime.h>
+#include <vel/Util/Assert.h>
 
 namespace vel
 {
+    bool Runtime::_initialized = false;
+
     Config Runtime::_config{};
 
     std::unique_ptr<Window> Runtime::_window = nullptr;
@@ -25,8 +28,14 @@ namespace vel
     double Runtime::_frameTime = 0.0;
     double Runtime::_frameRate = 0.0;
 
-    bool Runtime::init(const Config& config)
+    void Runtime::init(const Config& config)
     {
+        VEL_ASSERT(!_initialized, "Runtime::init(): Runtime is already initialized.");
+
+#ifdef VEL_USE_NVAPI
+        initNvidiaApplicationProfile(config.appExeName, config.appName);
+#endif
+
         _config = config;
         
         _startTime = std::chrono::steady_clock::now();
@@ -37,24 +46,26 @@ namespace vel
         _frameRate = 0.0;
 
         if (_config.headless)
-            return true;
+        {
+            _initialized = true;
+            return;
+        }
+            
 
-        _window = std::make_unique<Window>();
-        if (!_window->init(_config))
-            return false;
-
-        _gpu = std::make_unique<GPU>(_config.fxaa);
+        _window = std::make_unique<Window>(_config);
+        _gpu = std::make_unique<GPU>();
 
         _audioDevice = std::make_unique<AudioDevice>();
-        if (!_audioDevice->init())
-            return false;
-        
+        bool audioDeviceInitSuccess = _audioDevice->init();
+        VEL_ASSERT(audioDeviceInitSuccess, "Runtime::init() - failed to initialize audioDevice");
 
-        return true;
+        _initialized = true;
     }
 
     void Runtime::shutdown()
     {
+        VEL_ASSERT(_initialized, "Runtime::shutdown(): Runtime is not initialized.");
+
         _audioDevice.reset();
         _gpu.reset();
         _window.reset();
@@ -115,6 +126,7 @@ namespace vel
 
     const InputState& Runtime::inputState()
     {
+        VEL_ASSERT(!_config.headless, "Runtime::inputState() - method cannot be called in headless mode");
         return *_window->getInputState();
     }
 

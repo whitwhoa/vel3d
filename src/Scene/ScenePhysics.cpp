@@ -2,6 +2,7 @@
 
 #include <vel/Runtime.h>
 #include <vel/Scene/Scene.h>
+#include <vel/Util/Assert.h>
 
 namespace vel
 {
@@ -26,7 +27,11 @@ namespace vel
 
 	CollisionWorld* HeadlessScene::getCollisionWorld(const std::string& name)
 	{
-		return this->collisionWorlds.at(this->getCollisionWorldIndex(name));
+		int index = this->getCollisionWorldIndex(name);
+
+		VEL_ASSERT(index >= 0, ("HeadlessScene::getCollisionWorld(): No collision world named '" + name + "' exists.").c_str());
+
+		return this->collisionWorlds[index];
 	}
 
 	void HeadlessScene::stepPhysics(float delta)

@@ -16,10 +16,6 @@ set_target_properties(VEL3D_LIBRARY PROPERTIES
 	ARCHIVE_OUTPUT_DIRECTORY ${INSTALL_ROOT}/vel3d/lib
 )
 
-if(USE_NVIDIA_API)
-	add_dependencies(VEL3D_LIBRARY NVAPI_LIBRARY)
-endif()
-
 target_include_directories(VEL3D_LIBRARY PUBLIC 
 	${VEL3D_INCLUDE_DIR}
 	${GLFW_INCLUDE_DIR}
@@ -48,11 +44,6 @@ source_group(
     FILES ${sources}
 )
 
-
-if(USE_NVIDIA_API)
-	target_include_directories(VEL3D_LIBRARY PUBLIC ${NVAPI_INCLUDE_DIR})
-endif()
-
 target_link_libraries(VEL3D_LIBRARY PUBLIC
 	GLFW_LIBRARY 
 	GLAD_LIBRARY
@@ -71,5 +62,13 @@ target_link_libraries(VEL3D_LIBRARY PUBLIC
 )
 
 if(USE_NVIDIA_API)
+	if(NOT WIN32)
+		message(FATAL_ERROR "USE_NVIDIA_API is only supported on Windows.")
+	endif()
+
+	add_dependencies(VEL3D_LIBRARY NVAPI_LIBRARY)
+
+	target_compile_definitions(VEL3D_LIBRARY PRIVATE VEL_USE_NVAPI)
+	target_include_directories(VEL3D_LIBRARY PRIVATE ${NVAPI_INCLUDE_DIR})
 	target_link_libraries(VEL3D_LIBRARY PUBLIC NVAPI_LIBRARY)
 endif()

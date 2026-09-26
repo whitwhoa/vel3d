@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <limits>
 
 namespace vel
 {
 	typedef unsigned int texture_handle;
+	inline constexpr texture_handle INVALID_TEXTURE_HANDLE = std::numeric_limits<texture_handle>::max();
 
 	enum TxtrFlg : uint32_t
 	{
@@ -19,17 +21,14 @@ namespace vel
 
 	struct Texture
 	{
-		uint32_t		flags = 0;
-
-		uint64_t		dsaHandle;
-		unsigned int	bufferId; // used to be: id
-
-		int				width = 0;
-		int				height = 0;
-		int				channels = 0; // used to be: nrComponents
-		unsigned int	format = 0;
+		uint32_t		flags		= 0;
+		uint64_t		dsaHandle	= 0;
+		unsigned int	bufferId	= 0; // used to be: id
+		int				width		= 0;
+		int				height		= 0;
+		int				channels	= 0; // used to be: nrComponents
+		unsigned int	format		= 0;
 		unsigned int	sizedFormat = 0;
-
-		unsigned char*	data = nullptr;
+		unsigned char*	data		= nullptr;
 	};
 }

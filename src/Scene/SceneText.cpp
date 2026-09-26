@@ -6,6 +6,7 @@
 
 #include <vel/Runtime.h>
 #include <vel/Scene/Scene.h>
+#include <vel/Util/Assert.h>
 
 namespace vel
 {
@@ -241,13 +242,6 @@ namespace vel
 
 	FontBitmap* Scene::loadFontBitmapRaw(const std::string& fontName, int stbFontSize, const std::string& fontPath)
 	{
-		if (this->fontBitmaps.contains(fontName))
-		{
-			SPDLOG_DEBUG("Scene::loadFontBitmapRaw(): Existing FontBitmap, bypass reload: {}", fontName);
-
-			return &this->fontBitmaps.at(fontName);
-		}
-
 		SPDLOG_DEBUG("Scene::loadFontBitmapRaw(): Loading new FontBitmap: {}", fontName);
 
 
@@ -369,8 +363,17 @@ namespace vel
 	{
 		std::string fontPath = Runtime::_config.dataDir + "/fonts/" + fontName + ".ttf";
 		std::string fontName2 = fontName + std::to_string(fontSize);
-		
+
+		auto it = this->fontBitmaps.find(fontName2);
+		if (it != this->fontBitmaps.end())
+		{
+			SPDLOG_DEBUG("Scene::loadFontBitmap(): Existing FontBitmap, bypass reload: {}", fontName2);
+			return &it->second;
+		}
+
 		FontBitmap* fb = this->loadFontBitmapRaw(fontName2, fontSize, fontPath);
+		VEL_ASSERT(fb, ("Scene::loadFontBitmap(): Failed to load font '" + fontPath + "'.").c_str());
+
 
 		Texture t = Runtime::_gpu->generateFontBitmapTexture(fb);
 		texture_handle th = this->textures.size();
@@ -386,38 +389,37 @@ namespace vel
 		std::string fontPath = Runtime::_config.dataDir + "/fonts/" + fontName + ".ttf";
 		std::string fontName2 = fontName + std::to_string(desiredVisiblePx) + "DVPX";
 
-		if (this->fontBitmaps.contains(fontName2))
+		auto it = this->fontBitmaps.find(fontName2);
+		if (it != this->fontBitmaps.end())
 		{
 			SPDLOG_DEBUG("Scene::loadFontBitmapVisualHeight(): Existing FontBitmap, bypass reload: {}", fontName2);
-
-			return &this->fontBitmaps.at(fontName2);
+			return &it->second;
 		}
 
-		SPDLOG_DEBUG("Scene::loadFontBitmapVisualHeight(): Loading new FontBitmap: {}", fontName2);
 
 		const std::string referenceText = "Hg";
+		const std::string calibrationName = fontName2 + "_calibration";
 
-		FontBitmap* testFont = this->loadFontBitmapRaw(fontName2 + "_calibration", desiredVisiblePx, fontPath);
+		FontBitmap* testFont = this->loadFontBitmapRaw(calibrationName, desiredVisiblePx, fontPath);
+		VEL_ASSERT(testFont, ("Scene::loadFontBitmapVisualHeight(): Failed to load font '" + fontPath + "'.").c_str());
 
 		float measuredHeight = this->measureFontHeight(referenceText, testFont);
+		VEL_ASSERT(measuredHeight > 0.0f, ("Scene::loadFontBitmapVisualHeight(): Could not measure font '" + fontPath + "'.").c_str());
 
-		if (measuredHeight <= 0.0f)
-			return testFont;
+		float correction = static_cast<float>(desiredVisiblePx) / measuredHeight;
+		int correctedSize = static_cast<int>(std::round(desiredVisiblePx * correction));
 
-		float correction = desiredVisiblePx / measuredHeight;
-		int correctedSize = (int)std::round(desiredVisiblePx * correction);
-
-		this->fontBitmaps.erase(testFont->fontName);
-
+		this->fontBitmaps.erase(calibrationName);
 
 		FontBitmap* fb = this->loadFontBitmapRaw(fontName2, correctedSize, fontPath);
+		VEL_ASSERT(fb, ("Scene::loadFontBitmapVisualHeight(): Failed to load corrected font '" + fontPath + "'.").c_str());
+
 
 		Texture t = Runtime::_gpu->generateFontBitmapTexture(fb);
 		texture_handle th = this->textures.size();
 		this->textures.push_back(t);
 
 		fb->texture = th;
-
 
 		return fb;
 	}
@@ -439,6 +441,7 @@ namespace vel
 
 
 		t.actor = this->addActor(stage, mesh, { tMaterialHandle }, ACTFLG_VISIBLE);
+		this->actors[t.actor].colorMultiplier = color;
 
 
 		return this->texts.insert(t);

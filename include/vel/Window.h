@@ -45,9 +45,8 @@ namespace vel
 
     public:
 							Window(Window&&) = default;
-							Window();
+							Window(const Config& c);
 							~Window();
-        bool                init(const Config& c);
 
         void				setTitle(const std::string& title);
         bool				shouldClose();

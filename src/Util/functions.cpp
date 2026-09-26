@@ -64,15 +64,6 @@ namespace vel
         return result;
     }
 
-    std::string char_to_string(char* a)
-    {
-        std::string s = "";
-        for (int i = 0; i < (sizeof(a) / sizeof(char)); i++) {
-            s = s + a[i];
-        }
-        return s;
-    }
-
 	bool sin_vector(std::string needle, std::vector<std::string> haystack)
 	{
 		if (std::find(haystack.begin(), haystack.end(), needle) != haystack.end())

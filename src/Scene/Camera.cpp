@@ -18,7 +18,7 @@ namespace vel
 		nearPlane(0.1f),
 		farPlane(100.0f),
 		position(glm::vec3(0.0f)),
-		lookAt(glm::vec3(0.0f)),
+		lookAt(glm::vec3(0.f, 0.f, -1.f)),
 		up(glm::vec3(0.0f, 1.0f, 0.0f)),
 		gpuData({}),
 		finalRenderCam(true),

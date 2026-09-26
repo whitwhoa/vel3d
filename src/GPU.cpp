@@ -23,7 +23,7 @@
 
 namespace vel
 {
-	GPU::GPU(bool fxaa) :
+	GPU::GPU() :
 		zeroFillerVec(glm::vec4(0.0f)),
 		oneFillerVec(1.0f),
 		activeClearColorValues(glm::vec4(0.0f)),
@@ -40,9 +40,7 @@ namespace vel
 		texturesUBO(0),
 		lightmapTextureUBO(0),
 		
-		activeFramebuffer(-1),
-		useFXAA(fxaa)
-		
+		activeFramebuffer(-1)
 	{
 		this->enableBackfaceCulling();
 
@@ -434,16 +432,30 @@ namespace vel
 
 	void GPU::clearTexture(Texture& t)
 	{
-		glMakeTextureHandleNonResidentARB(t.dsaHandle);
-		glDeleteTextures(1, &t.bufferId);
+		if (t.dsaHandle != 0)
+			glMakeTextureHandleNonResidentARB(t.dsaHandle);
+
+		if (t.bufferId != 0)
+			glDeleteTextures(1, &t.bufferId);
+
+		t.dsaHandle = 0;
+		t.bufferId = 0;
 	}
 
 	void GPU::clearRenderTarget(RenderTarget& rt)
 	{
-		glMakeTextureHandleNonResidentARB(rt.opaqueDsaHandle);
-		glMakeTextureHandleNonResidentARB(rt.depthDsaHandle);
-		glMakeTextureHandleNonResidentARB(rt.accumDsaHandle);
-		glMakeTextureHandleNonResidentARB(rt.revealDsaHandle);
+		if (rt.opaqueDsaHandle != 0)
+			glMakeTextureHandleNonResidentARB(rt.opaqueDsaHandle);
+
+		if (rt.depthDsaHandle != 0)
+			glMakeTextureHandleNonResidentARB(rt.depthDsaHandle);
+
+		if (rt.accumDsaHandle != 0)
+			glMakeTextureHandleNonResidentARB(rt.accumDsaHandle);
+
+		if (rt.revealDsaHandle != 0)
+			glMakeTextureHandleNonResidentARB(rt.revealDsaHandle);
+
 		glDeleteTextures(1, &rt.opaqueBufferId);
 		glDeleteTextures(1, &rt.depthBufferId);
 		glDeleteTextures(1, &rt.accumBufferId);
@@ -451,6 +463,8 @@ namespace vel
 
 		glDeleteFramebuffers(1, &rt.opaqueFBO);
 		glDeleteFramebuffers(1, &rt.alphaFBO);
+
+		rt = {};
 	}
 
 	bool GPU::loadShader(Shader& s, const std::string& vertCode, const std::string& fragCode)
@@ -922,10 +936,7 @@ namespace vel
 	{
 		GpuGeoPool& ggp = gp->gpuGeoPool.value();
 
-		// Generate and bind vertex attribute array
 		glBindVertexArray(ggp.VAO);
-
-		// Bind and update vertex buffer
 		glBindBuffer(GL_ARRAY_BUFFER, ggp.VBO);
 
 		switch (gp->vtxLayout)
@@ -1017,6 +1028,7 @@ namespace vel
 		glBindTexture(GL_TEXTURE_2D, t.bufferId);
 
 		// load data into the buffer
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexImage2D(
 			GL_TEXTURE_2D,
 			0,
@@ -1028,6 +1040,7 @@ namespace vel
 			GL_UNSIGNED_BYTE,
 			t.data
 		);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4); // reset default state
 
 		//// auto generate mipmap levels for texture
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -1098,11 +1111,6 @@ namespace vel
 		glMakeTextureHandleResidentARB(t.dsaHandle);
 
 		return t;
-	}
-
-	glm::ivec2 GPU::getActiveCameraViewportSize()
-	{
-		return this->activeCameraViewportSize;
 	}
 
 	void GPU::useShader(Shader s)
