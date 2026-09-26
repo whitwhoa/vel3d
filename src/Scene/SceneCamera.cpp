@@ -70,6 +70,11 @@ namespace vel
 
 		texture_handle handle = camera.renderTargetTextureHandle.value();
 
+		const Texture& texture = this->textures[handle];
+
+		if (texture.bufferId == camera.renderTarget.opaqueBufferId && texture.dsaHandle == camera.renderTarget.opaqueDsaHandle)
+			return;
+
 		this->updateTextureHandle(handle, camera.renderTarget.opaqueBufferId, camera.renderTarget.opaqueDsaHandle);
 	}
 

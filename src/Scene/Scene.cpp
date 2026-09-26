@@ -301,24 +301,14 @@ namespace vel
 				}
 			}
 
-			ActorGpuData agd;
-			agd.model = this->getActorWorldRenderMatrix(actor, alpha);
-			agd.colorMultiplier = actor.colorMultiplier;
-			agd.lightmapHandle = actor.lightmapTexture != INVALID_TEXTURE_HANDLE ? this->textures[actor.lightmapTexture].dsaHandle : 0;
-			agd.flags = actor.flags;
-			agd.ambientCubeOffset = ambientCubeOffset;
-			agd.boneMatrixOffset = boneMatrixOffset;
-
-			this->actorsGpu.push_back(agd);
-
-			//this->actorsGpu.push_back({
-			//	.model                  = this->getActorWorldRenderMatrix(actor, alpha),
-			//	.colorMultiplier        = actor.colorMultiplier,
-			//	.lightmapHandle         = actor.lightmapTexture ? this->textures[actor.lightmapTexture].dsaHandle : 0,
-			//	.flags                  = actor.flags,
-			//	.ambientCubeOffset      = ambientCubeOffset,
-			//	.boneMatrixOffset       = boneMatrixOffset
-			//});
+			this->actorsGpu.push_back({
+				.model                  = this->getActorWorldRenderMatrix(actor, alpha),
+				.colorMultiplier        = actor.colorMultiplier,
+				.lightmapHandle         = actor.lightmapTexture != INVALID_TEXTURE_HANDLE ? this->textures[actor.lightmapTexture].dsaHandle : 0,
+				.flags                  = actor.flags,
+				.ambientCubeOffset      = ambientCubeOffset,
+				.boneMatrixOffset       = boneMatrixOffset
+			});
 
 			const Mesh& mesh = *actor.mesh;
 
