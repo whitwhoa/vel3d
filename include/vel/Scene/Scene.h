@@ -40,6 +40,7 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	class HeadlessScene
 	{
+		friend class Scene;
 	private:
 		unsigned int																id;
 	protected:
@@ -64,8 +65,11 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneActor
 	////////////////////////////////////////////////////////////////////////////////////////////////
+	private:
+		void				setActorBones(Actor& a);
 	protected:
 		actor_handle		addActor(Mesh* mesh);
+		actor_handle		addActor(Mesh* mesh, SkelAnimator* animator);
 		void				setActorParent(actor_handle child, actor_handle parent);
 		void				clearActorParent(actor_handle child);
 		void				setActorParentBone(actor_handle child, actor_handle parent, int32_t parentBoneId);
@@ -168,6 +172,7 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	private:
 		DrawBucketLocation			findOrCreateDrawBucket(Stage* stage, RenderPass pass, uint32_t shader, uint32_t vao);
+		Actor						addRenderActor(Stage* stage, Mesh* mesh, std::vector<material_handle> materials, uint32_t flags);
 	protected:
 		actor_handle				addActor(Stage* stage, Mesh* mesh, std::vector<material_handle> materials, uint32_t flags);
 		actor_handle				addActor(Stage* stage, Mesh* mesh, SkelAnimator* animator, std::vector<material_handle> materials, uint32_t flags);

@@ -27,7 +27,7 @@ namespace vel
 
 	unsigned int FrameAnimator::update(float frameTime)
 	{
-		if (this->paused)
+		if (this->paused || this->frameCount == 1)
 			return this->currentFrame;
 
 		float secondsPerFrame = 1.f / this->framesPerSecond;

@@ -278,9 +278,8 @@ namespace vel
 			if (!stage.enabled)
 				continue;
 
-			if (actor.flags & ACTFLG_ANIMATED_MATERIAL)
-				for (auto& materialAnimator : actor.materialAnimators)
-					materialAnimator.update(frameTime);
+			for (auto& materialAnimator : actor.materialAnimators)
+				materialAnimator.update(frameTime);
 
 			const uint32_t actorDataIndex = static_cast<uint32_t>(this->actorsGpu.size());
 			const uint32_t ambientCubeOffset = static_cast<uint32_t>(this->actorAmbientCube.size());

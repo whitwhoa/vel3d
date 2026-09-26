@@ -128,24 +128,6 @@ namespace vel
 		return { pass, static_cast<uint32_t>(buckets.size() - 1) };
 	}
 
-	actor_handle HeadlessScene::addActor(Mesh* mesh)
-	{
-		Actor a{};
-		a.mesh = mesh;
-		return this->actors.insert(a);
-	}
-
-	actor_handle Scene::addActor(Stage* stage, Mesh* mesh, std::vector<material_handle> materials, uint32_t flags)
-	{
-		Actor a{};
-		a.stage = stage;
-		a.mesh = mesh;
-		a.flags = flags;
-		a.materialIndices = materials;
-
-		return this->actors.insert(a);
-	}
-
 	void Scene::initActorDrawBuckets()
 	{
 		for (auto& a : this->actors)
@@ -157,43 +139,16 @@ namespace vel
 			{
 				Material& m = this->materials[a.materialIndices[i]];
 
-				if (m.flags & MTLFLG_HAS_AMBIENT_CUBE)
-				{
-					a.flags |= ACTFLG_AMBIENT_CUBE; // make sure actor has ambient cube flag if one of its materials has it
-					if (a.ambientCube.size() == 0)
-					{
-						// prime a value (should be overwritten by application specific logic)
-						a.ambientCube = {
-							{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f},
-							{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}
-						};
-					}
-				}
-
 				if ((m.flags & MTLFLG_IS_TRANSPARENT) || (m.flags & MTLFLG_IS_RGBA) || (m.flags & MTLFLG_IS_TEXT) || (m.flags & MTLFLG_IS_ALPHA_MASK))
 					a.drawBuckets.push_back(this->findOrCreateDrawBucket(a.stage, RENDER_PASS_TRANSPARENT, m.shaderProgramId, a.mesh->gp->gpuGeoPool->VAO));
 				else
 					a.drawBuckets.push_back(this->findOrCreateDrawBucket(a.stage, RENDER_PASS_OPAQUE, m.shaderProgramId, a.mesh->gp->gpuGeoPool->VAO));
-
-				if (a.flags & ACTFLG_ANIMATED_MATERIAL)
-				{
-					VEL_ASSERT(!m.textures.empty(), "Scene::initActorDrawBuckets(): Animated material has no textures.");
-					a.materialAnimators.emplace_back(static_cast<uint32_t>(m.textures.size()), 24.f);
-				}
-					
 			}
 		}
 	}
 
-	actor_handle Scene::addActor(Stage* stage, Mesh* mesh, SkelAnimator* animator, std::vector<material_handle> materials, uint32_t flags)
+	void HeadlessScene::setActorBones(Actor& a)
 	{
-		Actor a{};
-		a.stage = stage;
-		a.mesh = mesh;
-		a.flags = flags;
-		a.materialIndices = materials;
-		a.animator = animator;
-
 		unsigned int index = 0;
 		for (auto& meshBone : a.mesh->bones)
 		{
@@ -203,6 +158,72 @@ namespace vel
 			a.activeBones.push_back(std::pair<unsigned int, unsigned int>(skelBoneIndex, index));
 			index++;
 		}
+	}
+
+	actor_handle HeadlessScene::addActor(Mesh* mesh)
+	{
+		Actor a{};
+		a.mesh = mesh;
+		return this->actors.insert(a);
+	}
+
+	actor_handle HeadlessScene::addActor(Mesh* mesh, SkelAnimator* animator)
+	{
+		Actor a{};
+		a.mesh = mesh;
+		a.animator = animator;
+
+		this->setActorBones(a);
+
+		return this->actors.insert(a);
+	}
+
+	Actor Scene::addRenderActor(Stage* stage, Mesh* mesh, std::vector<material_handle> materials, uint32_t flags)
+	{
+		Actor a{};
+		a.stage = stage;
+		a.mesh = mesh;
+		a.flags = flags;
+		a.materialIndices = materials;
+
+		for (uint32_t i = 0; i < a.materialIndices.size(); i++)
+		{
+			Material& m = this->materials[a.materialIndices[i]];
+
+			if (m.flags & MTLFLG_HAS_AMBIENT_CUBE)
+			{
+				a.flags |= ACTFLG_AMBIENT_CUBE; // make sure actor has ambient cube flag if one of its materials has it
+				if (a.ambientCube.size() == 0)
+				{
+					// prime a value (should be overwritten by application specific logic)
+					a.ambientCube = {
+						{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f},
+						{1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}, {1.f, 1.f, 1.f}
+					};
+				}
+			}
+
+			if (a.flags & ACTFLG_ANIMATED_MATERIAL)
+			{
+				VEL_ASSERT(!m.textures.empty(), "Scene::addRenderActor(): Animated material has no textures.");
+				a.materialAnimators.emplace_back(static_cast<uint32_t>(m.textures.size()), 24.f);
+			}
+		}
+
+		return a;
+	}
+
+	actor_handle Scene::addActor(Stage* stage, Mesh* mesh, std::vector<material_handle> materials, uint32_t flags)
+	{
+		return this->actors.insert(this->addRenderActor(stage, mesh, materials, flags));
+	}
+
+	actor_handle Scene::addActor(Stage* stage, Mesh* mesh, SkelAnimator* animator, std::vector<material_handle> materials, uint32_t flags)
+	{
+		Actor a = this->addRenderActor(stage, mesh, materials, flags);
+		a.animator = animator;
+
+		HeadlessScene::setActorBones(a);
 
 		return this->actors.insert(a);
 	}
