@@ -1071,9 +1071,9 @@ namespace vel
 		else
 		{
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
 		}
 
 		// obtain texture's DSA handle
@@ -1278,16 +1278,12 @@ namespace vel
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
-layout (location = 3) in vec2 aLightMapCoords;
-layout (location = 4) in uint aTexId;
 
 out vec2 TexCoords;
-flat out uint TexId;
 
 void main()
 {
     TexCoords = aTexCoords;
-	TexId = aTexId;
 
 	gl_Position = vec4(aPos, 1.0);
 }
@@ -1299,8 +1295,7 @@ void main()
 #extension GL_ARB_gpu_shader_int64 : require
 
 in vec2 TexCoords;
-in vec2 LMTexCoords;
-flat in uint TexId;
+
 
 const int MAX_TEXTURE_SLOTS = 250;
 layout (std140, binding = 0) uniform TexturesUBO
@@ -1312,7 +1307,7 @@ out vec4 FragColor;
 
 void main()
 {	
-	FragColor = texture(tex[TexId], TexCoords).rgba;
+	FragColor = texture(tex[0], TexCoords);
 }
 )GLSL";
 
@@ -1356,8 +1351,7 @@ out vec4 FragColor;
 
 void main()
 {	
-	//sampler2D tex = sampler2D(textureHandle);
-	sampler2D tex = sampler2D(unpackUint2x32(textureHandle));
+	sampler2D tex = sampler2D(textureHandle);
 	vec4 texColor = texture(tex, TexCoords);
 	FragColor = mix(texColor, vec4(color.rgb, 1.0), color.a);
 }

@@ -321,12 +321,10 @@ void main()
 #ifdef HAS_TEXTURES
 	const uint localTextureIndex	= min(fragActiveFrame, material.textureCount - 1u);
 	const uint64_t textureHandle	= materialTextureHandles[material.textureOffset + localTextureIndex];
-	//sampler2D materialTexture		= sampler2D(textureHandle); // OR sampler2D(unpackUint2x32(textureHandle));
-	sampler2D materialTexture		= sampler2D(unpackUint2x32(textureHandle));
+	sampler2D materialTexture		= sampler2D(textureHandle);
 #endif
 #ifdef HAS_LIGHTMAP
-	//sampler2D lightmapTexture = sampler2D(actor.lightmapHandle);
-	sampler2D lightmapTexture = sampler2D(unpackUint2x32(actor.lightmapHandle));
+	sampler2D lightmapTexture = sampler2D(actor.lightmapHandle);
 #endif
 
 
