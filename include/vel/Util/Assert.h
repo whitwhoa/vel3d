@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
 #ifdef ENABLE_VEL_ASSERT
 
@@ -11,6 +12,7 @@
         if (!(condition)) \
         { \
             std::fprintf(stderr, "%s\n", message); \
+            std::cin.get(); \
             std::abort(); \
         } \
     } while (0)

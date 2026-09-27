@@ -1316,7 +1316,8 @@ void main()
 }
 )GLSL";
 
-		this->loadShader(this->screenShader, vertCode, fragCode);
+		bool screenShaderCompStatus = this->loadShader(this->screenShader, vertCode, fragCode);
+		VEL_ASSERT(screenShaderCompStatus, "GPU::initShaders() - failed to compile shader, see log");
 
 
 		////////////////////////////////////////////////////////
@@ -1355,14 +1356,15 @@ out vec4 FragColor;
 
 void main()
 {	
-	sampler2D tex = sampler2D(textureHandle);
+	//sampler2D tex = sampler2D(textureHandle);
+	sampler2D tex = sampler2D(unpackUint2x32(textureHandle));
 	vec4 texColor = texture(tex, TexCoords);
 	FragColor = mix(texColor, vec4(color.rgb, 1.0), color.a);
-	//FragColor = texColor * color;
 }
 )GLSL";
 
-		this->loadShader(this->postShader, vertCode, fragCode);
+		bool postShaderCompStatus = this->loadShader(this->postShader, vertCode, fragCode);
+		VEL_ASSERT(postShaderCompStatus, "GPU::initShaders() - failed to compile shader, see log");
 
 		this->postShaderColorLocation = glGetUniformLocation(this->postShader.programId, "color");
 		this->postShaderTextureLocation = glGetUniformLocation(this->postShader.programId, "textureHandle");
@@ -1438,7 +1440,8 @@ void main()
 }
 )GLSL";
 
-		this->loadShader(this->compositeShader, vertCode, fragCode);
+		bool compositeShaderCompStatus = this->loadShader(this->compositeShader, vertCode, fragCode);
+		VEL_ASSERT(compositeShaderCompStatus, "GPU::initShaders() - failed to compile shader, see log");
 
 	}
 

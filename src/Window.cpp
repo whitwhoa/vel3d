@@ -147,7 +147,14 @@ namespace vel
 		//
 		int gladResult = gladLoadGL(glfwGetProcAddress);
 		VEL_ASSERT(gladResult != 0, "Window::init(): Failed to initialize GLAD.");
-		VEL_ASSERT(GLAD_GL_VERSION_4_6, "Window::init(): OpenGL 4.6 is not available.");
+
+		SPDLOG_INFO("OpenGL Vendor: {}", reinterpret_cast<const char*>(glGetString(GL_VENDOR)));
+		SPDLOG_INFO("OpenGL Renderer: {}", reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
+		SPDLOG_INFO("OpenGL Version: {}", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+
+		VEL_ASSERT(GLAD_GL_VERSION_4_6, "OpenGL 4.6 is required.");
+		VEL_ASSERT(GLAD_GL_ARB_bindless_texture, "GL_ARB_bindless_texture is required.");
+		VEL_ASSERT(GLAD_GL_ARB_gpu_shader_int64, "GL_ARB_gpu_shader_int64 is required.");
 
 		//
 		// window

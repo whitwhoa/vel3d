@@ -2,6 +2,7 @@
 
 #include <vel/Runtime.h>
 #include <vel/Scene/Scene.h>
+#include <vel/Util/Assert.h>
 
 namespace vel
 {
@@ -320,10 +321,12 @@ void main()
 #ifdef HAS_TEXTURES
 	const uint localTextureIndex	= min(fragActiveFrame, material.textureCount - 1u);
 	const uint64_t textureHandle	= materialTextureHandles[material.textureOffset + localTextureIndex];
-	sampler2D materialTexture		= sampler2D(textureHandle); // OR sampler2D(unpackUint2x32(textureHandle));
+	//sampler2D materialTexture		= sampler2D(textureHandle); // OR sampler2D(unpackUint2x32(textureHandle));
+	sampler2D materialTexture		= sampler2D(unpackUint2x32(textureHandle));
 #endif
 #ifdef HAS_LIGHTMAP
-	sampler2D lightmapTexture = sampler2D(actor.lightmapHandle);
+	//sampler2D lightmapTexture = sampler2D(actor.lightmapHandle);
+	sampler2D lightmapTexture = sampler2D(unpackUint2x32(actor.lightmapHandle));
 #endif
 
 
@@ -449,7 +452,8 @@ void main()
 		this->generateFragmentShader(flags, fragCode);
 
 		Shader s;
-		Runtime::_gpu->loadShader(s, vertCode, fragCode);
+		bool shaderCompStatus = Runtime::_gpu->loadShader(s, vertCode, fragCode);
+		VEL_ASSERT(shaderCompStatus, "Scene::generateShader() - failed to compile shader, see log");
 
 		shader_handle handle = this->shaders.size();
 		this->shaders.push_back(s);
