@@ -32,8 +32,7 @@ namespace vel
 
 	void Scene::generateVertexShader(uint32_t flags, std::string& code)
 	{
-		code =	"#version 460 core\n"
-				"#extension GL_ARB_gpu_shader_int64 : require\n\n";
+		code = "#version 460 core\n\n";
 
 		if (flags & MTLFLG_HAS_TEXTURES)
 			code += "#define HAS_TEXTURES\n";
@@ -61,8 +60,8 @@ struct ActorGpuData
 {
 	mat4		model;
 	vec4		colorMultiplier;
-	uint64_t	lightmapHandle;
-	uint flags;
+	uvec2		lightmapHandle;
+	uint		flags;
 	uint		ambientCubeOffset;
 	uint		boneMatrixOffset;
 };
@@ -205,8 +204,7 @@ void main()
 	void Scene::generateFragmentShader(uint32_t flags, std::string& code)
 	{
 		code = "#version 460 core\n"
-			"#extension GL_ARB_bindless_texture : require\n"
-			"#extension GL_ARB_gpu_shader_int64 : require\n\n";
+			"#extension GL_ARB_bindless_texture : require\n\n";
 
 		if (flags & MTLFLG_HAS_TEXTURES)
 			code += "#define HAS_TEXTURES\n";
@@ -232,7 +230,7 @@ struct ActorGpuData
 {
 	mat4		model;
 	vec4		colorMultiplier;
-	uint64_t	lightmapHandle;
+	uvec2		lightmapHandle;
 	uint		flags;
 	uint		ambientCubeOffset;
 	uint		boneMatrixOffset;
@@ -259,7 +257,7 @@ layout(std430, binding = 3) readonly buffer MaterialDataBuffer
 
 layout(std430, binding = 4) readonly buffer MaterialTextureHandleBuffer
 {
-    uint64_t materialTextureHandles[];
+    uvec2 materialTextureHandles[];
 };
 
 layout(std430, binding = 5) readonly buffer ActorAmbientCubeBuffer
@@ -319,12 +317,12 @@ void main()
 	const MaterialGpuData material	= materials[fragMaterialIndex];
 	vec4 color						= actor.colorMultiplier;
 #ifdef HAS_TEXTURES
-	const uint localTextureIndex	= min(fragActiveFrame, material.textureCount - 1u);
-	const uint64_t textureHandle	= materialTextureHandles[material.textureOffset + localTextureIndex];
-	sampler2D materialTexture		= sampler2D(textureHandle);
+    const uint localTextureIndex	= min(fragActiveFrame, material.textureCount - 1u);
+    const uvec2 textureHandle		= materialTextureHandles[material.textureOffset + localTextureIndex];
+    sampler2D materialTexture		= sampler2D(textureHandle);
 #endif
 #ifdef HAS_LIGHTMAP
-	sampler2D lightmapTexture = sampler2D(actor.lightmapHandle);
+    sampler2D lightmapTexture		= sampler2D(actor.lightmapHandle);
 #endif
 
 

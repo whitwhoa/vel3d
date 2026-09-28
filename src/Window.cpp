@@ -154,7 +154,7 @@ namespace vel
 
 		VEL_ASSERT(GLAD_GL_VERSION_4_6, "OpenGL 4.6 is required.");
 		VEL_ASSERT(GLAD_GL_ARB_bindless_texture, "GL_ARB_bindless_texture is required.");
-		VEL_ASSERT(GLAD_GL_ARB_gpu_shader_int64, "GL_ARB_gpu_shader_int64 is required.");
+
 
 		//
 		// window

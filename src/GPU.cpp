@@ -246,7 +246,10 @@ namespace vel
 
 		this->useShader(this->postShader);
 
-		glUniform1ui64ARB(this->postShaderTextureLocation, frt.colorDsaHandle);
+		//glUniform1ui64ARB(this->postShaderTextureLocation, frt.colorDsaHandle);
+		glUniform2ui(this->postShaderTextureLocation, 
+			static_cast<GLuint>(frt.colorDsaHandle), 
+			static_cast<GLuint>(frt.colorDsaHandle >> 32));
 		glUniform4fv(this->postShaderColorLocation, 1, &frt.colorMultiplier[0]);
 		
 		this->useVao(this->screenSpaceMesh->gp->gpuGeoPool->VAO);
@@ -1292,7 +1295,6 @@ void main()
 		std::string fragCode = R"GLSL(
 #version 460 core
 #extension GL_ARB_bindless_texture : require
-#extension GL_ARB_gpu_shader_int64 : require
 
 in vec2 TexCoords;
 
@@ -1340,12 +1342,11 @@ void main()
 		fragCode = R"GLSL(
 #version 460 core
 #extension GL_ARB_bindless_texture : require
-#extension GL_ARB_gpu_shader_int64 : require
 
 in vec2 TexCoords;
 
 uniform vec4 color;
-uniform uint64_t textureHandle;
+uniform uvec2 textureHandle;
 
 out vec4 FragColor;
 
@@ -1381,7 +1382,6 @@ void main()
 		fragCode = R"GLSL(
 #version 460 core
 #extension GL_ARB_bindless_texture : require
-#extension GL_ARB_gpu_shader_int64 : require
 
 // shader outputs
 layout (location = 0) out vec4 frag;
