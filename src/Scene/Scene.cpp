@@ -120,6 +120,11 @@ namespace vel
 		return this->audioGroupKey;
 	}
 
+	Actor& Scene::getActor(actor_handle handle)
+	{
+		return this->actors[handle];
+	}
+
 	void HeadlessScene::internalFixedLoop(float deltaTime)
 	{
 		this->fixedLoop(deltaTime);

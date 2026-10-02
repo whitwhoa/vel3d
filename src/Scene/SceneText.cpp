@@ -10,6 +10,15 @@
 
 namespace vel
 {
+	Text& Scene::getText(text_handle handle)
+	{
+		return this->texts[handle];
+	}
+
+	Actor& Scene::getTextActor(text_handle handle)
+	{
+		return this->actors[this->texts[handle].actor];
+	}
 
 	FontGlyphInfo Scene::getFontGlyphInfo(uint32_t character, float offsetX, float offsetY, FontBitmap* fb)
 	{
@@ -447,24 +456,27 @@ namespace vel
 		return this->texts.insert(t);
 	}
 
+	void Scene::updateText(Text& t)
+	{
+		if (!t.requiresUpdate)
+			return;
+
+		Actor& a = this->actors[t.actor];
+
+		VEL_ASSERT(a.mesh && a.mesh->gp, "Scene::updateTexts(): Text actor has no geometry pool.");
+		VEL_ASSERT(a.mesh->gp->gpuGeoPool, "Scene::updateTexts(): Text geometry pool has not been initialized.");
+
+		this->buildTextGeometry(t, a.mesh);
+
+		Runtime::_gpu->updateGeoPool(a.mesh->gp);
+
+		t.requiresUpdate = false;
+	}
+
 	void Scene::updateTexts()
 	{
 		for (auto& t : this->texts)
-		{
-			if (!t.requiresUpdate)
-				continue;
-
-			Actor& a = this->actors[t.actor];
-
-			VEL_ASSERT(a.mesh && a.mesh->gp, "Scene::updateTexts(): Text actor has no geometry pool.");
-			VEL_ASSERT(a.mesh->gp->gpuGeoPool, "Scene::updateTexts(): Text geometry pool has not been initialized.");
-
-			this->buildTextGeometry(t, a.mesh);
-			
-			Runtime::_gpu->updateGeoPool(a.mesh->gp);
-
-			t.requiresUpdate = false;
-		}
+			this->updateText(t);
 	}
 
 } // END NAMESPACE

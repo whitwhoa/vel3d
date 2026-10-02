@@ -70,11 +70,12 @@ namespace vel
 	protected:
 		actor_handle		addActor(Mesh* mesh);
 		actor_handle		addActor(Mesh* mesh, SkelAnimator* animator);
-		void				setActorParent(actor_handle child, actor_handle parent);
-		void				clearActorParent(actor_handle child);
 		void				setActorParentBone(actor_handle child, actor_handle parent, int32_t parentBoneId);
 		void				clearActorParentBone(actor_handle child);
 		glm::mat4			getActorWorldMatrix(Actor& a);
+	public:
+		void				setActorParent(actor_handle child, actor_handle parent);
+		void				clearActorParent(actor_handle child);
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
@@ -179,9 +180,11 @@ namespace vel
 		void						hideActor(actor_handle h);
 		void						showActor(actor_handle h);
 		glm::mat4					getActorWorldRenderMatrix(Actor& a, float alpha);
-		AABB						getActorWorldAABB(Actor& a);
 	public:
 		void						initActorDrawBuckets();
+		Actor&						getActor(actor_handle handle);
+		AABB						getActorWorldAABB(Actor& a);
+		bool						actorContainsPoint(actor_handle a, glm::vec2 p);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneText
@@ -197,7 +200,10 @@ namespace vel
 		FontBitmap*					loadFontBitmapVisualHeight(const std::string& fontName, int desiredVisiblePx); // for ui elements where you would expect that font size is in pixels
 		text_handle					addText(Stage* stage, const std::string& font, int fontSize, glm::vec4 color, const std::string& theText, PlaneOrigin originType = PlaneOrigin::LEFT_BOTTOM);
 	public:
+		void						updateText(Text& t);
 		void						updateTexts();
+		Text&						getText(text_handle handle);
+		Actor&						getTextActor(text_handle handle);
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneTexture
@@ -268,6 +274,12 @@ namespace vel
 		void						updateAllCameraResolutions(int x, int y);
 		void						clearAllRenderTargetBuffers();
 		texture_handle				createCameraTexture(Camera* c);
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// SceneUI
+	////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 
 	}; // END SCENE CLASS

@@ -246,6 +246,16 @@ namespace vel
 		return AABB(worldCorners);
 	}
 
+	bool Scene::actorContainsPoint(actor_handle a, glm::vec2 p)
+	{
+		AABB aabb = this->getActorWorldAABB(this->actors[a]);
+
+		if (p.x >= aabb.minEdge.x && p.x <= aabb.maxEdge.x && p.y >= aabb.minEdge.y && p.y <= aabb.maxEdge.y)
+			return true;
+
+		return false;
+	}
+
 
 
 } // END NAMESPACE
