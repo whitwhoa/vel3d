@@ -292,14 +292,15 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	private:
 		void						preloadUI();
-		void						initScrollView(UIScrollView* sv);
-		void						initSelect(UISelect* s);
-		void						initCheckbox(UICheckbox* c);
-		void						initTextButton(UITextButton* b);
-		void						initTextInput(UITextInput* i);
 		void						initText(UIText* t);
 		void						initImage(UIImage* i);
 		void						initButton(UIButton* b);
+		void						initTextButton(UITextButton* b);
+		void						initCheckbox(UICheckbox* c);
+
+		void						initScrollView(UIScrollView* sv);
+		void						initSelect(UISelect* s);
+		void						initTextInput(UITextInput* i);		
 		void						initTable(UITable* t);
 		void						initUI(UIView* v);
 		void						refreshScrollView(UIScrollView* sv);

@@ -31,15 +31,15 @@ namespace vel
 
 		void addStage(Scene* scene, Stage* s, Camera* camera);
 
-		UITextButton* addTextButton(const std::string& id);
-		UISelect* addSelect(const std::string& id);
-		UICheckbox* addCheckbox(const std::string& id);
-		UITextInput* addTextInput(const std::string& id);
-		UIText* addText(const std::string& id);
-		UIImage* addImage(const std::string& id);
-		UIButton* addButton(const std::string& id);
-		UITable* addTable(const std::string& id);
-		UIScrollView* addScrollView(const std::string& id);
+		UITextButton*		addTextButton(const std::string& id);
+		UISelect*			addSelect(const std::string& id);
+		UICheckbox*			addCheckbox(const std::string& id);
+		UITextInput*		addTextInput(const std::string& id);
+		UIText*				addText(const std::string& id);
+		UIImage*			addImage(const std::string& id);
+		UIButton*			addButton(const std::string& id);
+		UITable*			addTable(const std::string& id);
+		UIScrollView		addScrollView(const std::string& id);
 
 		int					getElementIndex(const std::string& id) const;
 		const UIElement*	getElementByIndex(int i) const;

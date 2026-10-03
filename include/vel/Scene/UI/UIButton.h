@@ -49,7 +49,7 @@ namespace vel
         virtual UIButton* setVisible(bool b) override;
         virtual UIButton* setWidth(int w);
         virtual UIButton* setHeight(int h);
-        virtual UIButton* addBackgroundImage(const std::string& i, bool filter = true);
+        virtual UIButton* addBackgroundImage(const std::string& i, bool filter = false);
         virtual UIButton* setHoldUntilMouseUp(bool b);
 
         virtual bool		    containsPoint(glm::vec2 p) override;

@@ -92,9 +92,198 @@ namespace vel
 		this->uiCursor = std::make_unique<UICursor>(this, pointerActorHandle, textSelectActorHandle);
 	}
 
-	void Scene::initText(UIText* t)
+	void Scene::initText(UIText* uiT)
 	{
-		
+		Text t;
+		t.text = uiT->text;
+		t.fontBitmap = this->loadFontBitmapVisualHeight(uiT->fontType, uiT->fontSize);
+		t.originType = uiT->originType;
+
+		Mesh* mesh = this->addMesh(std::move(this->loadTextMesh(t)));
+
+		material_handle tMaterialHandle = this->addMaterial(MTLFLG_IS_TEXT | MTLFLG_HAS_TEXTURES | MTLFLG_IS_TRANSPARENT);
+		Material& tMaterial = this->materials[tMaterialHandle];
+		tMaterial.textures.push_back(t.fontBitmap->texture);
+
+		t.actor = this->addActor(uiT->parentView->stage, mesh, {tMaterialHandle}, ACTFLG_VISIBLE);
+		Actor& ta = this->actors[t.actor];
+		ta.colorMultiplier = uiT->color;
+		ta.setScale({ 1.0f, -1.0f, 1.0f });
+
+		uiT->textActor = this->texts.insert(t);
+		uiT->isInitialized = true;
+
+		uiT->setPosition(uiT->getPosition());
+		uiT->setVisible(uiT->getIsVisible());
+		uiT->setParent(uiT->getParent());
+	}
+
+	void Scene::initImage(UIImage* i)
+	{
+		material_handle iMaterialHandle = this->addMaterial(vel::MTLFLG_HAS_TEXTURES);
+		Material& iMaterial = this->materials[iMaterialHandle];
+
+		uint32_t textureFlags = 0;
+
+		if (i->filter)
+			textureFlags |= TXTRFLG_FILTER;
+
+		texture_handle iTextureHandle = this->loadTexture(i->src, textureFlags);
+		Texture& iTexture = this->textures[iTextureHandle];
+
+		iMaterial.textures.push_back(iTextureHandle);
+
+		i->imageActor = this->addActor(i->parentView->stage, this->getMesh("plane_1x1"), { iMaterialHandle }, ACTFLG_VISIBLE);
+		Actor& iActor = this->actors[i->imageActor];
+
+		float width = iTexture.width;
+		float height = iTexture.height;
+
+		if (!i->size)
+		{
+			width *= i->scale;
+			height *= i->scale;
+		}
+		else
+		{
+			width = i->size->first;
+			height = i->size->second;
+		}
+
+		iActor.setScale({ width, -height, 1.f });
+
+
+		i->isInitialized = true;
+		i->setPosition(i->getPosition());
+		i->setVisible(i->getIsVisible());
+		i->setParent(i->getParent());
+	}
+
+	void Scene::initButton(UIButton* b)
+	{
+		material_handle buttonMaterialHandle = this->addMaterial(MTLFLG_HAS_TEXTURES);
+		Material& buttonMaterial = this->materials[buttonMaterialHandle];
+
+		for (int i = 0; i < b->backgroundImages.size(); i++)
+		{
+			auto& bi = b->backgroundImages[i];
+
+			if (bi.second)
+				buttonMaterial.textures.push_back(this->loadTexture(bi.first, TXTRFLG_FILTER));
+			else
+				buttonMaterial.textures.push_back(this->loadTexture(bi.first));
+		}
+
+		if(buttonMaterial.textures.size() == 0)
+			buttonMaterial.textures.push_back(this->loadTexture(Runtime::_config.dataDir + "/textures/defaults/white.png"));
+
+		b->buttonActor = this->addActor(b->parentView->stage, this->getMesh("plane_1x1"), { buttonMaterialHandle }, ACTFLG_NONE);
+
+		Actor& buttonActor = this->actors[b->buttonActor];
+		buttonActor.setScale({ b->width, -b->height, 1.f });
+
+
+		if (!b->isMouseOverSet())
+			b->setMouseOverEvent([]() {});
+		if (!b->isMouseOutSet())
+			b->setMouseOutEvent([]() {});
+		if (!b->isMouseDownSet())
+			b->setMouseDownEvent([]() {});
+		if (!b->isMouseUpSet())
+			b->setMouseUpEvent([]() {});
+
+		b->isInitialized = true;
+
+		b->setPosition(b->getPosition());
+		b->setVisible(b->getIsVisible());
+		b->setParent(b->getParent());
+	}
+
+	void Scene::initTextButton(UITextButton* b)
+	{
+		Text t;
+		t.text = b->text;
+		t.fontBitmap = this->loadFontBitmapVisualHeight(b->fontType, b->fontSize);
+		t.originType = PlaneOrigin::CENTER_CENTER;
+
+		Mesh* mesh = this->addMesh(std::move(this->loadTextMesh(t)));
+
+		material_handle tMaterialHandle = this->addMaterial(MTLFLG_IS_TEXT | MTLFLG_HAS_TEXTURES | MTLFLG_IS_TRANSPARENT);
+		Material& tMaterial = this->materials[tMaterialHandle];
+		tMaterial.textures.push_back(t.fontBitmap->texture);
+
+		t.actor = this->addActor(b->parentView->stage, mesh, { tMaterialHandle }, ACTFLG_VISIBLE);
+		Actor& ta = this->actors[t.actor];
+		ta.colorMultiplier = b->textColor;
+		ta.setScale({ 1.0f, -1.0f, 1.0f });
+
+		b->textActor = this->texts.insert(t);
+
+
+		this->initButton(b);
+
+		b->updateButtonActorSize();
+
+		this->actors[b->buttonActor].colorMultiplier = b->getBackgroundColor();
+
+
+
+		b->isInitialized = true;
+
+		b->setPosition(b->getPosition());
+		b->setVisible(b->getIsVisible());
+		b->setParent(b->getParent());
+	}
+
+	void Scene::initCheckbox(UICheckbox* c)
+	{
+		c->uncheckedButton = c->parentView->addTextButton(c->id + "UncheckedButton")
+			->setFontType(c->fontType)
+			->setFontSize(c->fontSize)
+			->setText("[  ]")
+			->setTopPadding(this->px(-4))
+			->setBottomPadding(this->px(-6))
+			->setTextColor(c->color)
+			->setTextColorHover(c->color)
+			->setTextColorClick(c->color)
+			->setBackgroundColor(c->backgroundColor)
+			->setBackgroundColorHover(c->backgroundColor)
+			->setBackgroundColorClick(c->backgroundColor)
+			->setPosition(c->positionCache)
+			->setVisible(!c->isChecked)
+			->setMouseUpEvent([c]() {
+				c->toggleState();
+			});
+
+		this->initTextButton(c->uncheckedButton);
+
+
+		c->checkedButton = c->parentView->addTextButton(c->id + "CheckedButton")
+			->setFontType(c->fontType)
+			->setFontSize(c->fontSize)
+			->setText("[*]")
+			->setTopPadding(this->px(-4))
+			->setBottomPadding(this->px(-6))
+			->setTextColor(c->color)
+			->setTextColorHover(c->color)
+			->setTextColorClick(c->color)
+			->setBackgroundColor(c->backgroundColor)
+			->setBackgroundColorHover(c->backgroundColor)
+			->setBackgroundColorClick(c->backgroundColor)
+			->setPosition(c->positionCache)
+			->setVisible(c->isChecked)
+			->setMouseUpEvent([c]() {
+				c->toggleState();
+			});
+
+		this->initTextButton(c->checkedButton);
+
+
+		c->isInitialized = true;
+
+		c->setPosition(c->getPosition());
+		c->setVisible(c->getIsVisible());
+		c->setParent(c->getParent());
 	}
 
 	void Scene::initUI(UIView* v)
