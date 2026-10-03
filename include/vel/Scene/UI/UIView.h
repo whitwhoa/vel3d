@@ -17,7 +17,7 @@ namespace vel
 	class UIView
 	{
 	protected:
-		friend class UIScene;
+		friend class Scene;
 
 		std::vector<std::unique_ptr<UIElement>>	elements;
 		int initializedElements;

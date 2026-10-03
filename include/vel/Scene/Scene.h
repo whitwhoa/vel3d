@@ -30,6 +30,8 @@
 #include <vel/Scene/Mesh/PlaneOrigin.h>
 #include <vel/Scene/ActorGpuData.h>
 #include <vel/Scene/Stage/Stage.h>
+#include <vel/Scene/UI/UICursor.h>
+#include <vel/Scene/UI/UIView.h>
 
 
 
@@ -119,7 +121,13 @@ namespace vel
 	private:
 		int																audioGroupKey;
 		BufferIds														bufferIds;
+		glm::vec2														uiScreenSize;
+		glm::vec2														uiReferenceSize;
+		float															uiScale;
 	protected:
+		std::unique_ptr<UIView>											ui;
+		std::unique_ptr<UICursor>										uiCursor;
+
 		FinalRenderTarget												sceneRenderTarget;
 		std::vector<std::unique_ptr<Stage>> 							stages;
 		std::vector<std::unique_ptr<Camera>>							cameras;
@@ -147,13 +155,17 @@ namespace vel
 
 		std::vector<std::string>										sfxInUse;
 		std::vector<std::string>										bgmInUse;
+
+		
 	
 	private:
+		void			init();
 		void			initMaterialData();
 		DrawBucket&		getDrawBucket(Stage& stage, const DrawBucketLocation& location);
 		void			uploadDrawBuckets(std::vector<DrawBucket>& buckets);
 	public:
 						Scene();
+						Scene(glm::vec2 uiReferenceSize);
 						~Scene() override;
 		int				getAudioGroupKey() const;
 		virtual void	immediateLoop(float frameTime, float renderLerpInterval) = 0;
@@ -278,7 +290,31 @@ namespace vel
 	////////////////////////////////////////////////////////////////////////////////////////////////
 	// SceneUI
 	////////////////////////////////////////////////////////////////////////////////////////////////
+	private:
+		void						preloadUI();
+		void						initScrollView(UIScrollView* sv);
+		void						initSelect(UISelect* s);
+		void						initCheckbox(UICheckbox* c);
+		void						initTextButton(UITextButton* b);
+		void						initTextInput(UITextInput* i);
+		void						initText(UIText* t);
+		void						initImage(UIImage* i);
+		void						initButton(UIButton* b);
+		void						initTable(UITable* t);
+		void						initUI(UIView* v);
+		void						refreshScrollView(UIScrollView* sv);
+		void						setCursorOver(std::vector<std::unique_ptr<UIElement>>& elements);
+		void						updateUI(float dt);
+	protected:
+		int							px(int value) const;
+		glm::ivec2					screenCenter() const;
+		int							screenLeft() const;
+		int							screenRight() const;
+		int							screenTop() const;
+		int							screenBottom() const;
 
+		void						addCursor();
+		
 
 
 

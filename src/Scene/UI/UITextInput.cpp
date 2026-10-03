@@ -456,30 +456,30 @@ namespace vel
 		return false;
 	}
 
-	bool UITextInput::shouldTypeKey(const vel::InputState* is, vel::VEL_KEY key)
+	bool UITextInput::shouldTypeKey(const InputState& is, VEL_KEY key)
 	{
-		if (is->pressed(key))
+		if (is.pressed(key))
 		{
 			this->keyNextTime = this->currentTime + this->keyDelay;
 			return true;
 		}
 
-		if (is->held(key) && this->canKey())
+		if (is.held(key) && this->canKey())
 			return true;
 
 		return false;
 	}
 
-	void UITextInput::updateKeys(const vel::InputState* is)
+	void UITextInput::updateKeys(const InputState& is)
 	{
 		// Navigation
-		if (this->shouldTypeKey(is, vel::VEL_KEY_RIGHT))
+		if (this->shouldTypeKey(is, VEL_KEY_RIGHT))
 		{
 			this->moveCaretRight();
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_LEFT))
+		if (this->shouldTypeKey(is, VEL_KEY_LEFT))
 		{
 			this->moveCaretLeft();
 			return;
@@ -487,13 +487,13 @@ namespace vel
 
 
 		// Removal
-		if (this->shouldTypeKey(is, vel::VEL_KEY_BACKSPACE))
+		if (this->shouldTypeKey(is, VEL_KEY_BACKSPACE))
 		{
 			this->backspaceChar();
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_DELETE))
+		if (this->shouldTypeKey(is, VEL_KEY_DELETE))
 		{
 			this->deleteChar();
 			return;
@@ -501,402 +501,402 @@ namespace vel
 
 
 		// Shift State
-		bool shifted = is->down(vel::VEL_KEY_LEFT_SHIFT) ||
-			is->down(vel::VEL_KEY_RIGHT_SHIFT);
+		bool shifted = is.down(VEL_KEY_LEFT_SHIFT) ||
+			is.down(VEL_KEY_RIGHT_SHIFT);
 
-		if (is->pressed(vel::VEL_KEY_CAPS_LOCK))
+		if (is.pressed(VEL_KEY_CAPS_LOCK))
 			this->isCapsLock = !this->isCapsLock;
 
 		bool capitalized = shifted != this->isCapsLock;
 
 
 		// Keys
-		if (this->shouldTypeKey(is, vel::VEL_KEY_SPACE))
+		if (this->shouldTypeKey(is, VEL_KEY_SPACE))
 		{
 			this->addChar(" ");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_APOSTROPHE))
+		if (this->shouldTypeKey(is, VEL_KEY_APOSTROPHE))
 		{
 			this->addChar(shifted ? "\"" : "'");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_COMMA))
+		if (this->shouldTypeKey(is, VEL_KEY_COMMA))
 		{
 			this->addChar(shifted ? "<" : ",");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_MINUS))
+		if (this->shouldTypeKey(is, VEL_KEY_MINUS))
 		{
 			this->addChar(shifted ? "_" : "-");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_PERIOD))
+		if (this->shouldTypeKey(is, VEL_KEY_PERIOD))
 		{
 			this->addChar(shifted ? ">" : ".");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_SLASH))
+		if (this->shouldTypeKey(is, VEL_KEY_SLASH))
 		{
 			this->addChar(shifted ? "?" : "/");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_0))
+		if (this->shouldTypeKey(is, VEL_KEY_0))
 		{
 			this->addChar(shifted ? ")" : "0");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_1))
+		if (this->shouldTypeKey(is, VEL_KEY_1))
 		{
 			this->addChar(shifted ? "!" : "1");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_2))
+		if (this->shouldTypeKey(is, VEL_KEY_2))
 		{
 			this->addChar(shifted ? "@" : "2");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_3))
+		if (this->shouldTypeKey(is, VEL_KEY_3))
 		{
 			this->addChar(shifted ? "#" : "3");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_4))
+		if (this->shouldTypeKey(is, VEL_KEY_4))
 		{
 			this->addChar(shifted ? "$" : "4");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_5))
+		if (this->shouldTypeKey(is, VEL_KEY_5))
 		{
 			this->addChar(shifted ? "%" : "5");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_6))
+		if (this->shouldTypeKey(is, VEL_KEY_6))
 		{
 			this->addChar(shifted ? "^" : "6");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_7))
+		if (this->shouldTypeKey(is, VEL_KEY_7))
 		{
 			this->addChar(shifted ? "&" : "7");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_8))
+		if (this->shouldTypeKey(is, VEL_KEY_8))
 		{
 			this->addChar(shifted ? "*" : "8");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_9))
+		if (this->shouldTypeKey(is, VEL_KEY_9))
 		{
 			this->addChar(shifted ? "(" : "9");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_SEMICOLON))
+		if (this->shouldTypeKey(is, VEL_KEY_SEMICOLON))
 		{
 			this->addChar(shifted ? ":" : ";");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_EQUAL))
+		if (this->shouldTypeKey(is, VEL_KEY_EQUAL))
 		{
 			this->addChar(shifted ? "+" : "=");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_A))
+		if (this->shouldTypeKey(is, VEL_KEY_A))
 		{
 			this->addChar(capitalized ? "A" : "a");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_B))
+		if (this->shouldTypeKey(is, VEL_KEY_B))
 		{
 			this->addChar(capitalized ? "B" : "b");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_C))
+		if (this->shouldTypeKey(is, VEL_KEY_C))
 		{
 			this->addChar(capitalized ? "C" : "c");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_D))
+		if (this->shouldTypeKey(is, VEL_KEY_D))
 		{
 			this->addChar(capitalized ? "D" : "d");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_E))
+		if (this->shouldTypeKey(is, VEL_KEY_E))
 		{
 			this->addChar(capitalized ? "E" : "e");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_F))
+		if (this->shouldTypeKey(is, VEL_KEY_F))
 		{
 			this->addChar(capitalized ? "F" : "f");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_G))
+		if (this->shouldTypeKey(is, VEL_KEY_G))
 		{
 			this->addChar(capitalized ? "G" : "g");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_H))
+		if (this->shouldTypeKey(is, VEL_KEY_H))
 		{
 			this->addChar(capitalized ? "H" : "h");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_I))
+		if (this->shouldTypeKey(is, VEL_KEY_I))
 		{
 			this->addChar(capitalized ? "I" : "i");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_J))
+		if (this->shouldTypeKey(is, VEL_KEY_J))
 		{
 			this->addChar(capitalized ? "J" : "j");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_K))
+		if (this->shouldTypeKey(is, VEL_KEY_K))
 		{
 			this->addChar(capitalized ? "K" : "k");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_L))
+		if (this->shouldTypeKey(is, VEL_KEY_L))
 		{
 			this->addChar(capitalized ? "L" : "l");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_M))
+		if (this->shouldTypeKey(is, VEL_KEY_M))
 		{
 			this->addChar(capitalized ? "M" : "m");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_N))
+		if (this->shouldTypeKey(is, VEL_KEY_N))
 		{
 			this->addChar(capitalized ? "N" : "n");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_O))
+		if (this->shouldTypeKey(is, VEL_KEY_O))
 		{
 			this->addChar(capitalized ? "O" : "o");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_P))
+		if (this->shouldTypeKey(is, VEL_KEY_P))
 		{
 			this->addChar(capitalized ? "P" : "p");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_Q))
+		if (this->shouldTypeKey(is, VEL_KEY_Q))
 		{
 			this->addChar(capitalized ? "Q" : "q");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_R))
+		if (this->shouldTypeKey(is, VEL_KEY_R))
 		{
 			this->addChar(capitalized ? "R" : "r");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_S))
+		if (this->shouldTypeKey(is, VEL_KEY_S))
 		{
 			this->addChar(capitalized ? "S" : "s");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_T))
+		if (this->shouldTypeKey(is, VEL_KEY_T))
 		{
 			this->addChar(capitalized ? "T" : "t");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_U))
+		if (this->shouldTypeKey(is, VEL_KEY_U))
 		{
 			this->addChar(capitalized ? "U" : "u");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_V))
+		if (this->shouldTypeKey(is, VEL_KEY_V))
 		{
 			this->addChar(capitalized ? "V" : "v");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_W))
+		if (this->shouldTypeKey(is, VEL_KEY_W))
 		{
 			this->addChar(capitalized ? "W" : "w");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_X))
+		if (this->shouldTypeKey(is, VEL_KEY_X))
 		{
 			this->addChar(capitalized ? "X" : "x");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_Y))
+		if (this->shouldTypeKey(is, VEL_KEY_Y))
 		{
 			this->addChar(capitalized ? "Y" : "y");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_Z))
+		if (this->shouldTypeKey(is, VEL_KEY_Z))
 		{
 			this->addChar(capitalized ? "Z" : "z");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_LEFT_BRACKET))
+		if (this->shouldTypeKey(is, VEL_KEY_LEFT_BRACKET))
 		{
 			this->addChar(shifted ? "{" : "[");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_RIGHT_BRACKET))
+		if (this->shouldTypeKey(is, VEL_KEY_RIGHT_BRACKET))
 		{
 			this->addChar(shifted ? "}" : "]");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_BACKSLASH))
+		if (this->shouldTypeKey(is, VEL_KEY_BACKSLASH))
 		{
 			this->addChar(shifted ? "|" : "\\");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_GRAVE_ACCENT))
+		if (this->shouldTypeKey(is, VEL_KEY_GRAVE_ACCENT))
 		{
 			this->addChar(shifted ? "~" : "`");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_0))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_0))
 		{
 			this->addChar("0");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_1))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_1))
 		{
 			this->addChar("1");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_2))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_2))
 		{
 			this->addChar("2");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_3))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_3))
 		{
 			this->addChar("3");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_4))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_4))
 		{
 			this->addChar("4");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_5))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_5))
 		{
 			this->addChar("5");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_6))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_6))
 		{
 			this->addChar("6");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_7))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_7))
 		{
 			this->addChar("7");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_8))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_8))
 		{
 			this->addChar("8");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_9))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_9))
 		{
 			this->addChar("9");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_DECIMAL))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_DECIMAL))
 		{
 			this->addChar(".");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_DIVIDE))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_DIVIDE))
 		{
 			this->addChar("/");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_MULTIPLY))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_MULTIPLY))
 		{
 			this->addChar("*");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_SUBTRACT))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_SUBTRACT))
 		{
 			this->addChar("-");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_ADD))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_ADD))
 		{
 			this->addChar("+");
 			return;
 		}
 
-		if (this->shouldTypeKey(is, vel::VEL_KEY_KP_EQUAL))
+		if (this->shouldTypeKey(is, VEL_KEY_KP_EQUAL))
 		{
 			this->addChar("=");
 			return;
 		}
 	}
 
-	void UITextInput::update(float dt, const vel::InputState* is, UICursor* c)
+	void UITextInput::update(float dt, const InputState& is, UICursor* c)
 	{
 		UIButton::update(dt, is, c);
 
@@ -906,7 +906,7 @@ namespace vel
 			return;
 
 		// unfocus if mouse click outside button
-		if (!this->getIsMouseOver() && is->mouseLeftButton)
+		if (!this->getIsMouseOver() && is.mouseLeftButton)
 		{
 			this->hasFocus = false;
 

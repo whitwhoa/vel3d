@@ -16,7 +16,7 @@ namespace vel
 	class UIElement
 	{
 	private:
-		friend class UIScene;
+		friend class Scene;
 
 	protected:
 		std::string			id;
@@ -42,7 +42,7 @@ namespace vel
 		void				setParentView(UIView* v);
 
 		virtual bool		containsPoint(glm::vec2 p) = 0;
-		virtual void		update(float dt, const InputState* is, UICursor* c) = 0;
+		virtual void		update(float dt, const InputState& is, UICursor* c) = 0;
 		virtual int			getWidth() const = 0;
 		virtual int			getHeight() const = 0;
 

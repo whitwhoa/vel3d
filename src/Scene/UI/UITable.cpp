@@ -33,7 +33,7 @@ namespace vel
 		return false;
 	}
 
-	void UITable::update(float dt, const vel::InputState* is, UICursor* c)
+	void UITable::update(float dt, const vel::InputState& is, UICursor* c)
 	{}
 
 	UITable* UITable::setOriginType(vel::PlaneOrigin ot)

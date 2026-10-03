@@ -11,7 +11,7 @@ namespace vel
 	class UICursor
 	{
 	private:
-		friend class UIScene;
+		friend class Scene;
 
 		Scene* scene;
 		actor_handle pointerActor;

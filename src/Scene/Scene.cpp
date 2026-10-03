@@ -14,6 +14,8 @@
 #include <vel/Scene/Scene.h>
 #include <vel/Scene/Texture.h>
 #include <vel/Scene/MeshLoader/AssimpMeshLoader.h>
+#include <vel/Scene/Material.h>
+
 
 using json = nlohmann::json;
 
@@ -28,8 +30,32 @@ namespace vel
 	Scene::Scene() :
 		HeadlessScene(),
 		audioGroupKey(-1),
+		bufferIds(),
+		uiScale(1.f),
 		sceneRenderTarget(),
-		bufferIds()
+		uiScreenSize(Runtime::_window->getResolution()),
+		uiReferenceSize({ 1280, 720 }),
+		ui(nullptr),
+		uiCursor(nullptr)
+	{
+		this->init();
+	}
+
+	Scene::Scene(glm::vec2 uiReferenceSize) :
+		HeadlessScene(),
+		audioGroupKey(-1),
+		bufferIds(),
+		uiScale(1.f),
+		sceneRenderTarget(),
+		uiScreenSize(Runtime::_window->getResolution()),
+		uiReferenceSize(uiReferenceSize),
+		ui(nullptr),
+		uiCursor(nullptr)
+	{
+		this->init();
+	}
+
+	void Scene::init()
 	{
 		this->renderGeoPools.emplace(VtxLayout::VTX_POS, std::make_unique<GeoPoolT<VtxPos>>());
 		this->renderGeoPools.emplace(VtxLayout::VTX_POS_NRML, std::make_unique<GeoPoolT<VtxPosNrml>>());
@@ -41,8 +67,14 @@ namespace vel
 		this->sceneRenderTarget = Runtime::_gpu->createFinalRenderTarget(
 			Runtime::_window->getWindowSize().x, Runtime::_window->getWindowSize().y);
 
-		if(Runtime::_audioDevice)
+
+		if (Runtime::_audioDevice)
 			this->audioGroupKey = Runtime::_audioDevice->generateGroupKey();
+
+
+		float scaleX = this->uiScreenSize.x / this->uiReferenceSize.x;
+		float scaleY = this->uiScreenSize.y / this->uiReferenceSize.y;
+		this->uiScale = std::min(scaleX, scaleY);
 	}
 	
 	HeadlessScene::~HeadlessScene()
@@ -202,8 +234,12 @@ namespace vel
 
 	bool Scene::internalLoad()
 	{
+		this->preloadUI();
+
 		if (HeadlessScene::internalLoad())
 		{
+			this->initUI(this->ui.get());
+
 			Runtime::_gpu->initSceneBuffers(this->bufferIds);
 
 			this->initMaterialData();

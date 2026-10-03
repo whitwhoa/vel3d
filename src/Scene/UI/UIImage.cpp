@@ -113,7 +113,7 @@ namespace vel
 		return true;
 	}
 
-	void UIImage::update(float dt, const vel::InputState* is, UICursor* c) {}
+	void UIImage::update(float dt, const vel::InputState& is, UICursor* c) {}
 
 	int UIImage::getWidth() const
 	{

@@ -139,6 +139,6 @@ namespace vel
 		return true;
 	}
 
-	void UICheckbox::update(float dt, const vel::InputState* is, UICursor* c)
+	void UICheckbox::update(float dt, const vel::InputState& is, UICursor* c)
 	{}
 }

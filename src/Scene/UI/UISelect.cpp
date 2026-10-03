@@ -408,7 +408,7 @@ namespace vel
 		return false;
 	}
 
-	void UISelect::update(float dt, const vel::InputState* is, UICursor* c)
+	void UISelect::update(float dt, const vel::InputState& is, UICursor* c)
 	{
 		if (!this->isVisible)
 			return;
@@ -420,14 +420,14 @@ namespace vel
 		{
 			if (this->cursorOverOptions(glm::vec2(c->getPos())))
 			{
-				if (is->scroll > 0)
+				if (is.scroll > 0)
 					this->scrollUp();
-				else if (is->scroll < 0)
+				else if (is.scroll < 0)
 					this->scrollDown();
 			}
 
 			if (!this->cursorOverExpanded(glm::vec2(c->getPos())))
-				if (is->mouseLeftButton)
+				if (is.mouseLeftButton)
 					this->hideOptions();
 		}
 

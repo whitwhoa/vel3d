@@ -545,7 +545,7 @@ namespace vel
 		Actor& gpa = this->parentView->scene->getActor(this->ghostParentActor);
 
 		const glm::vec3& ghostPos = gpa.getTranslation();
-		glm::vec2& handlePos = this->scrollbarXHandleButton->getPosition();
+		const glm::vec2& handlePos = this->scrollbarXHandleButton->getPosition();
 
 		float requestedPos = ghostPos.x - scrollMag * this->cameraScrollXMultiplier;
 		float ghostXPos = 0.f;
@@ -573,7 +573,7 @@ namespace vel
 		Actor& gpa = this->parentView->scene->getActor(this->ghostParentActor);
 
 		const glm::vec3& ghostPos = gpa.getTranslation();
-		glm::vec2& handlePos = this->scrollbarXHandleButton->getPosition();
+		const glm::vec2& handlePos = this->scrollbarXHandleButton->getPosition();
 
 		float requestedPos = ghostPos.x + scrollMag * this->cameraScrollXMultiplier;
 		float ghostXPos = 0.f;
@@ -601,7 +601,7 @@ namespace vel
 		Actor& gpa = this->parentView->scene->getActor(this->ghostParentActor);
 
 		const glm::vec3& ghostPos = gpa.getTranslation();
-		glm::vec2& handlePos = this->scrollbarYHandleButton->getPosition();
+		const glm::vec2& handlePos = this->scrollbarYHandleButton->getPosition();
 
 		float requestedPos = ghostPos.y + scrollMag * this->cameraScrollYMultiplier;
 		float ghostYPos = 0.f;
@@ -629,7 +629,7 @@ namespace vel
 		Actor& gpa = this->parentView->scene->getActor(this->ghostParentActor);
 
 		const glm::vec3& ghostPos = gpa.getTranslation();
-		glm::vec2& handlePos = this->scrollbarYHandleButton->getPosition();
+		const glm::vec2& handlePos = this->scrollbarYHandleButton->getPosition();
 
 		float requestedPos = ghostPos.y - scrollMag * this->cameraScrollYMultiplier;
 		float ghostYPos = 0.f;
@@ -694,7 +694,7 @@ namespace vel
 			this->scrollLeft(scrollMag);
 	}
 
-	void UIScrollView::update(float dt, const vel::InputState* is, UICursor* c)
+	void UIScrollView::update(float dt, const vel::InputState& is, UICursor* c)
 	{
 		for (auto& e : this->elements)
 			e->update(dt, is, c);
@@ -722,19 +722,19 @@ namespace vel
 
 		if (this->parentView->scene->actorContainsPoint(this->displayActor, glm::vec2(c->getPos())))
 		{
-			if (this->requireScrollY && is->up(vel::VEL_KEY_LEFT_SHIFT))
+			if (this->requireScrollY && is.up(vel::VEL_KEY_LEFT_SHIFT))
 			{
-				if (is->scroll > 0)
+				if (is.scroll > 0)
 					this->scrollUp(10.f);
-				else if (is->scroll < 0)
+				else if (is.scroll < 0)
 					this->scrollDown(10.f);
 			}
 
-			if (this->requireScrollX && is->down(vel::VEL_KEY_LEFT_SHIFT))
+			if (this->requireScrollX && is.down(vel::VEL_KEY_LEFT_SHIFT))
 			{
-				if (is->scroll > 0)
+				if (is.scroll > 0)
 					this->scrollLeft(10.f);
-				else if (is->scroll < 0)
+				else if (is.scroll < 0)
 					this->scrollRight(10.f);
 			}
 		}

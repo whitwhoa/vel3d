@@ -11,7 +11,7 @@ namespace vel
     class UIButton : public UIElement
     {
     private:
-        friend class UIScene;
+        friend class Scene;
 
         bool isMouseOver;
         bool initialMouseOver;
@@ -53,7 +53,7 @@ namespace vel
         virtual UIButton* setHoldUntilMouseUp(bool b);
 
         virtual bool		    containsPoint(glm::vec2 p) override;
-        virtual void		    update(float dt, const InputState* is, UICursor* c) override;
+        virtual void		    update(float dt, const InputState& is, UICursor* c) override;
 
         virtual int			    getWidth() const override;
         virtual int			    getHeight() const override;

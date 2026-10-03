@@ -15,7 +15,7 @@ namespace vel
 	class UITable : public UIElement
 	{
 	private:
-		friend class UIScene;
+		friend class Scene;
 
 		std::vector<std::vector<UITableCell>>	rows;
 		actor_handle tableActor;
@@ -39,7 +39,7 @@ namespace vel
 		UITable* setPostInit(std::function<void()> f);
 
 		virtual bool containsPoint(glm::vec2 p) override;
-		virtual void update(float dt, const vel::InputState* is, UICursor* c) override;
+		virtual void update(float dt, const InputState& is, UICursor* c) override;
 
 		virtual int	getWidth() const override;
 		virtual int	getHeight() const override;

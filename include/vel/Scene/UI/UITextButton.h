@@ -18,7 +18,7 @@ namespace vel
 	class UITextButton : public UIButton
 	{
 	private:
-		friend class UIScene;
+		friend class Scene;
 
 		text_handle			textActor;
 

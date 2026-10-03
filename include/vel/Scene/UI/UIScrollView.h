@@ -11,7 +11,7 @@ namespace vel
 	class UIScrollView : public UIView, public UIElement
 	{
 	private:
-		friend class UIScene;
+		friend class Scene;
 
 		glm::vec4		scrollbarButtonColor;
 		glm::vec4		scrollbarButtonClickColor;
@@ -111,7 +111,7 @@ namespace vel
 		virtual int				getWidth() const override;
 		virtual int				getHeight() const override;
 
-		virtual void			update(float dt, const vel::InputState* is, UICursor* c) override;
+		virtual void			update(float dt, const InputState& is, UICursor* c) override;
 
 
 		float					getTopOffset() const;

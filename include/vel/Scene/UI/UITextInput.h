@@ -12,7 +12,7 @@ namespace vel
 	class UITextInput : public UIButton
 	{
 	private:
-		friend class UIScene;
+		friend class Scene;
 
 		std::string			fontType;
 		std::string			defaultText;
@@ -67,11 +67,11 @@ namespace vel
 		void				checkKeyPress();
 
 		bool				canKey();
-		bool				shouldTypeKey(const InputState* is, VEL_KEY key);
+		bool				shouldTypeKey(const InputState& is, VEL_KEY key);
 
 		void				updateView();
 		void				updateCaretActorPos();
-		void				updateKeys(const InputState* is);
+		void				updateKeys(const InputState& is);
 
 
 	public:
@@ -96,7 +96,7 @@ namespace vel
 		UITextInput* setVisible(bool b) override;
 		UITextInput* setParent(actor_handle a) override;
 
-		virtual void			update(float dt, const InputState* is, UICursor* c) override;
+		virtual void			update(float dt, const InputState& is, UICursor* c) override;
 
 		const std::string& getText();
 	};

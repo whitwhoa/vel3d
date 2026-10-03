@@ -118,7 +118,7 @@ namespace vel
 		return true;
 	}
 
-	void UIText::update(float dt, const vel::InputState* is, UICursor* c)
+	void UIText::update(float dt, const vel::InputState& is, UICursor* c)
 	{}
 
 	int UIText::getWidth() const

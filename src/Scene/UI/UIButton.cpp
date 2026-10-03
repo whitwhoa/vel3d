@@ -223,7 +223,7 @@ namespace vel
         return true;
     }
 
-    void UIButton::update(float dt, const vel::InputState* is, UICursor* c)
+    void UIButton::update(float dt, const vel::InputState& is, UICursor* c)
     {
         if (!this->isVisible)
             return;
@@ -232,7 +232,7 @@ namespace vel
         {
             this->setMouseOver(true);
 
-            if (is->mouseLeftButton)
+            if (is.mouseLeftButton)
                 this->setMouseDown(true);
             else
                 this->setMouseDown(false);

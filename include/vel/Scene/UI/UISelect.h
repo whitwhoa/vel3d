@@ -10,7 +10,7 @@ namespace vel
 	class UISelect : public UIElement
 	{
 	private:
-		friend class UIScene;
+		friend class Scene;
 
 		bool				isExpanded;
 		int					fontSize;
@@ -85,7 +85,7 @@ namespace vel
 		UISelect* setParent(actor_handle a) override;
 
 		virtual bool	containsPoint(glm::vec2 p) override;
-		virtual void	update(float dt, const vel::InputState* is, UICursor* c) override;
+		virtual void	update(float dt, const InputState& is, UICursor* c) override;
 
 		virtual int		getWidth() const override;
 		virtual int		getHeight() const override;
