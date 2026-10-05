@@ -6,12 +6,12 @@
 
 #include <vel/Scene/Actor/Actor.h>
 #include <vel/Scene/Mesh/PlaneOrigin.h>
-#include <vel/Scene/UI/UIView.h>
 
 namespace vel
 {
 	class UICursor;
 	class InputState;
+	class UIView;
 
 	class UIElement
 	{

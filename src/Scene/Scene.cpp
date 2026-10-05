@@ -31,6 +31,7 @@ namespace vel
 		HeadlessScene(),
 		audioGroupKey(-1),
 		bufferIds(),
+		emptyMaterial(INVALID_MATERIAL_HANDLE),
 		uiScale(1.f),
 		sceneRenderTarget(),
 		uiScreenSize(Runtime::_window->getResolution()),
@@ -45,6 +46,7 @@ namespace vel
 		HeadlessScene(),
 		audioGroupKey(-1),
 		bufferIds(),
+		emptyMaterial(INVALID_MATERIAL_HANDLE),
 		uiScale(1.f),
 		sceneRenderTarget(),
 		uiScreenSize(Runtime::_window->getResolution()),
@@ -75,6 +77,9 @@ namespace vel
 		float scaleX = this->uiScreenSize.x / this->uiReferenceSize.x;
 		float scaleY = this->uiScreenSize.y / this->uiReferenceSize.y;
 		this->uiScale = std::min(scaleX, scaleY);
+
+
+		this->emptyMaterial = this->addMaterial(MTLFLG_IS_RGBA);
 	}
 	
 	HeadlessScene::~HeadlessScene()
@@ -164,6 +169,8 @@ namespace vel
 
 	void Scene::internalImmediateLoop(float frameTime, float renderLerpInterval)
 	{
+		this->updateUI(frameTime);
+
 		this->immediateLoop(frameTime, renderLerpInterval);
 
 		for (auto& camera : this->cameras)

@@ -1,6 +1,6 @@
 
-
-
+#include <vel/Scene/Scene.h>
+#include <vel/Scene/UI/UIView.h>
 #include <vel/Scene/UI/UIButton.h>
 
 
@@ -217,7 +217,7 @@ namespace vel
         if (!this->isVisible)
             return false;
 
-        if(this->parentView->scene->actorContainsPoint(this->buttonActor, p))
+        if(!this->parentView->scene->actorContainsPoint(this->buttonActor, p))
             return false;
 
         return true;

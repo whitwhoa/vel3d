@@ -70,6 +70,7 @@ namespace vel
 	private:
 		void				setActorBones(Actor& a);
 	protected:
+		actor_handle		addActor();
 		actor_handle		addActor(Mesh* mesh);
 		actor_handle		addActor(Mesh* mesh, SkelAnimator* animator);
 		void				setActorParentBone(actor_handle child, actor_handle parent, int32_t parentBoneId);
@@ -121,6 +122,7 @@ namespace vel
 	private:
 		int																audioGroupKey;
 		BufferIds														bufferIds;
+		material_handle													emptyMaterial;
 		glm::vec2														uiScreenSize;
 		glm::vec2														uiReferenceSize;
 		float															uiScale;
@@ -297,11 +299,11 @@ namespace vel
 		void						initButton(UIButton* b);
 		void						initTextButton(UITextButton* b);
 		void						initCheckbox(UICheckbox* c);
-
-		void						initScrollView(UIScrollView* sv);
 		void						initSelect(UISelect* s);
-		void						initTextInput(UITextInput* i);		
+		void						initTextInput(UITextInput* i);
 		void						initTable(UITable* t);
+		void						initScrollView(UIScrollView* sv);
+
 		void						initUI(UIView* v);
 		void						refreshScrollView(UIScrollView* sv);
 		void						setCursorOver(std::vector<std::unique_ptr<UIElement>>& elements);

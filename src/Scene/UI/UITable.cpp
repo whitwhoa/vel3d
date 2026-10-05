@@ -1,4 +1,6 @@
 
+#include <vel/Scene/Scene.h>
+#include <vel/Scene/UI/UIView.h>
 #include <vel/Scene/UI/UITable.h>
 
 namespace vel
@@ -83,6 +85,9 @@ namespace vel
 
 	UITable* UITable::setParent(actor_handle a)
 	{
+		if (!a)
+			return this;
+
 		UIElement::setParent(a);
 
 		if (!this->isInitialized)

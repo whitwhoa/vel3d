@@ -1,5 +1,6 @@
 #include "spdlog/spdlog.h"
 
+#include <vel/Scene/Scene.h>
 #include <vel/Scene/UI/UIImage.h>
 
 namespace vel
@@ -44,6 +45,9 @@ namespace vel
 
 	UIImage* UIImage::setParent(actor_handle a)
 	{
+		if (!a)
+			return this;
+
 		UIElement::setParent(a);
 
 		if (!this->isInitialized)

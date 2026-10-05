@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vel/Scene/Scene.h>
 #include <vel/Scene/UI/UIButton.h>
 #include <vel/Scene/UI/UICheckbox.h>
 #include <vel/Scene/UI/UISelect.h>
@@ -12,6 +11,7 @@
 
 namespace vel
 {
+	class Scene;
 	class UIScrollView;
 
 	class UIView
@@ -39,7 +39,7 @@ namespace vel
 		UIImage*			addImage(const std::string& id);
 		UIButton*			addButton(const std::string& id);
 		UITable*			addTable(const std::string& id);
-		UIScrollView		addScrollView(const std::string& id);
+		UIScrollView*		addScrollView(const std::string& id);
 
 		int					getElementIndex(const std::string& id) const;
 		const UIElement*	getElementByIndex(int i) const;

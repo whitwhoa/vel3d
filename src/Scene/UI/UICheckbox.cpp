@@ -79,6 +79,9 @@ namespace vel
 
 	UICheckbox* UICheckbox::setParent(actor_handle a)
 	{
+		if (!a)
+			return this;
+
 		UIElement::setParent(a);
 
 		if (!this->isInitialized)

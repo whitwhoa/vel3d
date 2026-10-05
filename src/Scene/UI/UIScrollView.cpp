@@ -1,4 +1,5 @@
 
+#include <vel/Scene/Scene.h>
 #include <vel/Scene/UI/UIScrollView.h>
 
 namespace vel

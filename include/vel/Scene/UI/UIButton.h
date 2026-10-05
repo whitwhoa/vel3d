@@ -4,10 +4,12 @@
 #include <functional>
 
 #include <vel/Scene/UI/UIElement.h>
-#include <vel/Scene/UI/UICursor.h>
+//#include <vel/Scene/UI/UICursor.h>
 
 namespace vel
 {
+    class UICursor;
+
     class UIButton : public UIElement
     {
     private:

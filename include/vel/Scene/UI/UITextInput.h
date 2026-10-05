@@ -5,6 +5,7 @@
 
 #include <vel/InputState.h>
 
+#include <vel/Scene/Text.h>
 #include <vel/Scene/UI/UIButton.h>
 
 namespace vel

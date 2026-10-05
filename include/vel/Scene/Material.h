@@ -13,6 +13,7 @@
 namespace vel
 {
 	typedef unsigned int material_handle;
+	inline constexpr material_handle INVALID_MATERIAL_HANDLE = std::numeric_limits<material_handle>::max();
 
 	enum MtlFlg : uint32_t
 	{

@@ -132,7 +132,10 @@ namespace vel
 	{
 		for (auto& a : this->actors)
 		{
-			VEL_ASSERT(a.mesh && a.mesh->gp, "Scene::initActorDrawBuckets(): Actor has no geometry pool.");
+			if (!a.mesh)
+				continue;
+
+			//VEL_ASSERT(a.mesh && a.mesh->gp, "Scene::initActorDrawBuckets(): Actor has no geometry pool.");
 			VEL_ASSERT(a.mesh->gp->gpuGeoPool, "Scene::initActorDrawBuckets(): Geometry pool has not been initialized.");
 
 			for (uint32_t i = 0; i < a.materialIndices.size(); i++)
@@ -158,6 +161,12 @@ namespace vel
 			a.activeBones.push_back(std::pair<unsigned int, unsigned int>(skelBoneIndex, index));
 			index++;
 		}
+	}
+
+	actor_handle HeadlessScene::addActor()
+	{
+		Actor a{};
+		return this->actors.insert(a);
 	}
 
 	actor_handle HeadlessScene::addActor(Mesh* mesh)

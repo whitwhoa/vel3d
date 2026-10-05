@@ -51,6 +51,9 @@ namespace vel
 
     UIElement* UIElement::setParent(actor_handle a)
     {
+        if (!a)
+            return this;
+
         this->parentActorCache = a;
         return this;
     }
