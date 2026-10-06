@@ -44,13 +44,19 @@ namespace vel
 		int									postShaderColorLocation;
 
 		Shader								compositeShader;
+		
 		glm::ivec2							activeViewportSize;
+
+		Shader								debugShader;
+		
+
 		GLsync								prevFrameFence;
 
 		unsigned int						bonesUBO;
 		unsigned int						texturesUBO;
 		unsigned int						lightmapTextureUBO;
 		int									activeFramebuffer;
+		int									debugShaderVpLocation;
 		bool								useFXAA;
 
 		void								initBoneUBO();
@@ -96,7 +102,7 @@ namespace vel
 		void								enableBlend();
         void                                disableBlend();
 
-		void								debugDrawCollisionWorld(CollisionDebugDrawer* cdd);
+		void								debugDrawCollisionWorld(const glm::mat4& vp, CollisionDebugDrawer* cdd);
 
 		void								clearShader(unsigned int programId);
 		void								clearGeoPool(GpuGeoPool ggp);

@@ -23,7 +23,6 @@ namespace vel
 		int										debug_mode = 1; // default to DBG_DrawWireframe
 																// 2 = AABB
 		std::vector<BulletDebugDrawData> 		verts;
-		Shader*									shaderProgram;
 
 	public:
 		CollisionDebugDrawer();
@@ -34,8 +33,6 @@ namespace vel
 		void		draw3dText(const btVector3 &, const char *) override;
 		void		setDebugMode(int debug_mode) override;
 		int			getDebugMode(void) const override;
-		void		setShaderProgram(Shader* s);
-		Shader*		getShaderProgram();
 
 		std::vector<BulletDebugDrawData>& getVerts();
 

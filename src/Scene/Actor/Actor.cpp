@@ -19,7 +19,8 @@ namespace vel
 		material(-1),
 		stage(nullptr),
 		lightmapTexture(INVALID_TEXTURE_HANDLE),
-		colorMultiplier({1.f, 1.f, 1.f, 1.f})
+		colorMultiplier({1.f, 1.f, 1.f, 1.f}),
+		rigidBody(nullptr)
 	{}
 
 	//Actor::Actor(const Actor& a) :

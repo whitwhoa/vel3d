@@ -1521,13 +1521,17 @@ namespace vel
 	void Scene::updateUI(float dt)
 	{
 		const InputState& is = Runtime::inputState();
-		this->uiCursor->updatePos(is.mouseDX, is.mouseDY);
 
-		if (!this->uiCursor->holdInterrupt)
+		if (this->uiCursor)
 		{
-			this->uiCursor->overZ = -1.f;
-			this->uiCursor->overElement = nullptr;
-			this->setCursorOver(this->ui->elements);
+			this->uiCursor->updatePos(is.mouseDX, is.mouseDY);
+
+			if (!this->uiCursor->holdInterrupt)
+			{
+				this->uiCursor->overZ = -1.f;
+				this->uiCursor->overElement = nullptr;
+				this->setCursorOver(this->ui->elements);
+			}
 		}
 
 		//if (this->cursor->overElement)
@@ -1541,7 +1545,8 @@ namespace vel
 				if (scrollView->elements.size() > scrollView->initializedElements)
 					this->refreshScrollView(scrollView);
 
-			e->update(dt, is, this->uiCursor.get());
+			if(this->uiCursor)
+				e->update(dt, is, this->uiCursor.get());
 		}
 	}
 

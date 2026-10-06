@@ -479,6 +479,20 @@ namespace vel
 		glm::ivec2 windowSize = Runtime::_window->getWindowSize();
 		Runtime::_gpu->setDefaultFrameBuffer(windowSize.x, windowSize.y);
 		Runtime::_gpu->drawToScreen(this->sceneRenderTarget);
+
+
+		for (auto& cw : this->collisionWorlds)
+		{
+			if (cw->getIsActive() && cw->getDebugDrawer() != nullptr)
+			{
+				cw->getDynamicsWorld()->debugDrawWorld(); // load vertices into associated CollisionDebugDrawer
+
+				glm::mat4 vp = cw->getCamera()->gpuData.projectionMatrix * cw->getCamera()->gpuData.viewMatrix;
+
+				Runtime::_gpu->debugDrawCollisionWorld(vp, cw->getDebugDrawer());
+			}
+		}
+
 	}
 
 } // END VEL NAMESPACE

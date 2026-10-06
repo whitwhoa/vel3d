@@ -1237,8 +1237,12 @@ namespace vel
 		glDrawArrays(GL_LINES, 0, pointCount);
 	}
 
-	void GPU::debugDrawCollisionWorld(CollisionDebugDrawer* cdd)
+	void GPU::debugDrawCollisionWorld(const glm::mat4& vp, CollisionDebugDrawer* cdd)
 	{
+		glUseProgram(this->debugShader.programId);
+
+		glUniformMatrix4fv(this->debugShaderVpLocation, 1, GL_FALSE, glm::value_ptr(vp));
+
 		if (cdd->getVerts().size() > 0)
 		{
 			unsigned int VAO, VBO;
@@ -1436,6 +1440,44 @@ void main()
 
 		bool compositeShaderCompStatus = this->loadShader(this->compositeShader, vertCode, fragCode);
 		VEL_ASSERT(compositeShaderCompStatus, "GPU::initShaders() - failed to compile shader, see log");
+
+
+		////////////////////////////////////////////////////////
+		// Composite Shader
+		////////////////////////////////////////////////////////
+		vertCode = R"GLSL(
+#version 460 core
+
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aColor;
+
+uniform mat4 vp;
+
+out vec3 VertColor;
+
+void main() 
+{
+	VertColor = aColor;
+	gl_Position = vp * vec4(aPos, 1.0);
+}
+)GLSL";
+
+		fragCode = R"GLSL(
+#version 460 core
+
+in vec3 VertColor;
+out vec4 FragColor;
+
+void main() 
+{
+	FragColor = vec4(VertColor, 1.0);
+}
+)GLSL";
+
+		bool debugShaderCompStatus = this->loadShader(this->debugShader, vertCode, fragCode);
+		VEL_ASSERT(debugShaderCompStatus, "GPU::initShaders() - failed to compile shader, see log");
+
+		this->debugShaderVpLocation = glGetUniformLocation(this->debugShader.programId, "vp");
 
 	}
 

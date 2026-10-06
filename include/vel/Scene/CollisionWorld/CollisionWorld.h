@@ -52,8 +52,8 @@ namespace vel
 		btDiscreteDynamicsWorld* const			getDynamicsWorld();
 		void									addCollisionShape(const std::string& name, btCollisionShape* shape);
 		
-		btRigidBody*							addStaticCollisionBody(Actor* actor, int collisionFilterGroup, int collisionFilterMask);
-		btCollisionShape*						collisionShapeFromActor(Actor* actor, bool applyTransform = true);
+		btRigidBody*							addStaticCollisionBody(const Actor& actor, int collisionFilterGroup, int collisionFilterMask);
+		btCollisionShape*						collisionShapeFromActor(const Actor& actor, bool applyTransform = true);
 
 		void									removeRigidBody(btRigidBody* rb);
 		void									removeGhostObject(btPairCachingGhostObject* go);
@@ -62,7 +62,7 @@ namespace vel
 		std::optional<RaycastResult>			rayTest(btVector3 from, btVector3 to, int collisionFilterMask = 1, std::vector<btCollisionObject*> blackList = {});
 		std::optional<ConvexCastResult>			convexSweepTest(btConvexShape* castShape, btVector3 from, btVector3 to, int collisionFilterMask = 1, std::vector<btCollisionObject*> blackList = {});
 
-		void									useDebugDrawer(Shader* s, int debugMode = 1);
+		void									useDebugDrawer(int debugMode = 1);
 		CollisionDebugDrawer* 					getDebugDrawer();
 		bool									getDebugEnabled();
         

@@ -118,13 +118,12 @@ namespace vel
 		VEL_ASSERT(false, ("CollisionWorld::getCollisionObjectTemplate() - no template with name of: " + name).c_str());
 	}
 
-	void CollisionWorld::useDebugDrawer(Shader* s, int debugMode)
+	void CollisionWorld::useDebugDrawer(int debugMode)
 	{
 		VEL_ASSERT(!this->collisionDebugDrawer, "Debug drawer already initialized. Only one initialization allowed, or we leak memory, and this is not worth adding safety logic since it is intended for development debug");
 		
 		this->collisionDebugDrawer = new CollisionDebugDrawer();
 		this->collisionDebugDrawer->setDebugMode(debugMode);
-		this->collisionDebugDrawer->setShaderProgram(s);
 
 		this->dynamicsWorld->setDebugDrawer(this->collisionDebugDrawer);
 	}
@@ -221,12 +220,12 @@ namespace vel
 		}
 	}
 
-	btCollisionShape* CollisionWorld::collisionShapeFromActor(Actor* actor, bool applyTransform)
+	btCollisionShape* CollisionWorld::collisionShapeFromActor(const Actor& actor, bool applyTransform)
 	{
-		if (actor->mesh == nullptr || actor->mesh->gp == nullptr || actor->mesh->indexCount == 0)
+		if (actor.mesh == nullptr || actor.mesh->gp == nullptr || actor.mesh->indexCount == 0)
 			return nullptr;
 
-		auto* mesh = actor->mesh;
+		auto* mesh = actor.mesh;
 		std::string shapeName = mesh->name + "_shape";
 
 		// Reuse existing collision geometry when no transform is baked into it.
@@ -243,7 +242,7 @@ namespace vel
 			shapeName += "_" + std::to_string(this->nextCollisionShapeId++);
 		}
 
-		auto transformMatrix = actor->getTransform().getMatrix(); // this ignores parenting
+		auto transformMatrix = actor.getTransform().getMatrix(); // this ignores parenting
 
 		btTriangleMesh* triangleMesh = new btTriangleMesh();
 
@@ -287,19 +286,13 @@ namespace vel
 		return bvhShape;
 	}
 
-	btRigidBody* CollisionWorld::addStaticCollisionBody(Actor* actor, int collisionFilterGroup, int collisionFilterMask)
+	btRigidBody* CollisionWorld::addStaticCollisionBody(const Actor& actor, int collisionFilterGroup, int collisionFilterMask)
 	{
-		VEL_ASSERT(actor, "CollisionWorld::addStaticCollisionBody(): Actor cannot be null.");
-
 		btCollisionShape* staticCollisionShape = this->collisionShapeFromActor(actor);
 		
 		VEL_ASSERT(staticCollisionShape, "CollisionWorld::addStaticCollisionBody(): Actor did not produce a valid collision shape.");
 
-		btScalar mass(0);
-		btVector3 localInertia(0, 0, 0);
-		btDefaultMotionState* defaultMotionState = new btDefaultMotionState();
-		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, defaultMotionState, staticCollisionShape, localInertia);
-		btRigidBody* body = new btRigidBody(rbInfo);
+		btRigidBody* body = new btRigidBody({ 0, nullptr, staticCollisionShape, {0, 0, 0} });
 
 		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
 

@@ -36,15 +36,4 @@ namespace vel
 	{
 		return this->verts;
 	}
-
-	void CollisionDebugDrawer::setShaderProgram(Shader* s)
-	{
-		this->shaderProgram = s;
-	}
-
-	Shader* CollisionDebugDrawer::getShaderProgram()
-	{
-		return this->shaderProgram;
-	}
-
 }

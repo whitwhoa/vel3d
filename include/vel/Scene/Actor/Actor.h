@@ -62,6 +62,8 @@ namespace vel
 		std::vector<glm::vec3>			ambientCube;
 		texture_handle					lightmapTexture;
 
+		btRigidBody*					rigidBody;
+
 	private:
 		void						_updatePrevTransform();
 		
