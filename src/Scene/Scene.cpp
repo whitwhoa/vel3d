@@ -471,9 +471,10 @@ namespace vel
 
 		Runtime::_gpu->setFinalRenderTarget(this->sceneRenderTarget);
 
-		for (auto& c : this->cameras)
-			if (c->finalRenderCam)
-				Runtime::_gpu->drawToFinalRenderTarget(c->renderTarget.opaqueDsaHandle);
+		for(auto& s : this->stages)
+			for (auto& c : s->cameras)
+				if (c->finalRenderCam)
+					Runtime::_gpu->drawToFinalRenderTarget(c->renderTarget.opaqueDsaHandle);
 		
 		// call post process to apply post process shader while drawing into the default framebuffer for display to screen
 		glm::ivec2 windowSize = Runtime::_window->getWindowSize();

@@ -650,6 +650,10 @@ namespace vel
 	{
 		t->tableActor = HeadlessScene::addActor();
 
+		t->width = 0;
+		t->height = 0;
+
+
 		//
 		// Find each row height, and each column width
 		//
@@ -660,6 +664,7 @@ namespace vel
 		{
 			int rowHeight = 0;
 			int cellIndex = 0;
+
 			for (auto& cell : row)
 			{
 				int cellWidth = cell.element->getWidth() + t->cellPadding * 2;
@@ -679,6 +684,7 @@ namespace vel
 
 				cellIndex++;
 			}
+
 			rowHeights.push_back(rowHeight);
 			t->height += rowHeight;
 		}
@@ -688,114 +694,196 @@ namespace vel
 
 
 		//
-		// Position all elements relative to 0,0 (top left) using rowHeight and
-		// columnWidth, along with the origin type, width, height, and t->cellPadding
+		// Position all elements relative to 0,0 (top left)
 		//
 		int rowIndex = 0;
+
 		for (auto& row : t->rows)
 		{
 			int preRowHeight = 0;
+
 			for (int i = rowIndex - 1; i >= 0; i--)
 				preRowHeight += rowHeights[i];
 
 			int cellIndex = 0;
+
 			for (auto& cell : row)
 			{
 				int preCellWidth = 0;
+
 				for (int i = cellIndex - 1; i >= 0; i--)
 					preCellWidth += columnWidths[i];
 
-				glm::vec2 ePos = cell.element->getPosition();
+				int cellWidth = columnWidths[cellIndex];
+				int cellHeight = rowHeights[rowIndex];
 
+				glm::vec2 ePos{ 0.f, 0.f };
+
+
+				//
+				// Convert the element's origin to its assumed top-left position.
+				//
 				switch (cell.element->getOriginType())
 				{
 				case vel::PlaneOrigin::CENTER_BOTTOM:
 					ePos.x = std::round(cell.element->getWidth() * 0.5f);
 					ePos.y = cell.element->getHeight();
 					break;
+
 				case vel::PlaneOrigin::CENTER_CENTER:
 					ePos.x = std::round(cell.element->getWidth() * 0.5f);
 					ePos.y = std::round(cell.element->getHeight() * 0.5f);
 					break;
+
 				case vel::PlaneOrigin::CENTER_TOP:
 					ePos.x = std::round(cell.element->getWidth() * 0.5f);
 					break;
+
 				case vel::PlaneOrigin::LEFT_BOTTOM:
 					ePos.y = cell.element->getHeight();
 					break;
+
 				case vel::PlaneOrigin::LEFT_CENTER:
 					ePos.y = std::round(cell.element->getHeight() * 0.5f);
 					break;
+
 				case vel::PlaneOrigin::LEFT_TOP:
 					break;
+
 				case vel::PlaneOrigin::RIGHT_BOTTOM:
 					ePos.x = cell.element->getWidth();
 					ePos.y = cell.element->getHeight();
 					break;
+
 				case vel::PlaneOrigin::RIGHT_CENTER:
 					ePos.x = cell.element->getWidth();
 					ePos.y = std::round(cell.element->getHeight() * 0.5f);
 					break;
+
 				case vel::PlaneOrigin::RIGHT_TOP:
 					ePos.x = cell.element->getWidth();
 					break;
 				}
 
-				// set position such that the element is in the top left corner of it's cell
+
+				//
+				// Move to the top-left corner of this cell.
+				//
 				ePos.x += preCellWidth;
 				ePos.y += preRowHeight;
 
-				// align the element within it's cell
-				int cellWidth = columnWidths[cellIndex];
-				int cellHeight = rowHeights[rowIndex];
+
+				//
+				// Align the element within its cell.
+				//
 				switch (cell.align)
 				{
 				case UIColAlign::CENTER_BOTTOM:
 					ePos.x += std::round(cellWidth * 0.5f) - std::round(cell.element->getWidth() * 0.5f);
-					ePos.y += cell.element->getHeight() - t->cellPadding;
+					ePos.y += cellHeight - cell.element->getHeight() - t->cellPadding;
 					break;
+
 				case UIColAlign::CENTER_CENTER:
 					ePos.x += std::round(cellWidth * 0.5f) - std::round(cell.element->getWidth() * 0.5f);
 					ePos.y += std::round(cellHeight * 0.5f) - std::round(cell.element->getHeight() * 0.5f);
 					break;
+
 				case UIColAlign::CENTER_TOP:
 					ePos.x += std::round(cellWidth * 0.5f) - std::round(cell.element->getWidth() * 0.5f);
 					ePos.y += t->cellPadding;
 					break;
+
 				case UIColAlign::LEFT_BOTTOM:
 					ePos.x += t->cellPadding;
-					ePos.y += cell.element->getHeight() - t->cellPadding;
+					ePos.y += cellHeight - cell.element->getHeight() - t->cellPadding;
 					break;
+
 				case UIColAlign::LEFT_CENTER:
 					ePos.x += t->cellPadding;
 					ePos.y += std::round(cellHeight * 0.5f) - std::round(cell.element->getHeight() * 0.5f);
 					break;
+
 				case UIColAlign::LEFT_TOP:
 					ePos.x += t->cellPadding;
 					ePos.y += t->cellPadding;
 					break;
+
 				case UIColAlign::RIGHT_BOTTOM:
 					ePos.x += cellWidth - cell.element->getWidth() - t->cellPadding;
 					ePos.y += cellHeight - cell.element->getHeight() - t->cellPadding;
 					break;
+
 				case UIColAlign::RIGHT_CENTER:
 					ePos.x += cellWidth - cell.element->getWidth() - t->cellPadding;
-					ePos.y += std::round(cellHeight * 0.5f) - std::round(cell.element->getHeight() * 0.5f);
+					ePos.y += std::round(cellHeight * 0.5f)- std::round(cell.element->getHeight() * 0.5f);
 					break;
+
 				case UIColAlign::RIGHT_TOP:
 					ePos.x += cellWidth - cell.element->getWidth() - t->cellPadding;
 					ePos.y += t->cellPadding;
 					break;
 				}
+
+
+				//
+				// Initially position the element using the normal UIElement logic.
+				//
 				cell.element->setPosition(ePos);
 
 
-				// parent the element to the table so that it's position is relative to the table's position
+				//
+				// Parent the element to the table so its position is relative
+				// to the table.
+				//
 				cell.element->setParent(t->tableActor);
 
 
+				//
+				// UIText uses logical font metrics for its origin, while getHeight()
+				// uses the actual visible mesh height. Correct its final Y position
+				// using its real rendered AABB.
+				//
+				if (auto* text = dynamic_cast<UIText*>(cell.element))
+				{
+					Actor& textActor = this->getTextActor(text->textActor);
+					AABB textAABB = this->getActorWorldAABB(textActor);
+
+					float currentY = 0.f;
+					float desiredY = 0.f;
+
+					switch (cell.align)
+					{
+					case UIColAlign::LEFT_TOP:
+					case UIColAlign::CENTER_TOP:
+					case UIColAlign::RIGHT_TOP:
+						currentY = textAABB.minEdge.y;
+						desiredY = preRowHeight + t->cellPadding;
+						break;
+
+					case UIColAlign::LEFT_CENTER:
+					case UIColAlign::CENTER_CENTER:
+					case UIColAlign::RIGHT_CENTER:
+						currentY =(textAABB.minEdge.y + textAABB.maxEdge.y) * 0.5f;
+						desiredY = preRowHeight + cellHeight * 0.5f;
+						break;
+
+					case UIColAlign::LEFT_BOTTOM:
+					case UIColAlign::CENTER_BOTTOM:
+					case UIColAlign::RIGHT_BOTTOM:
+						currentY = textAABB.maxEdge.y;
+						desiredY = preRowHeight + cellHeight - t->cellPadding;
+						break;
+					}
+
+					glm::vec2 correctedPos = text->getPosition();
+					correctedPos.y += desiredY - currentY;
+
+					text->setPosition(correctedPos);
+				}
+
 				cellIndex++;
 			}
+
 			rowIndex++;
 		}
 
@@ -804,9 +892,11 @@ namespace vel
 		// Post initialization
 		//
 		t->isInitialized = true;
+
 		t->setPosition(t->getPosition());
 		t->setVisible(t->getIsVisible());
 		t->setParent(t->getParent());
+
 		if (t->postInit)
 			t->postInit();
 	}

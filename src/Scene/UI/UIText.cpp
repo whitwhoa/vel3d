@@ -144,9 +144,12 @@ namespace vel
 			return 0;
 
 		Scene* s = this->parentView->scene;
-		Text& text = s->getText(this->textActor);
 
-		return std::round(text.logicalHeight);
+		//Text& text = s->getText(this->textActor);
+		//return std::round(text.logicalHeight);
+
+		Actor& ta = s->getTextActor(this->textActor);
+		return std::round(s->getActorWorldAABB(ta).getSize().y);
 	}
 
 	int UIText::getXPos()
