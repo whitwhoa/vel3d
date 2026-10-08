@@ -425,7 +425,7 @@ namespace vel
 		//
 		// Initialize scrollbarTrackActor
 		//
-		s->scrollbarTrackActor = this->addActor(s->parentView->stage, this->getMesh("plane_1x1"), { this->emptyMaterial }, ACTFLG_NONE);
+		s->scrollbarTrackActor = this->addActor(s->parentView->stage, this->getMesh("plane_1x1"), { this->rgbaMaterial }, ACTFLG_NONE);
 
 		Actor& sbta = this->actors[s->scrollbarTrackActor];
 		sbta.setScale({ s->scrollbarWidth, -s->dropdownHeight, 1.f });
@@ -474,7 +474,7 @@ namespace vel
 		//
 		// Initialize optionsGhostActor
 		//
-		s->optionsGhostActor = this->addActor(s->parentView->stage, this->getMesh("plane_1x1"), { this->emptyMaterial }, ACTFLG_NONE);
+		s->optionsGhostActor = this->addActor(s->parentView->stage, this->getMesh("plane_1x1"), { this->rgbaMaterial }, ACTFLG_NONE);
 
 		Actor& oga = this->actors[s->optionsGhostActor];
 		oga.setScale({ s->selectButton->getWidth(), -s->dropdownHeight, 1.f });
@@ -484,7 +484,7 @@ namespace vel
 		//
 		// Initialize expandedGhostActor
 		//
-		s->expandedGhostActor = this->addActor(s->parentView->stage, this->getMesh("plane_1x1"), { this->emptyMaterial }, ACTFLG_NONE);
+		s->expandedGhostActor = this->addActor(s->parentView->stage, this->getMesh("plane_1x1"), { this->rgbaMaterial }, ACTFLG_NONE);
 
 		Actor& ega = this->actors[s->expandedGhostActor];
 		ega.setScale({ s->selectButton->getWidth(), -s->fullExpandedHeight, 1.f });
@@ -556,7 +556,7 @@ namespace vel
 		Text& gta = this->texts[i->ghostTextActor];
 		int buttonHeight = gta.logicalHeight + i->topPadding + i->bottomPadding;
 
-		i->buttonActor = this->addActor(i->parentView->stage, this->getMesh("plane_1x1"), { this->emptyMaterial }, ACTFLG_VISIBLE);
+		i->buttonActor = this->addActor(i->parentView->stage, this->getMesh("plane_1x1"), { this->rgbaMaterial }, ACTFLG_VISIBLE);
 
 		Actor& ba = this->actors[i->buttonActor];
 		ba.setScale({ i->width, -buttonHeight, 1.f });
@@ -568,7 +568,7 @@ namespace vel
 		//
 		int caretHeight = buttonHeight * 0.8f;
 
-		i->caretActor = this->addActor(i->parentView->stage, this->getMesh("plane_1x1"), { this->emptyMaterial }, ACTFLG_NONE);
+		i->caretActor = this->addActor(i->parentView->stage, this->getMesh("plane_1x1"), { this->rgbaMaterial }, ACTFLG_NONE);
 
 		Actor& ca = this->actors[i->caretActor];
 		ca.setScale({ 1.f, -caretHeight, 1.f });
@@ -948,7 +948,7 @@ namespace vel
 		//
 		// Parent all elements to ghostParentActor
 		//
-		sv->ghostParentActor = this->addActor(sv->stage, this->getMesh("cursor_plane"), { this->emptyMaterial }, ACTFLG_NONE);
+		sv->ghostParentActor = this->addActor(sv->stage, this->getMesh("cursor_plane"), { this->rgbaMaterial }, ACTFLG_NONE);
 
 		for (auto& e : sv->elements)
 			if (!e->getParent())
@@ -1001,7 +1001,7 @@ namespace vel
 				//
 				// Initialize scrollbarTrackXActor
 				//
-				sv->scrollbarTrackXActor = this->addActor(sv->parentView->stage, this->getMesh("plane_1x1"), { this->emptyMaterial }, ACTFLG_VISIBLE);
+				sv->scrollbarTrackXActor = this->addActor(sv->parentView->stage, this->getMesh("plane_1x1"), { this->rgbaMaterial }, ACTFLG_VISIBLE);
 				Actor& stxa = this->actors[sv->scrollbarTrackXActor];
 				stxa.setScale({ sv->width, -sv->scrollbarThickness, 1.f });
 				stxa.colorMultiplier = sv->scrollbarTrackColor;
@@ -1115,7 +1115,7 @@ namespace vel
 				//
 				// Initialize scrollbarTrackYActor
 				//
-				sv->scrollbarTrackYActor = this->addActor(sv->parentView->stage, this->getMesh("cursor_plane"), { this->emptyMaterial }, ACTFLG_VISIBLE);
+				sv->scrollbarTrackYActor = this->addActor(sv->parentView->stage, this->getMesh("cursor_plane"), { this->rgbaMaterial }, ACTFLG_VISIBLE);
 				Actor& stya = this->actors[sv->scrollbarTrackYActor];
 				stya.setScale({ sv->scrollbarThickness, -sv->viewHeight, 1.f });
 				stya.colorMultiplier = sv->scrollbarTrackColor;
@@ -1251,7 +1251,7 @@ namespace vel
 		{
 			if (!prevRequireScrollX)
 			{
-				sv->scrollbarTrackXActor = this->addActor(sv->parentView->stage, this->getMesh("plane_1x1"), { this->emptyMaterial }, ACTFLG_VISIBLE);
+				sv->scrollbarTrackXActor = this->addActor(sv->parentView->stage, this->getMesh("plane_1x1"), { this->rgbaMaterial }, ACTFLG_VISIBLE);
 				Actor& stxa = this->actors[sv->scrollbarTrackXActor];
 				stxa.setScale({ sv->width, -sv->scrollbarThickness, 1.f });
 				stxa.colorMultiplier = sv->scrollbarTrackColor;
@@ -1382,7 +1382,7 @@ namespace vel
 		{
 			if (!prevRequireScrollY)
 			{
-				sv->scrollbarTrackYActor = this->addActor(sv->parentView->stage, this->getMesh("cursor_plane"), { this->emptyMaterial }, ACTFLG_VISIBLE);
+				sv->scrollbarTrackYActor = this->addActor(sv->parentView->stage, this->getMesh("cursor_plane"), { this->rgbaMaterial }, ACTFLG_VISIBLE);
 				Actor& stya = this->actors[sv->scrollbarTrackYActor];
 				stya.setScale({ sv->scrollbarThickness, -sv->viewHeight, 1.f });
 				stya.colorMultiplier = sv->scrollbarTrackColor;

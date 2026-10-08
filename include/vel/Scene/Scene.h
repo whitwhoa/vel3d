@@ -122,11 +122,12 @@ namespace vel
 	private:
 		int																audioGroupKey;
 		BufferIds														bufferIds;
-		material_handle													emptyMaterial;
 		glm::vec2														uiScreenSize;
 		glm::vec2														uiReferenceSize;
 		float															uiScale;
 	protected:
+		material_handle													rgbMaterial;
+		material_handle													rgbaMaterial;
 		std::unique_ptr<UIView>											ui;
 		std::unique_ptr<UICursor>										uiCursor;
 

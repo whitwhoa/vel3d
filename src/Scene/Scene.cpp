@@ -31,7 +31,7 @@ namespace vel
 		HeadlessScene(),
 		audioGroupKey(-1),
 		bufferIds(),
-		emptyMaterial(INVALID_MATERIAL_HANDLE),
+		rgbaMaterial(INVALID_MATERIAL_HANDLE),
 		uiScale(1.f),
 		sceneRenderTarget(),
 		uiScreenSize(Runtime::_window->getResolution()),
@@ -46,7 +46,8 @@ namespace vel
 		HeadlessScene(),
 		audioGroupKey(-1),
 		bufferIds(),
-		emptyMaterial(INVALID_MATERIAL_HANDLE),
+		rgbMaterial(INVALID_MATERIAL_HANDLE),
+		rgbaMaterial(INVALID_MATERIAL_HANDLE),
 		uiScale(1.f),
 		sceneRenderTarget(),
 		uiScreenSize(Runtime::_window->getResolution()),
@@ -78,8 +79,8 @@ namespace vel
 		float scaleY = this->uiScreenSize.y / this->uiReferenceSize.y;
 		this->uiScale = std::min(scaleX, scaleY);
 
-
-		this->emptyMaterial = this->addMaterial(MTLFLG_IS_RGBA);
+		this->rgbMaterial = this->addMaterial(MTLFLG_IS_RGB);
+		this->rgbaMaterial = this->addMaterial(MTLFLG_IS_RGBA);
 	}
 	
 	HeadlessScene::~HeadlessScene()
