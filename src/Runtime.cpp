@@ -67,6 +67,8 @@ namespace vel
         VEL_ASSERT(_initialized, "Runtime::shutdown(): Runtime is not initialized.");
 
         _audioDevice.reset();
+        AudioDevice::nextGroupKey = 0;
+
         _gpu.reset();
         _window.reset();
 
@@ -76,6 +78,7 @@ namespace vel
         _frameTime = 0.0;
         _frameRate = 0.0;
         _startTime = {};
+        _initialized = false;
     }
 
     const Config& Runtime::config()

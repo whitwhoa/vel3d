@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <iostream>
 
 #include <spdlog/spdlog.h>
 
@@ -174,7 +175,7 @@ namespace vel
 			return;
 
 		auto& sfxSet = this->managedSFX.at(this->currentGroupKey);
-		for (auto it = sfxSet.begin(); it != sfxSet.end(); ) 
+		for (auto it = sfxSet.begin(); it != sfxSet.end();) 
 		{
 			ma_sound* sound = *it;
 

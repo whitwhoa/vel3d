@@ -19,7 +19,7 @@ namespace vel
 	class AudioDevice
 	{
 	private:
-		static unsigned int nextGroupKey; /* Way to track group keys already used. Values do not need to be sequential */
+		//static unsigned int nextGroupKey; /* Way to track group keys already used. Values do not need to be sequential */
 
 		ma_engine engine; /* Core logic engine for processing sound */
 		ma_sound_group sfxVolGroup; /* Sound group used for adjusting overall volume of sound effects */
@@ -81,6 +81,8 @@ namespace vel
 
 
 	public:
+		static unsigned int nextGroupKey; /* Way to track group keys already used. Values do not need to be sequential */
+
 		AudioDevice();
 		~AudioDevice();
 
